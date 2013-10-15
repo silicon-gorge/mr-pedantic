@@ -72,9 +72,11 @@
                  "rm.brislabs.com"
                  "http://rm.brislabs.com/nexus/content/groups/all-releases"}
 
-  :uberjar-name "Shuppet.jar"
+  :uberjar-name "shuppet.jar"
 
-  :rpm {:name "Shuppet1"
+  :resource-paths ["shared"]
+
+  :rpm {:name "shuppet"
         :summary "RPM for Shuppet service"
         :copyright "Nokia 2013"
         :preinstall {:scriptFile "scripts/rpm/preinstall.sh"}
