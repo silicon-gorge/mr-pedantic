@@ -25,7 +25,8 @@
                  [environ "0.4.0"]
                  [nokia/ring-utils "1.0.1"]
                  [metrics-clojure "1.0.1"]
-                 [metrics-clojure-ring "1.0.1"]]
+                 [metrics-clojure-ring "1.0.1"]
+                 [commons-collections "3.2.1"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
                                    :exclusions [org.slf4j/slf4j-nop
