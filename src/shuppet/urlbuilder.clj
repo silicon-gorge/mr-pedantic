@@ -11,7 +11,6 @@
    [org.apache.commons.codec.binary Base64]
    [org.joda.time DateTime DateTimeZone]))
 
-
 (def ^:const hmac-sha256-algorithm  "HmacSHA256")
 (def ^:const new-line "\n")
 
@@ -43,18 +42,18 @@
 (defn- bytes [str]
   (.getBytes str "UTF-8"))
 
-(defn- base64 [str]
-  (Base64/encodeBase64String str))
+(defn- base64 [b]
+  (Base64/encodeBase64String b))
 
-(defn- get-mac [key]
-  (let [signing-key (SecretKeySpec. (bytes key) hmac-sha256-algorithm)
+(defn- get-mac []
+  (let [signing-key (SecretKeySpec. (bytes (aws-secret)) hmac-sha256-algorithm)
         mac (Mac/getInstance hmac-sha256-algorithm)]
     (.init mac signing-key)
     mac))
 
 (defn- calculate-hmac [data]
   (try
-    (let [mac (get-mac (aws-secret))
+    (let [mac (get-mac)
           raw-mac (.doFinal mac (bytes data))]
       (base64 raw-mac))
     (catch Exception e
@@ -76,7 +75,8 @@
        (generate-query-string query-params)))
 
 (defn- generate-signature [method uri query-params]
-  (let [url (URL. uri)
+  (let [query-params (into (sorted-map) query-params)
+        url (URL. uri)
         host (lower-case (.getHost url))
         path (get-path url)
         data (url-to-sign method host path query-params)]
@@ -87,8 +87,7 @@
   [method uri params]
   (let [query-params (merge params auth-params)
         signature (generate-signature method uri query-params)
-        query-string (generate-query-string (merge query-params {"Signature" signature}))]
+        query-string (generate-query-string (merge {"Signature" signature} query-params))]
     (str uri "?" query-string)))
 
-
-;(build-url "get" "https://www.test.com" {"a" "1"})
+;(clj-http.client/get (build-url "get" "https://ec2.eu-west-1.amazonaws.com" {"Version" "2013-10-01" "Action" "DescribeSecurityGroups" }) {:throw-exceptions false})
