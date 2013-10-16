@@ -55,7 +55,8 @@
         :service-graphite-post-interval "1"
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
-        :service-production "false"}
+        :service-production "false"
+        :service-aws-ec2-url "https://ec2.us-west-1.amazonaws.com"}
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}
