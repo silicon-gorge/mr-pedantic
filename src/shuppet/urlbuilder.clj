@@ -1,11 +1,12 @@
 (ns shuppet.urlbuilder
   (:require
+   [clj-http.client :as client]
    [clojure.string :refer [join lower-case upper-case]]
-   [ring.util.codec :refer [url-encode]]
    [clojure.tools.logging :as log]
    [environ.core :refer [env]])
   (:import
    [java.net URL]
+   [java.net URLEncoder]
    [javax.crypto Mac]
    [javax.crypto.spec SecretKeySpec]
    [org.apache.commons.codec.binary Base64]
@@ -33,7 +34,6 @@
     (System/getenv "AWS_SECRET_KEY")
     aws-access-key-secret))
 
-
 (def ^:private auth-params
   {"SignatureVersion" "2"
    "AWSAccessKeyId" (aws-key)
@@ -52,10 +52,11 @@
     (.init mac signing-key)
     mac))
 
+(def mac-obj (delay (get-mac)))
+
 (defn- calculate-hmac [data]
   (try
-    (let [mac (get-mac)
-          raw-mac (.doFinal mac (bytes data))]
+    (let [raw-mac (.doFinal @mac-obj (bytes data))]
       (base64 raw-mac))
     (catch Exception e
       (log/error e "Failed to generate HMAC"))))
@@ -68,9 +69,9 @@
 
 (defn build-query-string [params]
   (join "&"
-    (map (fn [[k v]] (str (url-encode (name k)) "="
-                          (url-encode (str v))))
-         params)))
+        (map (fn [[k v]] (str (URLEncoder/encode (name k)) "="
+                             (URLEncoder/encode (str v))))
+             params)))
 
 (defn- url-to-sign [method host path query-params]
   (str (upper-case method)
@@ -90,13 +91,13 @@
     (calculate-hmac data)))
 
 (defn build-url
-  "Builds a signed url, which can be used with the aws rest api"
+  "Builds a signed url, which can be used with the aws api"
   ([method uri params]
-      (let [query-params (merge params auth-params)
-            signature (generate-signature method uri query-params)
-            query-string (build-query-string (merge {"Signature" signature} query-params))]
-        (str uri "?" query-string)))
+     (let [query-params (merge params auth-params)
+           signature (generate-signature method uri query-params)
+           query-string (build-query-string (merge {"Signature" signature} query-params))]
+       (str uri "?" query-string)))
   ([uri params]
      (build-url "get" uri params)))
 
-;(clj-http.client/get (build-url  "https://ec2.eu-west-1.amazonaws.com" {"Version" "2013-10-01" "Action" "CreateSecurityGroup" "GroupName" "test-sg" "GroupDescription" "test description" }) {:throw-exceptions false})
+;(client/get (build-url  "https://ec2.eu-west-1.amazonaws.com" {"Version" "2013-10-01" "Action" "CreateSecurityGroup" "GroupName" "test-sg" "GroupDescription" "testdescription" }) {:throw-exceptions false})
