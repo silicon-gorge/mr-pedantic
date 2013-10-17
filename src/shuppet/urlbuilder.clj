@@ -1,6 +1,5 @@
 (ns shuppet.urlbuilder
   (:require
-   [clj-http.client :as client]
    [clojure.string :refer [join lower-case upper-case]]
    [clojure.tools.logging :as log]
    [environ.core :refer [env]])
@@ -34,7 +33,7 @@
     (System/getenv "AWS_SECRET_KEY")
     aws-access-key-secret))
 
-(def ^:private auth-params
+(defn- auth-params []
   {"SignatureVersion" "2"
    "AWSAccessKeyId" (aws-key)
    "Timestamp" (current-time)
@@ -52,7 +51,7 @@
     (.init mac signing-key)
     mac))
 
-(def mac-obj (delay (get-mac)))
+(def ^:private mac-obj (delay (get-mac)))
 
 (defn- calculate-hmac [data]
   (try
@@ -67,10 +66,16 @@
       "/"
       path)))
 
-(defn build-query-string [params]
+(defn- url-encode
+  "The java.net.URLEncoder class encodes for application/x-www-form-urlencoded."
+  [s]
+  (-> (java.net.URLEncoder/encode s "UTF-8")
+      (.replace "+" "%20")))
+
+(defn- build-query-string [params]
   (join "&"
-        (map (fn [[k v]] (str (URLEncoder/encode (name k)) "="
-                             (URLEncoder/encode (str v))))
+        (map (fn [[k v]] (str (url-encode (name k)) "="
+                             (url-encode (str v))))
              params)))
 
 (defn- url-to-sign [method host path query-params]
@@ -93,11 +98,9 @@
 (defn build-url
   "Builds a signed url, which can be used with the aws api"
   ([method uri params]
-     (let [query-params (merge params auth-params)
+     (let [query-params (merge params (auth-params))
            signature (generate-signature method uri query-params)
            query-string (build-query-string (merge {"Signature" signature} query-params))]
        (str uri "?" query-string)))
   ([uri params]
      (build-url "get" uri params)))
-
-;(client/get (build-url  "https://ec2.eu-west-1.amazonaws.com" {"Version" "2013-10-01" "Action" "CreateSecurityGroup" "GroupName" "test-sg" "GroupDescription" "testdescription" }) {:throw-exceptions false})
