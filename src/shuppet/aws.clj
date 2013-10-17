@@ -15,3 +15,27 @@
     (if (= 200 (get response :status))
       (get response :body)
       (log/info (str "EC2 request : " url "\n failed with response : " response)))))
+
+(defn elb-request [params]
+  (client/get (urlbuilder/build-url
+               (env :service-aws-elb-url)
+               (merge {"Version" (env  :service-aws-elb-version)}  params))
+              {:as :xml
+               :throw-exceptions false}))
+
+
+#(elb-request {"Action" "CreateLoadBalancer"
+              "LoadBalancerName" "test-elb-nico"
+              "Listeners.member.1.LoadBalancerPort" 80
+              "Listeners.member.1.InstancePort"  80
+              "Listeners.member.1.Protocol" "http"
+              "Listeners.member.1.InstanceProtocol" "http"
+              "Subnets.member.1" "subnet-24df904c"
+              "Subnets.member.2" "subnet-bdc08fd5"
+              "Scheme" "internal"})
+
+#(elb-request {"Action" "DescribeLoadBalancers"
+               "LoadBalancerNames.member.1" "test-elb-nico"})
+
+#(elb-request {"Action" "DeleteLoadBalancer"
+              "LoadBalancerName" "test-elb-nico"})

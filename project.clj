@@ -58,8 +58,8 @@
         :service-production "false"
         :service-aws-ec2-url "https://ec2.eu-west-1.amazonaws.com"
         :service-aws-ec2-api-version "2013-10-01"
-        :service-aws-access-key-id "AKIAJV65X5LZHXPFCLEA"
-        ::service-aws-secret-access-key "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"
+        :service-aws-elb-url "https://elasticloadbalancing.eu-west-1.amazonaws.com"
+        :service-aws-elb-version "2012-06-01"
         }
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
