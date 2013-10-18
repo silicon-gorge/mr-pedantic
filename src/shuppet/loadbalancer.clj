@@ -10,6 +10,12 @@
 (def subnet1 "subnet-24df904c")
 (def subnet2 "subnet-bdc08fd5")
 
+(defn map-to-dot [prefix map]
+  )
+
+(defn list-to-member [prefix list]
+  (apply hash-map (flatten (map #(do [(str prefix ".member." %1) %2]) (iterate inc 1) list))))
+
 (def elb-config-modified
   { "LoadBalancerName" "nico-test-elb"
     "Listerners" [{"LoadBalancerPort" 8080
