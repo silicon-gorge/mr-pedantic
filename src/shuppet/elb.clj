@@ -31,31 +31,10 @@
                                 config))))
 
 (defn create-elb [config]
-                                        ;create security group first for elb
-
-
-  (let [elb (dissoc config "HealthCheck")
-        health-check (select-keys config ["LoadBalancerName" "HealthCheck"])])
-
-
-  (elb-request (merge {"Action" "CreateLoadBalancer"} (select-keys config
-                                                             ["LoadBalancerName"
-                                                              "Listeners.member.1.LoadBalancerPort"
-                                                              "Listeners.member.1.InstancePort"
-                                                              "Listeners.member.1.Protocol"
-                                                              "Listeners.member.1.InstanceProtocol"
-                                                              "Subnets.member.1"
-                                                              "Subnets.member.2"
-                                                              "SecurityGroups.member.1"
-                                                              "Scheme" "internal"])))
-  (elb-request (merge {"Action" "ConfigureHealthCheck"} (select-keys config
-                                                                     ["LoadBalancerName"
-                                                                      "HealthCheck.Target"
-                                                                      "HealthCheck.HealthyThreshold"
-                                                                      "HealthCheck.UnhealthyThreshold"
-                                                                      "HealthCheck.Interval"
-                                                                      "HealthCheck.Timeout"]))))
-
+  (let [elb-config (dissoc config "HealthCheck")
+        health-check-config (select-keys config ["LoadBalancerName" "HealthCheck"])]
+    (elb-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format elb-config)))
+    (elb-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format health-check-config)))))
 
 (defn find-elb [name]
   (elb-request {"Action" "DescribeLoadBalancers"
