@@ -26,8 +26,7 @@
   (apply hash-map (flatten (map (fn [[k v]]
                                   (cond (sequential? v) (list-to-member k v)
                                         (map? v) (map-to-dot k v)
-                                        :else [k v])
-                                  )
+                                        :else [k v]))
                                 config))))
 
 (defn create-elb [config]
@@ -40,19 +39,14 @@
   (elb-request {"Action" "DescribeLoadBalancers"
                 "LoadBalancerNames.member.1" name}))
 
-(defn- create-listeners []
-  (elb-request {"Action" "CreateLoadBalancerListeners"
-                "LoadBalancerName" "recommendations"
-                "Listeners.member.1.LoadBalancerPort" 80
-                "Listeners.member.1.InstancePort" 8080
-                "Listeners.member.1.InstanceProtocol" "http"
-                "Listeners.member.1.Protocol" "http"}))
+(defn create-listeners [config]
+  (elb-request (merge {"Action" "CreateLoadBalancerListeners"} (to-aws-format config))))
 
-(defn- delete-listerners []
+(defn delete-listener [elb-name listener-port]
   (elb-request {"Action" "DeleteLoadBalancerListeners"
-                "LoadBalancerName" "recommendations"
-                "LoadBalancerPorts.member.1" "80"}))
+                "LoadBalancerName" elb-name
+                "LoadBalancerPorts.member.1" listener-port}))
 
-(defn- delete-elb []
+(defn delete-elb [elb-name]
   (elb-request {"Action" "DeleteLoadBalancer"
-                "LoadBalancerName" "test-elb-nico"}))
+                "LoadBalancerName" elb-name}))
