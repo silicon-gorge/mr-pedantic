@@ -16,6 +16,11 @@
          params
          (for [[k v] params :when (nil? v)] k)))
 
+(defn in?
+  "true if seq contains element"
+  [seq element]
+  (some #(= element %) seq))
+
 (defn- process-list-of-maps [func opts]
   (loop [count (count opts)
          index (dec count)
@@ -30,31 +35,29 @@
                    (map #(func (dec count) %)
                         (nth opts (dec index))))))))
 
-(defn- process-list [func i opts]
-  (loop [count (count opts)
-         index (dec count)
-         result (into {}
-                      (func i
-                            count
-                            (nth opts index))) ]
-    (if (= (dec count) 0)
-      result
-      (recur (dec count)
-             (dec index)
-             (into result
-                   (func i
-                         (dec count)
-                         (nth opts (dec index))))))))
+(defn- nested-level [opts val]
+  (assoc opts :IpRanges val))
 
+(defn- first-level [sub-key opts]
+ (map #(nested-level opts %1) (get opts sub-key)))
 
+(defn- expand [opts key sub-key]
+  (flatten (map #(first-level sub-key %1) (get opts key))))
+
+(defn- compare-config
+  "Returns a list of two vectors
+   First vector is what is present in the remote config , which are not present in the local config
+   and the second vector element is otherwise"
+  [local remote]
+  (concat (list (vec (filter #(not (in? (set local) %)) (set remote))))
+          (list (vec (filter #(not (in? (set remote) %)) (set local))))))
 
 (defn- create-params [opts]
   (remove-nil {"GroupName" (get opts :GroupName)
                "GroupDescription" (get opts :GroupDescription)
                "VpcId" (get opts :VpcId)}))
 
-
-(defn create
+(defn- create
   "Creates a security group and returns the id"
   [opts]
   (let [cr-params (create-params opts)]
@@ -62,70 +65,98 @@
       (do
         (first (xml-> (xml-to-map response) :groupId text))))))
 
-(defn compare-sg [current-config opts]
-  (prn "lets compare the configs here  TODO" current-config))
-
-(defn process [action params]
-  (condp = (keyword action)
-    :CreateSecurityGroup (create params)
-    (ec2-request (merge params {"Action" (name action)}))))
-
-(defn- sg-id [opts]
-  (if-let [id (get opts :GroupId)]
-    {"GroupId" id}
-    {"GroupName" (get opts :GroupName)}))
-
-(defn- build-ip-range-params [i1 i2 vals]
-  {(str "IpPermissions." i1 ".IpRanges." i2 ".CidrIp") vals})
-
 (defn- build-network-params [index [k v]]
   (if (= (name k) "IpRanges")
-    (process-list build-ip-range-params index v)
+    {(str "IpPermissions." index ".IpRanges.1.CidrIp") v}
     {(str "IpPermissions." index "." (name k)) v}))
 
-
-(defn- apply-ingress [sg-id ingress]
-  (let [params (process-list-of-maps build-network-params ingress)]
-    (process "AuthorizeSecurityGroupIngress" (merge params {"GroupId" sg-id}))))
-
-(defn- apply-egress [sg-id outgress]
-  (let [params (process-list-of-maps build-network-params outgress) ]
-    (process "AuthorizeSecurityGroupEgress" (merge params {"GroupId" sg-id}))))
+(defn- network-action [sg-id opts action]
+  (let [params (process-list-of-maps build-network-params opts)]
+    (process action (merge params {"GroupId" sg-id}))))
 
 (defn- configure-network [sg-id opts]
-  (when-let [ingress (get opts :Ingress)]
-    (apply-ingress sg-id ingress))
-  (when-let [egress (get opts :Egress)]
-    (apply-egress sg-id egress)))
+  (when-let [ingress (expand opts :Ingress :IpRanges)]
+    (network-action sg-id ingress "AuthorizeSecurityGroupIngress"))
+  (when-let [egress (expand opts  :Egress :IpRanges)]
+    (network-action sg-id egress "AuthorizeSecurityGroupEgress")))
 
 (defn- build-sg [opts]
   (if-let [sg-id (create opts)]
     (configure-network sg-id opts)
     (prn "security group already exists")))
 
+(defn- filter-params [opts]
+  {"Filter.1.Name" "group-name"
+   "Filter.1.Value" (get opts :GroupName)
+   "Filter.2.Name" "vpc-id"
+   "Filter.2.Value" (get opts :VpcId)
+   "Filter.3.Name" "description"
+   "Filter.3.Value" (get opts :GroupDescription)})
+
+(defn- network-map [params]
+  (remove-nil {:IpProtocol (first (xml-> params :ipProtocol text))
+               :FromPort (first (xml-> params :fromPort text))
+               :ToPort (first (xml-> params :toPort text))
+               :IpRanges (vec (xml-> params :ipRanges :item :cidrIp text))}))
+
+(defn- build-config-map [opts]
+  (let [ingress (map network-map (xml-> opts :securityGroupInfo :item :ipPermissions :item))
+        egress (map network-map (xml-> opts :securityGroupInfo :item :ipPermissionsEgress :item))]
+    {:Ingress (vec ingress)
+     :Egress (vec egress)}))
+
+(defn- balance-ingress [sg-id opts]
+  (let [revoke-config (nth opts 0)
+        add-config (nth opts 1)]
+    (when-not (empty? add-config)
+      (network-action sg-id add-config "AuthorizeSecurityGroupIngress"))
+    (when-not (empty? revoke-config)
+      (network-action sg-id revoke-config "RevokeSecurityGroupIngress"))))
+
+(defn- balance-egress [sg-id opts]
+  (let [revoke-config (nth opts 0)
+        add-config (nth opts 1)]
+    (when-not (empty? add-config)
+      (network-action sg-id add-config "AuthorizeSecurityGroupEgress"))
+    (when-not (empty? revoke-config)
+      (network-action sg-id revoke-config "RevokeSecurityGroupEgress"))))
+
+(defn- compare-sg [sg-id aws local]
+  (let [remote (build-config-map aws)
+        ingress (compare-config  (expand local :Ingress :IpRanges) (expand remote :Ingress :IpRanges))
+        egress  (compare-config  (expand local :Egress :IpRanges) (expand remote :Egress :IpRanges))]
+    (balance-ingress sg-id ingress)
+    (balance-egress sg-id egress)))
+
+(defn process [action params]
+  (condp = (keyword action)
+    :CreateSecurityGroup (create params)
+    (ec2-request (merge params {"Action" (name action)}))))
+
 (defn ensure [opts]
 ;describe security group
 ;if not present create and apply ingress/outgress
 ;if present compare with the config
-;delete if needed
-  (if-let [response (process :DescribeSecurityGroups (sg-id opts))]
-    (compare-sg (xml-to-map response) opts)
-    (build-sg opts)))
+                                        ;delete if needed
+  (let [response (xml-to-map (process :DescribeSecurityGroups (filter-params opts)))]
+    (if-let [sg-id (first (xml-> response :securityGroupInfo :item :groupId text)) ]
+      (compare-sg sg-id response opts)
+      (build-sg opts))))
 
 
 (defn sg []
-  {:GroupName "test-sg5"
+  {:GroupName "test-sg6"
    :GroupDescription "test description"
    :VpcId "vpc-7bc88713"
    :Ingress [{:IpProtocol "tcp"
               :FromPort "80"
               :ToPort "80"
-              :IpRanges ["192.0.2.0/24" "198.51.100.0/24" ]
+              :IpRanges ["192.212.2.0/24" "193.182.100.0/24" ]
               },
              {:IpProtocol "udp"
               :FromPort "80"
               :ToPort "8080"
-              :IpRanges ["192.0.2.0/24" "198.51.100.0/24" ]
+              :IpRanges ["198.51.100.0/24", "192.0.2.0/24" ]
               }]
    :Egress [{:IpProtocol "tcp"
               :FromPort "80"
