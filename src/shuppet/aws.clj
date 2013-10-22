@@ -24,7 +24,7 @@
   (client/get (urlbuilder/build-url
                (env :service-aws-elb-url)
                (merge {"Version" (env  :service-aws-elb-version)}  params))
-              {:as :xml
+              {:as :stream
                :throw-exceptions false}))
 
 (defn decode-message [encoded-message]
