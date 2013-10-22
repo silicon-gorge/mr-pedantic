@@ -7,8 +7,8 @@
    [clojure.xml :as xml]
    [clojure.data :refer [diff]]
    [clojure.zip :as zip]
-   [slingshot.slingshot :refer [throw+]]
-   [clojure.data.zip.xml :refer [xml1-> attr xml-> text text= attr=]]))
+   [slingshot.slingshot :refer [throw+ try+]]
+   [clojure.data.zip.xml :refer [xml1-> text]]))
 
 (defn get-listeners
   "returns a list of maps, very specific"
@@ -62,13 +62,18 @@
     (elb-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format health-check-config)))))
 
 (defn find-elb [name]
-  (:body (elb-request {"Action" "DescribeLoadBalancers"
-                  "LoadBalancerNames.member.1" name})))
+  (try+
+   (elb-request {"Action" "DescribeLoadBalancers"
+                 "LoadBalancerNames.member.1" name})
+   (catch [:type :shuppet.aws/clj-http] {:keys [code]}
+     (if (and (= code "LoadBalancerNotFound"))
+       nil
+       (throw+)))))
 
-(defn check-text-value [zipper key-list value]
+(defn check-text-value [remote key-list value]
   (let [remote-value (apply
                       xml1->
-                      zipper
+                      remote
                       (concat [:DescribeLoadBalancersResult :LoadBalancerDescriptions :member]
                               key-list
                               [text]))]
@@ -103,10 +108,10 @@
                 "LoadBalancerName" elb-name}))
 
 (defn ensure-config [local]
-  (let [remote (find-elb (:LoadBalancerName local))
-        zipper (zip/xml-zip (xml/parse remote))]
-    (check-basic-values local zipper)
-;    (ensure-security-groups)
+  (if-let [remote (find-elb (:LoadBalancerName local))]
+    (check-basic-values local remote)
+      ;    (ensure-security-groups)
  ;   (ensure-listener)
 ;    (ensure-subnet)
-    ))
+
+    (create-elb local)))
