@@ -7,7 +7,6 @@
    [clojure.zip :as zip]
    [clojure.data.zip.xml :refer [xml1-> attr xml-> text text= attr=]]))
 
-
 (defn- xml-to-map [xml-string]
   (zip/xml-zip (xml/parse (java.io.ByteArrayInputStream. (.getBytes xml-string)))))
 
@@ -64,6 +63,12 @@
     (if-let [response (ec2-request (merge cr-params {"Action" "CreateSecurityGroup"}))]
       (do
         (first (xml-> (xml-to-map response) :groupId text))))))
+
+
+(defn process [action params]
+  (condp = (keyword action)
+    :CreateSecurityGroup (create params)
+    (ec2-request (merge params {"Action" (name action)}))))
 
 (defn- build-network-params [index [k v]]
   (if (= (name k) "IpRanges")
@@ -128,10 +133,7 @@
     (balance-ingress sg-id ingress)
     (balance-egress sg-id egress)))
 
-(defn process [action params]
-  (condp = (keyword action)
-    :CreateSecurityGroup (create params)
-    (ec2-request (merge params {"Action" (name action)}))))
+
 
 (defn ensure [opts]
 ;describe security group
