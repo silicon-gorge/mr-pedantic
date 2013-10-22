@@ -31,7 +31,7 @@
   [xml])
 
 (defn map-to-dot [prefix m]
-  (map (fn [[k v]] [(str prefix "." (name k)) v])
+  (map (fn [[k v]] [(str prefix "." (name k)) (str v)])
        m))
 
 (defn to-member [prefix i]
@@ -41,7 +41,7 @@
   (flatten (map (fn [i v]
                   (cond
                    (map? v) (map-to-dot (to-member prefix i) v)
-                   :else [(to-member prefix i) v]))
+                   :else [(to-member prefix i) (str v)]))
                 (iterate inc 1)
                 list)))
 
@@ -52,7 +52,7 @@
                                   (let [k (name k)]
                                     (cond (sequential? v) (list-to-member k v)
                                           (map? v) (map-to-dot k v)
-                                          :else [ k v])))
+                                          :else [k (str v)])))
                                 config))))
 
 (defn create-elb [config]
@@ -62,8 +62,8 @@
     (elb-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format health-check-config)))))
 
 (defn find-elb [name]
-  (elb-request {"Action" "DescribeLoadBalancers"
-                "LoadBalancerNames.member.1" name}))
+  (:body (elb-request {"Action" "DescribeLoadBalancers"
+                  "LoadBalancerNames.member.1" name})))
 
 (defn check-text-value [zipper key-list value]
   (let [remote-value (apply
@@ -74,7 +74,9 @@
                               [text]))]
     (cond
      (nil? remote-value) (throw+ {:type ::missing-value :key key-list })
-     (not (= remote-value value)) (throw+ {:type ::wrong-value :value remote-value}))))
+     (not (= remote-value (str value))) (throw+ {:type ::wrong-value :key key-list
+                                           :local-value value
+                                           :remote-value remote-value}))))
 
 (defn check-map-value [remote k1 v1]
   (map (fn [[k2 v2]]
