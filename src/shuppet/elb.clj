@@ -1,14 +1,16 @@
 (ns shuppet.elb
   (:require
-   [shuppet.aws :refer [elb-request]]
+   [shuppet
+    [aws :refer [elb-request]]
+    [util :refer [without-nils]]]
    [clj-http.client :as client]
    [clojure.string :refer [join]]
    [clojure.tools.logging :as log]
    [clojure.xml :as xml]
    [clojure.data :refer [diff]]
-   [clojure.zip :as zip]
+   [clojure.zip :as zip :refer [children]]
    [slingshot.slingshot :refer [throw+ try+]]
-   [clojure.data.zip.xml :refer [xml1-> text]]))
+   [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
 (defn- get-listeners
   "returns a list of maps, very specific"
@@ -97,18 +99,41 @@
   (elb-request {"Action" "DeleteLoadBalancer"
                 "LoadBalancerName" elb-name}))
 
+(defn children-to-map [children]
+  (apply hash-map (flatten
+                   (map (fn [item]
+                          [(:tag item) (join (:content item))])
+                        children))))
+
+(defn filter-children [children key]
+  (filter #(= (:tag %) :Listener)
+          children))
+
+(defn children-to-maps [children]
+  (map #(children-to-map (:content %))
+       children))
+
 (defn- ensure-health-check [{:keys [local remote] :as config}]
-config
-  )
+  (let [remote-health-check (children-to-map (xml-> remote :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :HealthCheck children))
+        local-health-check (:HealthCheck local)]
+;compare maps
+    config))
+
+(defn ensure-listeners [{:keys [local remote] :as config}]
+  (let [remote-listenters (-> (xml-> remote :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :ListenerDescriptions :member children)
+                              (filter-children :Listener)
+                              (children-to-maps))]
+    ; compare lists
+    config))
 
 (defn ensure-config [local]
   (if-let [remote (find-elb (:LoadBalancerName local))]
     (-> {:local local :remote remote}
         (check-fixed-values)
-        (ensure-health-check))
+        (ensure-health-check)
+        (ensure-listeners))
     (create-elb local))
 
         ;    (ensure-security-groups)
- ;   (ensure-listener)
                                         ;    (ensure-subnet)
   )

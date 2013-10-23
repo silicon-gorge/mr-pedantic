@@ -23,6 +23,15 @@
 <InstancePort>8080</InstancePort>
 </Listener>
 </member>
+<member>
+<PolicyNames/>
+<Listener>
+<Protocol>HTTP</Protocol>
+<LoadBalancerPort>80</LoadBalancerPort>
+<InstanceProtocol>HTTP</InstanceProtocol>
+<InstancePort>8080</InstancePort>
+</Listener>
+</member>
 </ListenerDescriptions>
 <Instances/><Policies><AppCookieStickinessPolicies/><OtherPolicies/><LBCookieStickinessPolicies/></Policies>
 <AvailabilityZones>

@@ -1,8 +1,8 @@
 (ns shuppet.unit.elb
   (:require [cheshire.core :as json]
             [clojure.xml :as xml]
-            [clojure.zip :as zip]
-)
+            [clojure.zip :as zip :refer [children]]
+            [clojure.data.zip.xml :refer [xml1-> xml->]])
   (:import (java.io ByteArrayInputStream))
   (:use [shuppet.elb]
         [midje.sweet]))
@@ -12,6 +12,10 @@
 
 (def config {:LoadBalancerName "elb-for-test"
              :Listeners [{:LoadBalancerPort 8080
+                          :InstancePort 8080
+                          :Protocol "http"
+                          :InstanceProtocol "http"}
+                         {:LoadBalancerPort 80
                           :InstancePort 8080
                           :Protocol "http"
                           :InstanceProtocol "http"}]
@@ -40,6 +44,10 @@
                                            "Listeners.member.1.InstancePort"   "8080"
                                            "Listeners.member.1.Protocol" "http"
                                            "Listeners.member.1.InstanceProtocol" "http"
+                                           "Listeners.member.2.LoadBalancerPort" "80"
+                                           "Listeners.member.2.InstancePort"   "8080"
+                                           "Listeners.member.2.Protocol" "http"
+                                           "Listeners.member.2.InstanceProtocol" "http"
                                            "Subnets.member.1" subnet1
                                            "Subnets.member.2" subnet2
                                            "Scheme" "internal"
@@ -71,4 +79,23 @@
                   (provided
                    (find-elb anything) => xml))
 
-            )
+            (fact "map is built from children"
+                  (children-to-map (xml-> xml  :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :HealthCheck children))
+                  => {:Interval "6"
+                      :Target "HTTP:8080/1.x/ping"
+                      :HealthyThreshold "2"
+                      :Timeout "5"
+                      :UnhealthyThreshold "2"})
+
+            (fact "list of maps is built from children"
+                  (-> (xml-> xml :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :ListenerDescriptions :member children)
+                      (filter-children :Listener)
+                      (children-to-maps))
+                  => [{:InstancePort "8080"
+                       :InstanceProtocol "HTTP"
+                       :LoadBalancerPort "8080"
+                       :Protocol "HTTP"}
+                      {:InstancePort "8080"
+                       :InstanceProtocol "HTTP"
+                       :LoadBalancerPort "80"
+                       :Protocol "HTTP"}]))
