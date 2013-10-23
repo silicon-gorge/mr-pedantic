@@ -5,7 +5,7 @@
    [clojure.tools.logging :as log]
    [clojure.xml :as xml]
    [clojure.zip :as zip]
-   [clojure.data.zip.xml :refer [xml1-> text]]))
+   [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
 
 (defn- xml-to-map [xml-string]
@@ -73,6 +73,11 @@
       (do
         (xml1-> (xml-to-map response) :groupId text)))))
 
+(defn- process [action params]
+  (condp = (keyword action)
+    :CreateSecurityGroup (create params)
+    (ec2-request (merge params {"Action" (name action)}))))
+
 (defn- network-action [sg-id opts action]
   (let [params (process-list-of-maps build-network-params opts)]
     (process action (merge params {"GroupId" sg-id}))))
@@ -135,11 +140,6 @@
         egress  (compare-config  (expand local :Egress :IpRanges) (expand remote :Egress :IpRanges))]
     (balance-ingress sg-id ingress)
     (balance-egress sg-id egress)))
-
-(defn- process [action params]
-  (condp = (keyword action)
-    :CreateSecurityGroup (create params)
-    (ec2-request (merge params {"Action" (name action)}))))
 
 (defn ensure
   "Describe the security security group
