@@ -1,5 +1,8 @@
 (ns shuppet.core
-  (:require [clojure.string :refer [lower-case]]))
+  (:require [clojure.string :refer [lower-case]]
+            [clojure.data.json :refer [json-str]]
+            [shuppet.util :refer :all]
+            [shuppet.securitygroups :refer :all]))
 
 (declare ^:dynamic application-name)
 (declare ^:dynamic environment)
@@ -15,7 +18,6 @@
                 action action
                 vpc-id "vpc-7bc88713"] ;todo get it from somewhere
         (clojure.core/refer 'clojure.core)
-        (refer 'clojure.string)
         (refer 'clojure.data.json)
         (refer 'shuppet.core)
         (refer 'shuppet.util)
@@ -31,4 +33,4 @@
   ([app-name env]
      (configure app-name env nil)))
 
-;(configure  "test" "prod")
+;(configure  "test" "dev")
