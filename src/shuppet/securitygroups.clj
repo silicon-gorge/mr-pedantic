@@ -64,9 +64,9 @@
     (process action (merge params {"GroupId" sg-id}))))
 
 (defn- configure-network [sg-id opts]
-  (when-let [ingress (flatten (get opts :Ingress))]
+  (when-let [ingress (get opts :Ingress)]
     (network-action sg-id ingress :AuthorizeSecurityGroupIngress))
-  (when-let [egress (flatten (get opts :Egress))]
+  (when-let [egress (get opts :Egress)]
     (network-action sg-id egress :AuthorizeSecurityGroupEgress)))
 
 (defn- delete-sg [sg-name]
@@ -118,8 +118,8 @@
 
 (defn- compare-sg [sg-id aws local]
   (let [remote (build-config aws)
-        ingress (compare-config  (flatten (get local :Ingress)) (expand remote :Ingress :IpRanges))
-        egress  (compare-config (flatten (get local :Egress)) (expand remote :Egress :IpRanges))]
+        ingress (compare-config  (get local :Ingress) (expand remote :Ingress :IpRanges))
+        egress  (compare-config (get local :Egress) (expand remote :Egress :IpRanges))]
     (balance-ingress sg-id ingress)
     (balance-egress sg-id egress)))
 

@@ -47,8 +47,11 @@
                      (clojure.java.io/input-stream))})
 
      (GET "/:env/service/:name"
-          [env name]
-          (core/configure env name) ))
+          [env name action]
+          (if (or (empty? action)
+                  (= action "print"))
+            (core/configure env name action)
+           {:status 400 :body (str "Invalid action " action "specified.")})))
 
     (GET "/healthcheck" []
          (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))

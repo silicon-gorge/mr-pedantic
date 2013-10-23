@@ -25,7 +25,7 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw+ {:type ::clj-http :status status :url url :code (xml1-> body :Error :Code text)}))))
+      (throw+ {:type ::clj-http :status status :url url :body body}))))
 
 (defn elb-request [params]
   (let [response (client/get (urlbuilder/build-url
