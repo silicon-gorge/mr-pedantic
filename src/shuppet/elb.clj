@@ -10,34 +10,34 @@
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text]]))
 
-(defn get-listeners
+(defn- get-listeners
   "returns a list of maps, very specific"
   [xml]
   )
 
-(defn get-subnets
+(defn- get-subnets
   "returns a list of strings, can be generalised eg get-string-list name"
   [xml]
   )
 
-(defn compare-lists
+(defn- compare-lists
   "use indexof to see what is missing, returns map :a :b with lists, can be used for maps or strings"
   [a b]
 
   )
 
-(defn get-security-groups
+(defn- get-security-groups
   "returns a list of strings, same as subnet"
   [xml])
 
-(defn map-to-dot [prefix m]
+(defn- map-to-dot [prefix m]
   (map (fn [[k v]] [(str prefix "." (name k)) (str v)])
        m))
 
-(defn to-member [prefix i]
+(defn- to-member [prefix i]
   (str prefix ".member." i))
 
-(defn list-to-member [prefix list]
+(defn- list-to-member [prefix list]
   (flatten (map (fn [i v]
                   (cond
                    (map? v) (map-to-dot (to-member prefix i) v)
@@ -45,7 +45,7 @@
                 (iterate inc 1)
                 list)))
 
-(defn to-aws-format
+(defn- to-aws-format
   "Transforms shuppet config to aws config format"
   [config]
   (apply hash-map (flatten (map (fn [[k v]]
@@ -68,7 +68,7 @@
    (catch [:code "LoadBalancerNotFound"] _
        nil)))
 
-(defn check-string-value [remote k v]
+(defn- check-string-value [remote k v]
   (let [remote-value (xml1->
                       remote
                       :DescribeLoadBalancersResult :LoadBalancerDescriptions :member k text)]
@@ -78,26 +78,26 @@
                                            :local-value v
                                            :remote-value remote-value}))))
 
-(defn check-fixed-values [{:keys [local remote] :as config}]
+(defn- check-fixed-values [{:keys [local remote] :as config}]
   (dorun (map (fn [[k v]]
                 (cond
                  (string? v) (check-string-value remote k v)))
               local))
   config)
 
-(defn create-listeners [config]
+(defn- create-listeners [config]
   (elb-request (merge {"Action" "CreateLoadBalancerListeners"} (to-aws-format config))))
 
-(defn delete-listener [elb-name listener-port]
+(defn- delete-listener [elb-name listener-port]
   (elb-request {"Action" "DeleteLoadBalancerListeners"
                 "LoadBalancerName" elb-name
                 "LoadBalancerPorts.member.1" listener-port}))
 
-(defn delete-elb [elb-name]
+(defn- delete-elb [elb-name]
   (elb-request {"Action" "DeleteLoadBalancer"
                 "LoadBalancerName" elb-name}))
 
-(defn ensure-health-check [{:keys [local remote] :as config}]
+(defn- ensure-health-check [{:keys [local remote] :as config}]
 config
   )
 

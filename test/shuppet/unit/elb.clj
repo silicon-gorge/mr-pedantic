@@ -9,7 +9,8 @@
 
 (def subnet1 "subnet-24df904c")
 (def subnet2 "subnet-bdc08fd5")
-(def config {:LoadBalancerName "testelb"
+
+(def config {:LoadBalancerName "elb-for-test"
              :Listeners [{:LoadBalancerPort 8080
                           :InstancePort 8080
                           :Protocol "http"
@@ -22,6 +23,9 @@
                            :Interval 6
                            :Timeout 5}})
 
+(def to-aws-format @#'shuppet.elb/to-aws-format)
+(def check-string-value @#'shuppet.elb/check-string-value)
+
 (def xml (->  (slurp "test/shuppet/unit/resources/DescribeLoadBalancersResponse.xml")
               (.getBytes)
               (ByteArrayInputStream.)
@@ -31,7 +35,7 @@
 (fact-group :unit
 
             (fact "correctly convert to aws format"
-                  (let [converted-config { "LoadBalancerName" "testelb"
+                  (let [converted-config { "LoadBalancerName" "elb-for-test"
                                            "Listeners.member.1.LoadBalancerPort" "8080"
                                            "Listeners.member.1.InstancePort"   "8080"
                                            "Listeners.member.1.Protocol" "http"
@@ -54,4 +58,17 @@
                   (check-string-value xml :Scheme "wrong") =>  (throws clojure.lang.ExceptionInfo))
 
             (fact "missing text value fails"
-                  (check-string-value xml :missing "value") =>  (throws clojure.lang.ExceptionInfo)))
+                  (check-string-value xml :missing "value") =>  (throws clojure.lang.ExceptionInfo))
+
+            (fact "config is created when missing"
+                  (ensure-config config) => ..response..
+                  (provided
+                   (find-elb anything) => nil
+                   (create-elb config) => ..response..))
+
+            (fact "error when fixed value changed"
+                  (ensure-config config) => (throws clojure.lang.ExceptionInfo)
+                  (provided
+                   (find-elb anything) => xml))
+
+            )
