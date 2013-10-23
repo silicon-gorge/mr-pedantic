@@ -27,9 +27,7 @@
 
 (defn configure
   ([app-name env action]
-     (let [config-file (str app-name ".clj")
-           contents (slurp config-file)]
-       (execute-string (lower-case app-name) (lower-case env) action contents)))
+     (execute-string (lower-case app-name) (lower-case env) action (slurp (str app-name ".clj"))))
   ([app-name env]
      (configure app-name env nil)))
 

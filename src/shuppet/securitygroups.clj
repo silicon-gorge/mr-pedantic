@@ -5,34 +5,6 @@
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
-(defn- build-network-params [index [k v]]
-  (if (= (name k) "IpRanges")
-    {(str "IpPermissions." index ".IpRanges.1.CidrIp") v}
-    {(str "IpPermissions." index "." (name k)) v}))
-
-(defn- process-list-of-maps [func opts]
-  (loop [count (count opts)
-         index (dec count)
-         result (into {}
-                      (map #(func count  %)
-                           (nth opts index))) ]
-    (if (= (dec count) 0)
-      result
-      (recur (dec count)
-             (dec index)
-             (into result
-                   (map #(func (dec count) %)
-                        (nth opts (dec index))))))))
-
-(defn- nested-level [opts val]
-  (assoc opts :IpRanges val))
-
-(defn- first-level [sub-key opts]
-  (map #(nested-level opts %1) (get opts sub-key)))
-
-(defn- expand [opts key sub-key]
-  (flatten (map #(first-level sub-key %1) (get opts key))))
-
 (defn- compare-config
   "Returns a list of two vectors
    First vector is what is present in the remote config , which are not present in the local config
@@ -59,8 +31,16 @@
     :CreateSecurityGroup (create params)
     (ec2-request (merge params {"Action" (name action)}))))
 
+(defn- network-query-params [index [k v]]
+  (if (= (name k) "IpRanges")
+    {(str "IpPermissions." index ".IpRanges.1.CidrIp") v}
+    {(str "IpPermissions." index "." (name k)) v}))
+
+(defn- build-network-params [index opts]
+  (into {} (map #(network-query-params index %1) opts)))
+
 (defn- network-action [sg-id opts action]
-  (let [params (process-list-of-maps build-network-params opts)]
+  (let [params (into {} (map #(build-network-params %1 %2) (iterate inc 1) opts))]
     (process action (merge params {"GroupId" sg-id}))))
 
 (defn- configure-network [sg-id opts]
@@ -90,15 +70,15 @@
    "Filter.3.Value" (get opts :GroupDescription)})
 
 (defn- network-config [params]
-  (without-nils {:IpProtocol (xml1-> params :ipProtocol text)
-                 :FromPort (xml1-> params :fromPort text)
-                 :ToPort (xml1-> params :toPort text)
-                 :IpRanges (vec (xml-> params :ipRanges :item :cidrIp text))}))
+  (group-record (xml1-> params :ipProtocol text)
+                (xml1-> params :fromPort text)
+                (xml1-> params :toPort text)
+                (vec (xml-> params :ipRanges :item :cidrIp text))))
 
 
 (defn- build-config [opts]
-  {:Ingress (vec (map network-config (xml-> opts :securityGroupInfo :item :ipPermissions :item)))
-   :Egress (vec (map network-config (xml-> opts :securityGroupInfo :item :ipPermissionsEgress :item)))})
+  {:Ingress (flatten (map network-config (xml-> opts :securityGroupInfo :item :ipPermissions :item)))
+   :Egress (flatten (map network-config (xml-> opts :securityGroupInfo :item :ipPermissionsEgress :item)))})
 
 (defn- balance-ingress [sg-id opts]
   (let [revoke-config (nth opts 0)
@@ -118,8 +98,8 @@
 
 (defn- compare-sg [sg-id aws local]
   (let [remote (build-config aws)
-        ingress (compare-config  (get local :Ingress) (expand remote :Ingress :IpRanges))
-        egress  (compare-config (get local :Egress) (expand remote :Egress :IpRanges))]
+        ingress (compare-config  (get local :Ingress) (get remote :Ingress))
+        egress  (compare-config (get local :Egress) (get remote :Egress))]
     (balance-ingress sg-id ingress)
     (balance-egress sg-id egress)))
 
