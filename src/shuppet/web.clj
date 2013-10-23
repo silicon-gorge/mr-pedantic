@@ -26,37 +26,37 @@
 (defn response [data content-type & [status]]
   {:status (or status 200)
    :headers {"Content-Type" content-type}
-   :body data}
+   :body data})
 
-  (defroutes routes
-    (context
-     "/1.x" []
+(defroutes routes
+  (context
+   "/1.x" []
 
-     (GET "/ping"
-          [] {:status 200 :body "pong"})
+   (GET "/ping"
+        [] {:status 200 :body "pong"})
 
-     (GET "/status"
-          [] {:status 200 :body {:name "shuppet"
-                                 :version *version*
-                                 :status true}})
+   (GET "/status"
+        [] {:status 200 :body {:name "shuppet"
+                               :version *version*
+                               :status true}})
 
-     (GET "/icon" []
-          {:status 200
-           :headers {"Content-Type" "image/jpeg"}
-           :body (-> (clojure.java.io/resource "shuppet.jpg")
-                     (clojure.java.io/input-stream))})
+   (GET "/icon" []
+        {:status 200
+         :headers {"Content-Type" "image/jpeg"}
+         :body (-> (clojure.java.io/resource "shuppet.jpg")
+                   (clojure.java.io/input-stream))})
 
-     (GET "/:env/service/:name"
-          [env name action]
-          (if (or (empty? action)
-                  (= action "print"))
-            (core/configure env name action)
-           {:status 400 :body (str "Invalid action " action "specified.")})))
+   (GET "/:env/service/:name"
+        [env name action]
+        (if (or (empty? action)
+                (= action "print"))
+          (core/configure env name action)
+          {:status 400 :body (str "Invalid action " action "specified.")})))
 
-    (GET "/healthcheck" []
-         (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
+  (GET "/healthcheck" []
+       (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
 
-    (route/not-found (error-response "Resource not found" 404))))
+  (route/not-found (error-response "Resource not found" 404)))
 
 
 (def app
