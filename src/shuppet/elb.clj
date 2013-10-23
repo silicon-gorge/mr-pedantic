@@ -70,29 +70,20 @@
        nil
        (throw+)))))
 
-(defn check-text-value [remote key-list value]
-  (let [remote-value (apply
-                      xml1->
+(defn check-string-value [remote k v]
+  (let [remote-value (xml1->
                       remote
-                      (concat [:DescribeLoadBalancersResult :LoadBalancerDescriptions :member]
-                              key-list
-                              [text]))]
+                      :DescribeLoadBalancersResult :LoadBalancerDescriptions :member k text)]
     (cond
-     (nil? remote-value) (throw+ {:type ::missing-value :key key-list })
-     (not (= remote-value (str value))) (throw+ {:type ::wrong-value :key key-list
-                                           :local-value value
+     (nil? remote-value) (throw+ {:type ::missing-value :key k })
+     (not (= remote-value (str v))) (throw+ {:type ::wrong-value :key k
+                                           :local-value v
                                            :remote-value remote-value}))))
 
-(defn check-map-value [remote k1 v1]
-  (map (fn [[k2 v2]]
-         (check-text-value remote [k1 k2] v2))
-       v1))
-
-(defn check-basic-values [local remote]
+(defn check-fixed-values [local remote]
   (map (fn [[k v]]
          (cond
-          (string? v) (check-text-value remote [k] v)
-          (map? v) (check-map-value remote k v)))
+          (string? v) (check-string-value remote k v)))
        local))
 
 (defn create-listeners [config]
@@ -109,7 +100,7 @@
 
 (defn ensure-config [local]
   (if-let [remote (find-elb (:LoadBalancerName local))]
-    (check-basic-values local remote)
+    (check-fixed-values local remote)
       ;    (ensure-security-groups)
  ;   (ensure-listener)
 ;    (ensure-subnet)

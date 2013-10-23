@@ -22,6 +22,12 @@
                            :Interval 6
                            :Timeout 5}})
 
+(def xml (->  (slurp "test/shuppet/unit/resources/DescribeLoadBalancersResponse.xml")
+              (.getBytes)
+              (ByteArrayInputStream.)
+              (xml/parse)
+              (zip/xml-zip)))
+
 (fact-group :unit
 
             (fact "correctly convert to aws format"
@@ -42,16 +48,10 @@
                     (to-aws-format config) => converted-config))
 
             (fact "same text value returns nil"
-                  (let [xml (ByteArrayInputStream. (.getBytes (slurp "test/shuppet/unit/resources/DescribeLoadBalancersResponse.xml")))
-                        zipper (zip/xml-zip (xml/parse xml))]
-                    (check-text-value zipper [:HealthCheck :Interval] "6") => nil))
+                  (check-string-value xml :Scheme "internal") => nil)
 
             (fact "different text value fails"
-                  (let [xml (ByteArrayInputStream. (.getBytes (slurp "test/shuppet/unit/resources/DescribeLoadBalancersResponse.xml")))
-                        zipper (zip/xml-zip (xml/parse xml))]
-                    (check-text-value zipper [:HealthCheck :Interval] "wrong") =>  (throws clojure.lang.ExceptionInfo)))
+                  (check-string-value xml :Scheme "wrong") =>  (throws clojure.lang.ExceptionInfo))
 
             (fact "missing text value fails"
-                  (let [xml (ByteArrayInputStream. (.getBytes (slurp "test/shuppet/unit/resources/DescribeLoadBalancersResponse.xml")))
-                        zipper (zip/xml-zip (xml/parse xml))]
-                    (check-text-value zipper [:notthere] "value") =>  (throws clojure.lang.ExceptionInfo))))
+                  (check-string-value xml :missing "value") =>  (throws clojure.lang.ExceptionInfo)))
