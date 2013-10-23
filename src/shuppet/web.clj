@@ -1,21 +1,23 @@
 (ns shuppet.web
-    (:require [compojure.core :refer [defroutes context GET PUT POST DELETE]]
-              [compojure.route :as route]
-              [compojure.handler :as handler]
-              [ring.middleware.format-response :refer [wrap-json-response]]
-              [ring.middleware.json-params :refer [wrap-json-params]]
-              [ring.middleware.params :refer [wrap-params]]
-              [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-              [clojure.data.xml :refer [element emit-str]]
-              [clojure.string :refer [split]]
-              [clojure.tools.logging :refer [info warn error]]
-              [environ.core :refer [env]]
-              [nokia.ring-utils.error :refer [wrap-error-handling error-response]]
-              [nokia.ring-utils.metrics :refer [wrap-per-resource-metrics replace-outside-app
-                                                replace-guid replace-mongoid replace-number]]
-              [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
-              [metrics.ring.expose :refer [expose-metrics-as-json]]
-              [metrics.ring.instrument :refer [instrument]]))
+  (:require
+   [shuppet.core :as core]
+   [compojure.core :refer [defroutes context GET PUT POST DELETE]]
+   [compojure.route :as route]
+   [compojure.handler :as handler]
+   [ring.middleware.format-response :refer [wrap-json-response]]
+   [ring.middleware.json-params :refer [wrap-json-params]]
+   [ring.middleware.params :refer [wrap-params]]
+   [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+   [clojure.data.xml :refer [element emit-str]]
+   [clojure.string :refer [split]]
+   [clojure.tools.logging :refer [info warn error]]
+   [environ.core :refer [env]]
+   [nokia.ring-utils.error :refer [wrap-error-handling error-response]]
+   [nokia.ring-utils.metrics :refer [wrap-per-resource-metrics replace-outside-app
+                                     replace-guid replace-mongoid replace-number]]
+   [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
+   [metrics.ring.expose :refer [expose-metrics-as-json]]
+   [metrics.ring.instrument :refer [instrument]]))
 
 (def ^:dynamic *version* "none")
 (defn set-version! [version]
@@ -24,30 +26,34 @@
 (defn response [data content-type & [status]]
   {:status (or status 200)
    :headers {"Content-Type" content-type}
-   :body data})
+   :body data}
 
-(defroutes routes
-  (context
-   "/1.x" []
+  (defroutes routes
+    (context
+     "/1.x" []
 
-   (GET "/ping"
-        [] {:status 200 :body "pong"})
+     (GET "/ping"
+          [] {:status 200 :body "pong"})
 
-   (GET "/status"
-        [] {:status 200 :body {:name "shuppet"
-                               :version *version*
-                               :status true}})
+     (GET "/status"
+          [] {:status 200 :body {:name "shuppet"
+                                 :version *version*
+                                 :status true}})
 
-   (GET "/icon" []
-        {:status 200
-         :headers {"Content-Type" "image/jpeg"}
-         :body (-> (clojure.java.io/resource "shuppet.jpg")
-                   (clojure.java.io/input-stream))}))
+     (GET "/icon" []
+          {:status 200
+           :headers {"Content-Type" "image/jpeg"}
+           :body (-> (clojure.java.io/resource "shuppet.jpg")
+                     (clojure.java.io/input-stream))})
 
-  (GET "/healthcheck" []
-        (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
+     (GET "/:env/service/:name"
+          [env name]
+          (core/configure env name) ))
 
-  (route/not-found (error-response "Resource not found" 404)))
+    (GET "/healthcheck" []
+         (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
+
+    (route/not-found (error-response "Resource not found" 404))))
 
 
 (def app

@@ -17,12 +17,15 @@
 
 (defn ec2-request [params]
   (let [url (urlbuilder/build-url ec2-url (merge {"Version" ec2-version} params))
-        response (client/get url {:as :xml
-                                  :throw-exceptions false})]
-  ;  (prn "response = " response)
-    (if (= 200 (get response :status))
-      (get response :body)
-      (log/info (str "EC2 request : " url "\n failed with response : " response)))))
+        response (client/get url {:as :stream
+                                  :throw-exceptions false})
+        status (:status response)
+        body (-> (:body response)
+                 (xml/parse)
+                 (zip/xml-zip))]
+    (if (= 200 status)
+      body
+      (throw+ {:type ::clj-http :status status :url url :code (xml1-> body :Error :Code text)}))))
 
 (defn elb-request [params]
   (let [response (client/get (urlbuilder/build-url
