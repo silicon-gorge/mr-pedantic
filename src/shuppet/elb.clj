@@ -65,10 +65,8 @@
   (try+
    (elb-request {"Action" "DescribeLoadBalancers"
                  "LoadBalancerNames.member.1" name})
-   (catch [:type :shuppet.aws/clj-http] {:keys [code]}
-     (if (and (= code "LoadBalancerNotFound"))
-       nil
-       (throw+)))))
+   (catch [:code "LoadBalancerNotFound"] _
+       nil)))
 
 (defn check-string-value [remote k v]
   (let [remote-value (xml1->
