@@ -11,6 +11,9 @@
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
+(defn get-elements [xml path]
+  (apply xml-> xml (concat [:DescribeLoadBalancersResult :LoadBalancerDescriptions :member] path)))
+
 (defn- get-listeners
   "returns a list of maps, very specific"
   [xml]
@@ -98,17 +101,32 @@
   (elb-request {"Action" "DeleteLoadBalancer"
                 "LoadBalancerName" elb-name}))
 
-(defn- ensure-health-check [{:keys [local remote] :as config}]
-  (let [remote-health-check (children-to-map (xml-> remote :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :HealthCheck children))
+(defn ensure-health-check [{:keys [local remote] :as config}]
+  (let [remote-health-check (-> remote
+                                (get-elements [:HealthCheck children])
+                                (children-to-map))
         local-health-check (:HealthCheck local)]
 ;compare maps
     config))
 
 (defn ensure-listeners [{:keys [local remote] :as config}]
-  (let [remote-listenters (-> (xml-> remote :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :ListenerDescriptions :member children)
+  (let [remote-listenters (-> remote
+                              (get-elements [:ListenerDescriptions :member children])
                               (filter-children :Listener)
                               (children-to-maps))]
     ; compare lists
+    config))
+
+(defn ensure-subnets [{:keys [local remote] :as config}]
+  (let [remote-subnets (-> remote
+                           (get-elements [:Subnets :member children]))]
+                                        ; compare
+    remote-subnets))
+
+(defn ensure-security-groups [{:keys [local remote] :as config}]
+  (let [remote-sg (-> remote
+                      (get-elements [ :SecurityGroups :member children]))]
+
     config))
 
 (defn ensure-config [local]
@@ -117,8 +135,4 @@
         (check-fixed-values)
         (ensure-health-check)
         (ensure-listeners))
-    (create-elb local))
-
-        ;    (ensure-security-groups)
-                                        ;    (ensure-subnet)
-  )
+    (create-elb local)))
