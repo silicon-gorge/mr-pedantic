@@ -31,6 +31,9 @@
   [seq element]
   (some #(= element %) seq))
 
+(defn values-tostring [m]
+  (into {} (map (fn [[k v]] [k (str v)]) m)))
+
 (defn group-record
   "Creates a Ingress/Egress config for a security group"
   [protocol from-port to-port ip-ranges]

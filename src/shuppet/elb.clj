@@ -2,7 +2,7 @@
   (:require
    [shuppet
     [aws :refer [elb-request]]
-    [util :refer [children-to-map filter-children children-to-maps]]]
+    [util :refer [children-to-map filter-children children-to-maps values-tostring]]]
    [clj-http.client :as client]
    [clojure.tools.logging :as log]
    [clojure.xml :as xml]
@@ -59,11 +59,19 @@
                                           :else [k (str v)])))
                                 config))))
 
+(defn- healthcheck-config [config]
+  (select-keys config [:LoadBalancerName :HealthCheck]))
+
+(defn- elb-config [config]
+  (dissoc config :HealthCheck))
+
+(defn create-healthcheck [config]
+  (elb-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
+  config)
+
 (defn create-elb [config]
-  (let [elb-config (dissoc config :HealthCheck)
-        health-check-config (select-keys config [:LoadBalancerName :HealthCheck])]
-    (elb-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format elb-config)))
-    (elb-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format health-check-config)))))
+  (elb-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format  (elb-config config))))
+  config)
 
 (defn find-elb [name]
   (try+
@@ -105,8 +113,9 @@
   (let [remote-health-check (-> remote
                                 (get-elements [:HealthCheck children])
                                 (children-to-map))
-        local-health-check (:HealthCheck local)]
-;compare maps
+        local-health-check (values-tostring (:HealthCheck local))]
+    (when-not (= remote-health-check local-health-check)
+      (create-healthcheck local))
     config))
 
 (defn ensure-listeners [{:keys [local remote] :as config}]
@@ -135,4 +144,6 @@
         (check-fixed-values)
         (ensure-health-check)
         (ensure-listeners))
-    (create-elb local)))
+    (-> local
+        (create-elb)
+        (create-healthcheck))))

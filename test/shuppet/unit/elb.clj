@@ -69,12 +69,24 @@
                   (check-string-value xml :missing "value") =>  (throws clojure.lang.ExceptionInfo))
 
             (fact "config is created when missing"
-                  (ensure-config config) => ..response..
+                  (ensure-config config) => config
                   (provided
                    (find-elb anything) => nil
-                   (create-elb config) => ..response..))
+                   (create-elb config) => config
+                   (create-healthcheck config) => config))
 
             (fact "error when fixed value changed"
                   (ensure-config config) => (throws clojure.lang.ExceptionInfo)
                   (provided
-                   (find-elb anything) => xml)))
+                   (find-elb anything) => xml))
+
+            (fact "health check is not created when identical"
+                  (ensure-health-check {:local config :remote xml}) => {:local config :remote xml}
+                  (provided
+                   (create-healthcheck config) => nil :times 0))
+
+            (fact "health check is created when configs are different"
+                  (let [config (assoc-in config [:HealthCheck :Target] "different")]
+                    (ensure-health-check {:local config :remote xml}) => {:local config :remote xml}
+                    (provided
+                     (create-healthcheck config) => nil))))
