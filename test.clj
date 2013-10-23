@@ -1,8 +1,5 @@
-(def service-name "test")
-(def service-description "test description")
-
-(ensure-sg {:GroupName (lower-case (str service-name "-sg"))
-            :GroupDescription service-description
+(ensure-sg {:GroupName (str application-name "-sg")
+            :GroupDescription (str "Security group for the application " application-name)
             :VpcId "vpc-7bc88713"
             :Ingress [(group-record "tcp" 80 8080 '("192.0.2.0/24" "198.51.100.0/24"))
                       (group-record "udp" 80 8080 '("192.0.2.0/24" "198.51.100.0/32"))]

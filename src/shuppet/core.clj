@@ -1,20 +1,26 @@
-(ns shuppet.core)
+(ns shuppet.core
+  (:require [clojure.string :refer [lower-case]]))
 
-(defn execute-string [clojure-string]
+(declare ^:dynamic application-name)
+(declare ^:dynamic environment)
+
+(defn execute-string [app-name env clojure-string]
   (let [ns (-> (java.util.UUID/randomUUID) (str) (symbol) (create-ns))]
     (try
-      (binding [*ns* ns]
+      (binding [*ns* ns
+                application-name app-name
+                environment env]
         (clojure.core/refer 'clojure.core)
         (refer 'clojure.string)
+        (refer 'shuppet.core)
         (refer 'shuppet.util)
         (refer 'shuppet.securitygroups)
         (eval (load-string clojure-string)))
       (finally (remove-ns (symbol (ns-name ns)))))))
 
-(defn configure [env service-name]
-  (let [config-file (str service-name "-" env ".clj")
+(defn configure [app-name env]
+  (let [config-file (str app-name ".clj")
         contents (slurp config-file)]
-    (execute-string contents)))
+    (execute-string (lower-case app-name) (lower-case env) contents)))
 
-
-;(configure "dev" "test")
+;(configure  "test" "dev")
