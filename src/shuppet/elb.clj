@@ -80,11 +80,12 @@
                                            :local-value v
                                            :remote-value remote-value}))))
 
-(defn check-fixed-values [local remote]
-  (map (fn [[k v]]
-         (cond
-          (string? v) (check-string-value remote k v)))
-       local))
+(defn check-fixed-values [{:keys [local remote] :as config}]
+  (dorun (map (fn [[k v]]
+                (cond
+                 (string? v) (check-string-value remote k v)))
+              local))
+  config)
 
 (defn create-listeners [config]
   (elb-request (merge {"Action" "CreateLoadBalancerListeners"} (to-aws-format config))))
@@ -98,11 +99,18 @@
   (elb-request {"Action" "DeleteLoadBalancer"
                 "LoadBalancerName" elb-name}))
 
+(defn ensure-health-check [{:keys [local remote] :as config}]
+config
+  )
+
 (defn ensure-config [local]
   (if-let [remote (find-elb (:LoadBalancerName local))]
-    (check-fixed-values local remote)
-      ;    (ensure-security-groups)
- ;   (ensure-listener)
-;    (ensure-subnet)
+    (-> {:local local :remote remote}
+        (check-fixed-values)
+        (ensure-health-check))
+    (create-elb local))
 
-    (create-elb local)))
+        ;    (ensure-security-groups)
+ ;   (ensure-listener)
+                                        ;    (ensure-subnet)
+  )
