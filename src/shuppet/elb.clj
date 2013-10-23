@@ -2,9 +2,8 @@
   (:require
    [shuppet
     [aws :refer [elb-request]]
-    [util :refer [without-nils]]]
+    [util :refer [children-to-map filter-children children-to-maps]]]
    [clj-http.client :as client]
-   [clojure.string :refer [join]]
    [clojure.tools.logging :as log]
    [clojure.xml :as xml]
    [clojure.data :refer [diff]]
@@ -98,20 +97,6 @@
 (defn- delete-elb [elb-name]
   (elb-request {"Action" "DeleteLoadBalancer"
                 "LoadBalancerName" elb-name}))
-
-(defn children-to-map [children]
-  (apply hash-map (flatten
-                   (map (fn [item]
-                          [(:tag item) (join (:content item))])
-                        children))))
-
-(defn filter-children [children key]
-  (filter #(= (:tag %) :Listener)
-          children))
-
-(defn children-to-maps [children]
-  (map #(children-to-map (:content %))
-       children))
 
 (defn- ensure-health-check [{:keys [local remote] :as config}]
   (let [remote-health-check (children-to-map (xml-> remote :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :HealthCheck children))

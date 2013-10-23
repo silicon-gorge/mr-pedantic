@@ -77,25 +77,4 @@
             (fact "error when fixed value changed"
                   (ensure-config config) => (throws clojure.lang.ExceptionInfo)
                   (provided
-                   (find-elb anything) => xml))
-
-            (fact "map is built from children"
-                  (children-to-map (xml-> xml  :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :HealthCheck children))
-                  => {:Interval "6"
-                      :Target "HTTP:8080/1.x/ping"
-                      :HealthyThreshold "2"
-                      :Timeout "5"
-                      :UnhealthyThreshold "2"})
-
-            (fact "list of maps is built from children"
-                  (-> (xml-> xml :DescribeLoadBalancersResult :LoadBalancerDescriptions :member :ListenerDescriptions :member children)
-                      (filter-children :Listener)
-                      (children-to-maps))
-                  => [{:InstancePort "8080"
-                       :InstanceProtocol "HTTP"
-                       :LoadBalancerPort "8080"
-                       :Protocol "HTTP"}
-                      {:InstancePort "8080"
-                       :InstanceProtocol "HTTP"
-                       :LoadBalancerPort "80"
-                       :Protocol "HTTP"}]))
+                   (find-elb anything) => xml)))
