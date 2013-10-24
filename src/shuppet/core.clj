@@ -11,7 +11,7 @@
   (let [ns (-> (java.util.UUID/randomUUID) (str) (symbol) (create-ns))]
     (try
       (binding [*ns* ns
-                default-config default-config]
+                default-config default-vars]
         (clojure.core/refer 'clojure.core)
         (refer 'clojure.data.json)
         (refer 'shuppet.core)
@@ -25,7 +25,8 @@
   {:Application (lower-case app-name)
    :Environment (keyword (lower-case env))
    :PrintJson print-json
-   :VpcId vpc-id})
+   :VpcId vpc-id
+   :SecurityGroups {:Egress (flatten [(group-record -1 nil nil '("0.0.0.0/0"))])}})
 
 (defn configure
   ([app-name env print-json]
@@ -35,4 +36,4 @@
                                          "vpc-7bc88713")
                      (slurp (str app-name ".clj")))))
 
-                                        ;(configure  "test" "dev" true)
+(configure  "test" "dev" false)

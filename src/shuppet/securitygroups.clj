@@ -39,12 +39,24 @@
   (let [params (into {} (map #(build-network-params %1 %2) (iterate inc 1) opts))]
     (process action (merge params {"GroupId" sg-id}))))
 
+(defn- check-default-egress [opts]
+  (let [egress (get opts :Egress)]
+    (filter #(and (not= (get % :IpRanges) "0.0.0.0/0")
+                  (not= (str (get % :IpPermission)) "-1")) egress) ))
+
 (defn- configure-network
+  "Applies all the ingress rules to the new security group.
+   For egress rules, we get rid of 0.0.0.0/0 for ALL protocols from the config map,
+   which will be created by default when you create a new security group.
+   If we get a custom egress rules other than the default one, then we revoke the default egress rule
+   and apply the custom ones"
   [sg-id opts]
   (when-let [ingress (get opts :Ingress)]
     (network-action sg-id ingress :AuthorizeSecurityGroupIngress))
-  (when-let [egress (get opts :Egress)]
-    (network-action sg-id egress :AuthorizeSecurityGroupEgress)))
+  (let [egress (check-default-egress opts)]
+    (when-not (empty? egress)
+      (network-action sg-id egress :AuthorizeSecurityGroupEgress)
+      (network-action sg-id {:IpRanges "0.0.0.0/0" :IpProtocol "-1"} :RevokeSecurityGroupEgress))))
 
 (defn- delete-sg
   [sg-name]

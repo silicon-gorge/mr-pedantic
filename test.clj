@@ -12,11 +12,11 @@
 (defn- sg-params
   []
   (merge (ingress-egress (sg-ingress-egress) (get default-config :SecurityGroups))
-         {:GroupName (str (get default-config :Application) "-sg")
-          :GroupDescription (str "Security group for the application " (get default-config :Application))
-          :VpcId (get default-config :VpcId)}))
+           {:GroupName (str (get default-config :Application) "-sg")
+            :GroupDescription (str "Security group for the application " (get default-config :Application))
+            :VpcId (get default-config :VpcId)}))
 
 (if (true? (get default-config :PrintJson))
-  (json-str (merge {:SecurityGroups (sg-params)}
-                   {:Environment (get default-config :Environment)}))
+  (prn (json-str (merge {:SecurityGroups (sg-params)}
+                        {:Environment (get default-config :Environment)})))
   (ensure-sg (sg-params)))
