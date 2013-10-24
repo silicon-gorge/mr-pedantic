@@ -53,10 +53,12 @@
 
 (defn create-healthcheck [config]
   (elb-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
+  (log/info "I've created a new health check config for" (elb-name config))
   config)
 
 (defn create-elb [config]
   (elb-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format  (elb-config config))))
+  (log/info "I've created a new ELB called" (elb-name config))
   config)
 
 (defn find-elb [name]
@@ -89,13 +91,15 @@
                                 (children-to-map))
         local-health-check (values-tostring (:HealthCheck local))]
     (when-not (= remote-health-check local-health-check)
-      (create-healthcheck local))
+      (create-healthcheck local)
+      (log/info "I've replaced healthcheck config for" (elb-name local)))
     config))
 
 (defn- update-elb [elb-name action prefix fields]
   (elb-request (merge {"Action" (name action)
                        "LoadBalancerName" elb-name}
-                      (apply hash-map (flatten (list-to-member (name prefix) fields))))))
+                      (apply hash-map (flatten (list-to-member (name prefix) fields)))))
+  (log/info "I had to" (name action) fields "on" elb-name))
 
 (defn ensure-listeners [{:keys [local remote] :as config}]
   (let [remote (-> remote

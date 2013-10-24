@@ -129,17 +129,17 @@
                      (elb-request anything) => nil :times 2)))
 
             (fact "update elb with a list of strings"
-                  (update-elb "elb-name" :action :prefix ["v1" "v2"]) => ..response..
+                  (update-elb "elb-name" :action :prefix ["v1" "v2"]) => anything
                   (provided
                    (elb-request {"Action" "action"
                                  "LoadBalancerName" "elb-name"
                                  "prefix.member.1" "v1"
-                                 "prefix.member.2" "v2"}) => ..response..))
+                                 "prefix.member.2" "v2"}) => anything))
 
             (fact "update elb with a list of maps"
-                  (update-elb "elb-name" :action :prefix [{:k1 "v1"} {:k2 "v2"}]) => ..response..
+                  (update-elb "elb-name" :action :prefix [{:k1 "v1"} {:k2 "v2"}]) => anything
                   (provided
                    (elb-request {"Action" "action"
                                  "LoadBalancerName" "elb-name"
                                  "prefix.member.1.k1" "v1"
-                                 "prefix.member.2.k2" "v2"}) => ..response..)))
+                                 "prefix.member.2.k2" "v2"}) => anything)))
