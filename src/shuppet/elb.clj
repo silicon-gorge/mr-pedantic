@@ -85,7 +85,7 @@
               local))
   config)
 
-(defn ensure-health-check [{:keys [local remote] :as config}]
+(defn- ensure-health-check [{:keys [local remote] :as config}]
   (let [remote-health-check (-> remote
                                 (get-elements [:HealthCheck children])
                                 (children-to-map))
@@ -101,7 +101,7 @@
                       (apply hash-map (flatten (list-to-member (name prefix) fields)))))
   (log/info "I had to" (name action) fields "on" elb-name))
 
-(defn ensure-listeners [{:keys [local remote] :as config}]
+(defn- ensure-listeners [{:keys [local remote] :as config}]
   (let [remote (-> remote
                    (get-elements [:ListenerDescriptions :member children])
                    (filter-children :Listener)
@@ -115,7 +115,7 @@
       (update-elb name :CreateLoadBalancerListeners :Listeners l))
     config))
 
-(defn ensure-subnets [{:keys [local remote] :as config}]
+(defn- ensure-subnets [{:keys [local remote] :as config}]
   (let [remote (-> remote
                    (get-elements [:Subnets :member children]))
         name (elb-name local)
@@ -127,7 +127,7 @@
       (update-elb name :AttachLoadBalancerToSubnets :Subnets l))
     config))
 
-(defn ensure-security-groups [{:keys [local remote] :as config}]
+(defn- ensure-security-groups [{:keys [local remote] :as config}]
   (let [remote (set (-> remote
                         (get-elements [:SecurityGroups :member children])))
         name (elb-name local)

@@ -31,6 +31,10 @@
 
 (def to-aws-format @#'shuppet.elb/to-aws-format)
 (def update-elb @#'shuppet.elb/update-elb)
+(def ensure-subnets @#'shuppet.elb/ensure-subnets)
+(def ensure-security-groups @#'shuppet.elb/ensure-security-groups)
+(def ensure-health-check @#'shuppet.elb/ensure-health-check)
+(def ensure-listeners @#'shuppet.elb/ensure-listeners)
 (def sg-names-to-ids @#'shuppet.elb/sg-names-to-ids)
 (def check-string-value @#'shuppet.elb/check-string-value)
 
