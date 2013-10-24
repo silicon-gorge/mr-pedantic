@@ -97,12 +97,20 @@
             (fact  "local security groups are applied when configs are different"
                    (ensure-security-groups {:local config :remote xml}) => {:local config :remote xml}
                    (provided
-                    (elb-request {"Action" "ApplySecurityGroupsToLoadBalancer"
-                                  "LoadBalancerName" "elb-for-test"
-                                  "SecurityGroups.member.1" "elb-for-test"}) => nil))
+                    (elb-request anything) => nil))
 
             (fact "security group names are replaced by ids"
                   (sg-names-to-ids config) => (assoc config :SecurityGroups ["id"])
                   (provided
                    (security-group-id anything) => "id"))
-            )
+
+            (fact "nothing done when subnets are identical"
+                  (ensure-subnets {:local config :remote xml})=> {:local config :remote xml}
+                  (provided
+                   (elb-request anything) => nil :times 0))
+
+            (fact "missing subnets are added and extra removed"
+                  (let [config (assoc config :Subnets ["different"])]
+                    (ensure-subnets {:local config :remote xml})=> {:local config :remote xml}
+                    (provided
+                     (elb-request anything) => nil :times 2))))

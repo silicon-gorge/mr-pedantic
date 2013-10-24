@@ -14,25 +14,8 @@
 (defn get-elements [xml path]
   (apply xml-> xml (concat [:DescribeLoadBalancersResult :LoadBalancerDescriptions :member] path)))
 
-(defn- get-listeners
-  "returns a list of maps, very specific"
-  [xml]
-  )
-
-(defn- get-subnets
-  "returns a list of strings, can be generalised eg get-string-list name"
-  [xml]
-  )
-
-(defn- compare-lists
-  "use indexof to see what is missing, returns map :a :b with lists, can be used for maps or strings"
-  [a b]
-
-  )
-
-(defn- get-security-groups
-  "returns a list of strings, same as subnet"
-  [xml])
+(defn elb-name [config]
+  (:LoadBalancerName config))
 
 (defn- map-to-dot [prefix m]
   (map (fn [[k v]] [(str prefix "." (name k)) (str v)])
@@ -127,14 +110,20 @@
     config))
 
 (defn ensure-subnets [{:keys [local remote] :as config}]
-  (let [remote-subnets (-> remote
-                           (get-elements [:Subnets :member children]))]
-                                        ; compare
-    ;need ids??
-    remote-subnets))
-
-(defn elb-name [config]
-  (:LoadBalancerName config))
+  (let [remote (-> remote
+                   (get-elements [:Subnets :member children]))
+        name (elb-name local)
+        local (:Subnets local)
+        [r l] (compare-config local remote)]
+    (when-not (empty? r)
+      (elb-request (into {"Action" "DetachLoadBalancerFromSubnets"
+                          "LoadBalancerName" name}
+                         (list-to-member "Subnets" r))))
+    (when-not (empty? l)
+      (elb-request (into {"Action" "AttachLoadBalancerToSubnets"
+                          "LoadBalancerName" name}
+                         (list-to-member "Subnets" l))))
+    config))
 
 (defn ensure-security-groups [{:keys [local remote] :as config}]
   (let [remote (set (-> remote
@@ -158,6 +147,7 @@
           (check-fixed-values)
           (ensure-health-check)
           (ensure-security-groups)
+          (ensure-subnets)
           (ensure-listeners))
       (-> local
           (create-elb)
