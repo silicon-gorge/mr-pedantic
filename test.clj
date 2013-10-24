@@ -1,9 +1,7 @@
 (defn- sg-ingress-egress
   []
   (condp = (get default-config :Environment)
-    :dev {:Ingress (flatten [(group-record "tcp" 80 8080 '("192.0.2.0/24" "192.51.100.0/24"))
-                             (group-record "udp" 80 8080 '("192.0.2.0/24" "192.51.100.0/32"))])
-          }
+    :dev {:Ingress (flatten [(group-record "tcp" 80 8080 '("198.0.2.0/24" "198.51.100.0/24"))])}
     :prod {:Ingress (flatten [(group-record "tcp" 80 8080 '("198.0.2.0/24" "198.51.100.0/24"))
                               (group-record "udp" 80 8080 '("198.0.2.0/24" "198.51.100.0/32"))])
            :Egress  (flatten [(group-record "tcp" 80 8090 '("198.0.2.0/24" "198.51.100.0/24"))

@@ -7,6 +7,7 @@
             [environ.core :refer [env]]))
 
 (def ^:const onix-url (or (env :environment-onix-url) "http://onix.brislabs.com:8080/1.x")) ;todo check
+(def ^:const file-ext ".clj")
 
 (declare ^:dynamic default-config)
 
@@ -15,7 +16,7 @@
     [apps]
     "Gets a list of the application names"))
 
-(defrecord NamesFromOnix [^String url]
+(defrecord NamesFromService [^String url]
   ApplicationNames
   (list-names
     [this]
@@ -30,6 +31,26 @@
   (list-names
     [this]
     (prn "Get service names from local file system here")))
+
+
+(defprotocol Configuration
+  (contents
+    [this]
+    "Gets the configuration file contents for evaluation"))
+
+(defrecord GitConfiguration [^String file-name]
+  Configuration
+  (contents
+    [this]
+   ; (git/contents file-name) todo
+    ))
+
+(defrecord FileConfiguration [^String file-name]
+  Configuration
+  (contents
+    [this]
+    (slurp file-name)))
+
 
 (defn execute-string
   [default-vars clojure-string]
@@ -46,25 +67,28 @@
       (finally (remove-ns (symbol (ns-name ns)))))))
 
 (defn- get-default-config
-  [app-name env print-json vpc-id]
-  {:Application (lower-case app-name)
-   :Environment (keyword (lower-case env))
-   :PrintJson print-json
-   :VpcId vpc-id
-   :SecurityGroups {:Egress (flatten [(group-record -1 nil nil '("0.0.0.0/0"))])}})
+  [app-name env print-json defaults]
+  (merge defaults {:Application (lower-case app-name)
+                   :Environment (keyword (lower-case env))
+                   :PrintJson print-json}))
 
 (defn configure
   ([app-name env print-json]
-     (execute-string (get-default-config app-name
-                                         env
-                                         print-json
-                                         "vpc-7bc88713")
-                     (slurp (str app-name ".clj")))))
+     (let [defaults (execute-string nil (contents (FileConfiguration.
+                                                   (str (lower-case env) file-ext))))]
+       (execute-string (get-default-config app-name
+                                           env
+                                           print-json
+                                           defaults)
+                       (contents (FileConfiguration.
+                                  (str (lower-case app-name) file-ext)))))))
 
 (defn update
   [env]
-  (let [names (list-names (NamesFromOnix. onix-url))]
+  (let [names (list-names (NamesFromService. onix-url))]
     (map #(configure % env false) names)))
 
-;(configure  "test" "dev" true)
+(configure  "test" "dev" false)
+
+
 ;(update "dev")

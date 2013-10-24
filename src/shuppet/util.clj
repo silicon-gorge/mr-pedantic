@@ -44,8 +44,10 @@
 
 (defn group-record
   "Creates a Ingress/Egress config for a security group"
-  [protocol from-port to-port ip-ranges]
-  (let [record (without-nils {:IpProtocol (str protocol)
-                            :FromPort (str from-port)
-                            :ToPort (str to-port)})]
-    (map #(merge record {:IpRanges %}) ip-ranges)   ))
+  ([protocol from-port to-port ip-ranges]
+      (let [record (without-nils {:IpProtocol (str protocol)
+                                  :FromPort (str from-port)
+                                  :ToPort (str to-port)})]
+        (map #(merge record {:IpRanges %}) ip-ranges)))
+  ([protocol ip-ranges]
+     (group-record protocol nil nil ip-ranges)))
