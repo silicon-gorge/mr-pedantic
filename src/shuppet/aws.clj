@@ -55,3 +55,9 @@
         response (client/post url { :content-type "application/x-www-form-urlencoded; charset=utf-8" :throw-exceptions false})]
     (prn "Decoded message response = " response)
     response))
+
+(defn security-group-id [group-name]
+  (xml1-> (ec2-request {"Action" "DescribeSecurityGroups"
+                        "Filter.1.Name" "group-name"
+                        "Filter.1.Value" group-name})
+          :securityGroupInfo :item :groupId text))
