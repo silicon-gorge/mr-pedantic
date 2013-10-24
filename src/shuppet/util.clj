@@ -31,6 +31,14 @@
   [seq element]
   (some #(= element %) seq))
 
+(defn compare-config
+  "Returns a list of two vectors
+   First vector is what is present in the remote config , which are not present in the local config
+   and the second vector is those present in the local config, which are not applied to the aws config yet"
+  [local remote]
+  (list (vec (filter #(not (in? (set local) %)) (set remote)))
+        (vec (filter #(not (in? (set remote) %)) (set local)))))
+
 (defn values-tostring [m]
   (into {} (map (fn [[k v]] [k (str v)]) m)))
 

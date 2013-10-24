@@ -5,16 +5,7 @@
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
-(defn- compare-config
-  "Returns a list of two vectors
-   First vector is what is present in the remote config , which are not present in the local config
-   and the second vector is those present in the local config, which are not applied to the aws config yet"
-  [local remote]
-  (concat (list (vec (filter #(not (in? (set local) %)) (set remote))))
-          (list (vec (filter #(not (in? (set remote) %)) (set local))))))
-
-(defn- create-params
-  [opts]
+(defn- create-params [opts]
   (without-nils {"GroupName" (get opts :GroupName)
                  "GroupDescription" (get opts :GroupDescription)
                  "VpcId" (get opts :VpcId)}))
