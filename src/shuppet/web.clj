@@ -30,6 +30,20 @@
    :headers {"Content-Type" content-type}
    :body data})
 
+(defroutes applications-routes
+
+  (GET "/:env/application/:name"
+       [env name]
+       (core/configure env name false))
+
+  (GET "/:env/application/:name/json"
+       [env name]
+       (core/configure env name true))
+
+  (GET "/:env/update"
+       [env]
+       (core/update env)))
+
 (defroutes routes
   (context
    "/1.x" []
@@ -49,13 +63,8 @@
          :body (-> (clojure.java.io/resource "shuppet.jpg")
                    (clojure.java.io/input-stream))})
 
-   (GET "env/:env/application/:name"
-        [env name]
-        (core/configure env name false))
-
-   (GET "env/:env/application/:name/json"
-        [env name]
-        (core/configure env name true)))
+   (context "/env"
+            [] applications-routes))
 
   (GET "/healthcheck"
        []

@@ -2,9 +2,34 @@
   (:require [clojure.string :refer [lower-case]]
             [clojure.data.json :refer [json-str]]
             [shuppet.util :refer :all]
-            [shuppet.securitygroups :refer :all]))
+            [shuppet.securitygroups :refer :all]
+            [clj-http.client :as client]
+            [environ.core :refer [env]]))
+
+(def ^:const onix-url (or (env :environment-onix-url) "http://onix.brislabs.com:8080/1.x")) ;todo check
 
 (declare ^:dynamic default-config)
+
+(defprotocol ApplicationNames
+  (list-names
+    [apps]
+    "Gets a list of the application names"))
+
+(defrecord NamesFromOnix [^String url]
+  ApplicationNames
+  (list-names
+    [this]
+    (let [response (client/get (str url "/applications") {:as :json
+                                                          :throw-exceptions true})]
+      (if (= 200 (:status response))
+        (get-in response [:body :applications])
+        (prn "Cant get a proper response from onix application " response)))))
+
+(defrecord NamesFromFile [^String path]
+  ApplicationNames
+  (list-names
+    [this]
+    (prn "Get service names from local file system here")))
 
 (defn execute-string
   [default-vars clojure-string]
@@ -36,4 +61,10 @@
                                          "vpc-7bc88713")
                      (slurp (str app-name ".clj")))))
 
-(configure  "test" "dev" false)
+(defn update
+  [env]
+  (let [names (list-names (NamesFromOnix. onix-url))]
+    (map #(configure % env false) names)))
+
+;(configure  "test" "dev" true)
+;(update "dev")
