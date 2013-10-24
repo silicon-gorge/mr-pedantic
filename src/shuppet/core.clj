@@ -88,7 +88,5 @@
   (let [names (list-names (NamesFromService. onix-url))]
     (map #(configure % env false) names)))
 
-(configure  "test" "dev" false)
-
-
+;(configure  "test" "dev" false)
 ;(update "dev")
