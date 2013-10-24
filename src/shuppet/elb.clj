@@ -127,8 +127,8 @@
     config))
 
 (defn- ensure-security-groups [{:keys [local remote] :as config}]
-  (let [remote (set (-> remote
-                        (get-elements [:SecurityGroups :member children])))
+  (let [remote (-> remote
+                    (get-elements [:SecurityGroups :member children]))
         name (elb-name local)
         local (:SecurityGroups local)]
     (when-not (= (set local) (set remote))
