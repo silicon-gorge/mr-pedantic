@@ -1,8 +1,8 @@
 (ns shuppet.elb
   (:require
    [shuppet
-    [aws :refer [elb-request]]
-    [util :refer [children-to-map filter-children children-to-maps values-tostring]]]
+    [aws :refer [elb-request ec2-request security-group-id]]
+    [util :refer :all]]
    [clj-http.client :as client]
    [clojure.tools.logging :as log]
    [clojure.xml :as xml]
@@ -42,12 +42,12 @@
   (str prefix ".member." i))
 
 (defn- list-to-member [prefix list]
-  (flatten (map (fn [i v]
-                  (cond
-                   (map? v) (map-to-dot (to-member prefix i) v)
-                   :else [(to-member prefix i) (str v)]))
-                (iterate inc 1)
-                list)))
+  (map (fn [i v]
+         (cond
+          (map? v) (map-to-dot (to-member prefix i) v)
+          :else [(to-member prefix i) (str v)]))
+       (iterate inc 1)
+       list))
 
 (defn- to-aws-format
   "Transforms shuppet config to aws config format"
@@ -130,20 +130,35 @@
   (let [remote-subnets (-> remote
                            (get-elements [:Subnets :member children]))]
                                         ; compare
+    ;need ids??
     remote-subnets))
 
-(defn ensure-security-groups [{:keys [local remote] :as config}]
-  (let [remote-sg (-> remote
-                      (get-elements [ :SecurityGroups :member children]))]
+(defn elb-name [config]
+  (:LoadBalancerName config))
 
+(defn ensure-security-groups [{:keys [local remote] :as config}]
+  (let [remote (set (-> remote
+                        (get-elements [ :SecurityGroups :member children])))
+        name (elb-name local)
+        local (:SecurityGroups local)]
+    (when-not (= (set local) (set remote))
+      (elb-request (into {"Action" "ApplySecurityGroupsToLoadBalancer"
+                          "LoadBalancerName" name}
+                         (list-to-member "SecurityGroups" local))))
     config))
 
+(defn sg-names-to-ids [config]
+  (assoc config :SecurityGroups (map #(security-group-id %) (:SecurityGroups config))))
+
 (defn ensure-config [local]
-  (if-let [remote (find-elb (:LoadBalancerName local))]
-    (-> {:local local :remote remote}
-        (check-fixed-values)
-        (ensure-health-check)
-        (ensure-listeners))
-    (-> local
-        (create-elb)
-        (create-healthcheck))))
+  (let [local (sg-names-to-ids local)
+        remote (find-elb (:LoadBalancerName local))]
+    (if remote
+      (-> {:local local :remote remote}
+          (check-fixed-values)
+          (ensure-health-check)
+          (ensure-security-groups)
+          (ensure-listeners))
+      (-> local
+          (create-elb)
+          (create-healthcheck)))))

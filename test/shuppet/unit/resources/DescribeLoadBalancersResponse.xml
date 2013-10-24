@@ -2,7 +2,7 @@
 <DescribeLoadBalancersResult>
 <LoadBalancerDescriptions>
 <member>
-<SecurityGroups><member>sg-a0f317cf</member></SecurityGroups>
+<SecurityGroups><member>same-as-xml</member></SecurityGroups>
 <CreatedTime>2013-10-21T14:36:25.740Z</CreatedTime>
 <LoadBalancerName>testelb</LoadBalancerName>
 <VPCId>vpc-7bc88713</VPCId>

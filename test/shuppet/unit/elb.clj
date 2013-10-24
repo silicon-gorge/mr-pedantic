@@ -1,6 +1,7 @@
 (ns shuppet.unit.elb
   (:require [cheshire.core :as json]
             [clojure.xml :as xml]
+            [shuppet.aws :refer [elb-request security-group-id]]
             [clojure.zip :as zip :refer [children]]
             [clojure.data.zip.xml :refer [xml1-> xml->]])
   (:import (java.io ByteArrayInputStream))
@@ -19,6 +20,7 @@
                           :InstancePort 8080
                           :Protocol "http"
                           :InstanceProtocol "http"}]
+             :SecurityGroups ["elb-for-test"]
              :Subnets [subnet1 subnet2]
              :Scheme "internal"
              :HealthCheck {:Target "HTTP:8080/1.x/ping"
@@ -50,6 +52,7 @@
                                            "Listeners.member.2.InstanceProtocol" "http"
                                            "Subnets.member.1" subnet1
                                            "Subnets.member.2" subnet2
+                                           "SecurityGroups.member.1" "elb-for-test"
                                            "Scheme" "internal"
                                            "HealthCheck.Target" "HTTP:8080/1.x/ping"
                                            "HealthCheck.HealthyThreshold" "2"
@@ -68,13 +71,6 @@
             (fact "missing text value fails"
                   (check-string-value xml :missing "value") =>  (throws clojure.lang.ExceptionInfo))
 
-            (fact "config is created when missing"
-                  (ensure-config config) => config
-                  (provided
-                   (find-elb anything) => nil
-                   (create-elb config) => config
-                   (create-healthcheck config) => config))
-
             (fact "error when fixed value changed"
                   (ensure-config config) => (throws clojure.lang.ExceptionInfo)
                   (provided
@@ -89,4 +85,24 @@
                   (let [config (assoc-in config [:HealthCheck :Target] "different")]
                     (ensure-health-check {:local config :remote xml}) => {:local config :remote xml}
                     (provided
-                     (create-healthcheck config) => nil))))
+                     (create-healthcheck config) => nil)))
+
+            (fact "Security groups not are created when configs are identical"
+                  (let [config (assoc config :SecurityGroups ["same-as-xml"])]
+                    (ensure-security-groups {:local config :remote xml})
+                    => {:local config :remote xml}
+                    (provided
+                     (elb-request anything) => nil :times 0)))
+
+            (fact  "local security groups are applied when configs are different"
+                   (ensure-security-groups {:local config :remote xml}) => {:local config :remote xml}
+                   (provided
+                    (elb-request {"Action" "ApplySecurityGroupsToLoadBalancer"
+                                  "LoadBalancerName" "elb-for-test"
+                                  "SecurityGroups.member.1" "elb-for-test"}) => nil))
+
+            (fact "security group names are replaced by ids"
+                  (sg-names-to-ids config) => (assoc config :SecurityGroups ["id"])
+                  (provided
+                   (security-group-id anything) => "id"))
+            )

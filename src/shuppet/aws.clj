@@ -45,7 +45,9 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw+ {:type ::clj-http :status status :code (xml1-> body :Error :Code text)}))))
+      (throw+ {:type ::clj-http :status status
+               :code (xml1-> body :Error :Code text)
+               :message (xml1-> body :Error :Message text) }))))
 
 (defn decode-message
   [encoded-message]
