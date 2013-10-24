@@ -30,6 +30,7 @@
                            :Timeout 5}})
 
 (def to-aws-format @#'shuppet.elb/to-aws-format)
+(def update-elb @#'shuppet.elb/update-elb)
 (def sg-names-to-ids @#'shuppet.elb/sg-names-to-ids)
 (def check-string-value @#'shuppet.elb/check-string-value)
 
@@ -125,4 +126,20 @@
                   (let [config (assoc config :Listeners [{:something "different"}])]
                     (ensure-listeners {:local config :remote xml})=> {:local config :remote xml}
                     (provided
-                     (elb-request anything) => nil :times 2))))
+                     (elb-request anything) => nil :times 2)))
+
+            (fact "update elb with a list of strings"
+                  (update-elb "elb-name" :action :prefix ["v1" "v2"]) => ..response..
+                  (provided
+                   (elb-request {"Action" "action"
+                                 "LoadBalancerName" "elb-name"
+                                 "prefix.member.1" "v1"
+                                 "prefix.member.2" "v2"}) => ..response..))
+
+            (fact "update elb with a list of maps"
+                  (update-elb "elb-name" :action :prefix [{:k1 "v1"} {:k2 "v2"}]) => ..response..
+                  (provided
+                   (elb-request {"Action" "action"
+                                 "LoadBalancerName" "elb-name"
+                                 "prefix.member.1.k1" "v1"
+                                 "prefix.member.2.k2" "v2"}) => ..response..)))

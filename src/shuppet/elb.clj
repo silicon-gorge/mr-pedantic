@@ -92,6 +92,11 @@
       (create-healthcheck local))
     config))
 
+(defn- update-elb [elb-name action prefix fields]
+  (elb-request (merge {"Action" (name action)
+                       "LoadBalancerName" elb-name}
+                      (apply hash-map (flatten (list-to-member (name prefix) fields))))))
+
 (defn ensure-listeners [{:keys [local remote] :as config}]
   (let [remote (-> remote
                    (get-elements [:ListenerDescriptions :member children])
@@ -101,13 +106,9 @@
         local (map #(values-to-uppercase %) (:Listeners local))
         [r l] (compare-config local remote)]
     (when-not (empty? r)
-      (elb-request (into {"Action" "DeleteLoadBalancerListeners"
-                          "LoadBalancerName" name}
-                         (list-to-member "LoadBalancerPorts" (map #(:LoadBalancerPort %) r)))))
+      (update-elb name :DeleteLoadBalancerListeners :LoadBalancerPorts (map #(:LoadBalancerPort %) r)))
     (when-not (empty? l)
-      (elb-request (merge {"Action" "CreateLoadBalancerListeners"
-                          "LoadBalancerName" name}
-                          (apply hash-map (flatten (list-to-member "Listeners" l))))))
+      (update-elb name :CreateLoadBalancerListeners :Listeners l))
     config))
 
 (defn ensure-subnets [{:keys [local remote] :as config}]
@@ -117,24 +118,18 @@
         local (:Subnets local)
         [r l] (compare-config local remote)]
     (when-not (empty? r)
-      (elb-request (into {"Action" "DetachLoadBalancerFromSubnets"
-                          "LoadBalancerName" name}
-                         (list-to-member "Subnets" r))))
+      (update-elb name :DetachLoadBalancerFromSubnets :Subnets r))
     (when-not (empty? l)
-      (elb-request (into {"Action" "AttachLoadBalancerToSubnets"
-                          "LoadBalancerName" name}
-                         (list-to-member "Subnets" l))))
+      (update-elb name :AttachLoadBalancerToSubnets :Subnets l))
     config))
 
 (defn ensure-security-groups [{:keys [local remote] :as config}]
   (let [remote (set (-> remote
-                        (get-elements [ :SecurityGroups :member children])))
+                        (get-elements [:SecurityGroups :member children])))
         name (elb-name local)
         local (:SecurityGroups local)]
     (when-not (= (set local) (set remote))
-      (elb-request (into {"Action" "ApplySecurityGroupsToLoadBalancer"
-                          "LoadBalancerName" name}
-                         (list-to-member "SecurityGroups" local))))
+      (update-elb name :ApplySecurityGroupsToLoadBalancer :SecurityGroups local))
     config))
 
 (defn ensure-config [local]
