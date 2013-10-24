@@ -20,10 +20,12 @@
    [metrics.ring.instrument :refer [instrument]]))
 
 (def ^:dynamic *version* "none")
-(defn set-version! [version]
+(defn set-version!
+  [version]
   (alter-var-root #'*version* (fn [_] version)))
 
-(defn response [data content-type & [status]]
+(defn response
+  [data content-type & [status]]
   {:status (or status 200)
    :headers {"Content-Type" content-type}
    :body data})
@@ -40,20 +42,23 @@
                                :version *version*
                                :status true}})
 
-   (GET "/icon" []
+   (GET "/icon"
+        []
         {:status 200
          :headers {"Content-Type" "image/jpeg"}
          :body (-> (clojure.java.io/resource "shuppet.jpg")
                    (clojure.java.io/input-stream))})
 
-   (GET "/:env/service/:name"
-        [env name action]
-        (if (or (empty? action)
-                (= action "print"))
-          (core/configure env name action)
-          {:status 400 :body (str "Invalid action " action "specified.")})))
+   (GET "env/:env/application/:name"
+        [env name]
+        (core/configure env name false))
 
-  (GET "/healthcheck" []
+   (GET "env/:env/application/:name/json"
+        [env name]
+        (core/configure env name true)))
+
+  (GET "/healthcheck"
+       []
        (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
 
   (route/not-found (error-response "Resource not found" 404)))

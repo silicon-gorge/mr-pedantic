@@ -15,7 +15,8 @@
 (def ^:const sts-url (or (env :service-aws-sts-url) "https://sts.amazonaws.com"))
 (def ^:const sts-version (or (env :service-aws-sts-api-version) "2011-06-15"))
 
-(defn ec2-request [params]
+(defn ec2-request
+  [params]
   (let [url (urlbuilder/build-url ec2-url (merge {"Version" ec2-version} params))
         response (client/get url {:as :stream
                                   :throw-exceptions false})
@@ -31,7 +32,8 @@
                :title  (xml1-> body :Errors :Error :Code text)
                :message (xml1-> body :Errors :Error :Message text)}))))
 
-(defn elb-request [params]
+(defn elb-request
+  [params]
   (let [response (client/get (urlbuilder/build-url
                               (env :service-aws-elb-url)
                               (merge {"Version" (env  :service-aws-elb-version)}  params))
@@ -45,7 +47,8 @@
       body
       (throw+ {:type ::clj-http :status status :code (xml1-> body :Error :Code text)}))))
 
-(defn decode-message [encoded-message]
+(defn decode-message
+  [encoded-message]
   (let [url (urlbuilder/build-url "post" sts-url {"Action" "DecodeAuthorizationMessage"
                                                   "EncodedMessage" encoded-message
                                                   "Version" sts-version})

@@ -4,19 +4,14 @@
             [shuppet.util :refer :all]
             [shuppet.securitygroups :refer :all]))
 
-(declare ^:dynamic application-name)
-(declare ^:dynamic environment)
-(declare ^:dynamic action)
-(declare ^:dynamic vpc-id)
+(declare ^:dynamic default-config)
 
-(defn execute-string [app-name env action clojure-string]
+(defn execute-string
+  [default-vars clojure-string]
   (let [ns (-> (java.util.UUID/randomUUID) (str) (symbol) (create-ns))]
     (try
       (binding [*ns* ns
-                application-name app-name
-                environment env
-                action action
-                vpc-id "vpc-7bc88713"] ;todo get it from somewhere
+                default-config default-config]
         (clojure.core/refer 'clojure.core)
         (refer 'clojure.data.json)
         (refer 'shuppet.core)
@@ -25,10 +20,19 @@
         (eval (load-string clojure-string)))
       (finally (remove-ns (symbol (ns-name ns)))))))
 
-(defn configure
-  ([app-name env action]
-     (execute-string (lower-case app-name) (lower-case env) action (slurp (str app-name ".clj"))))
-  ([app-name env]
-     (configure app-name env nil)))
+(defn- get-default-config
+  [app-name env print-json vpc-id]
+  {:Application (lower-case app-name)
+   :Environment (keyword (lower-case env))
+   :PrintJson print-json
+   :VpcId vpc-id})
 
-;(configure  "test" "dev")
+(defn configure
+  ([app-name env print-json]
+     (execute-string (get-default-config app-name
+                                         env
+                                         print-json
+                                         "vpc-7bc88713")
+                     (slurp (str app-name ".clj")))))
+
+                                        ;(configure  "test" "dev" true)
