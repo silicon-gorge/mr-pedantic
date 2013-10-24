@@ -6,7 +6,6 @@
    [clj-http.client :as client]
    [clojure.tools.logging :as log]
    [clojure.xml :as xml]
-   [clojure.data :refer [diff]]
    [clojure.zip :as zip :refer [children]]
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
