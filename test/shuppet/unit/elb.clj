@@ -30,6 +30,7 @@
                            :Timeout 5}})
 
 (def to-aws-format @#'shuppet.elb/to-aws-format)
+(def sg-names-to-ids @#'shuppet.elb/sg-names-to-ids)
 (def check-string-value @#'shuppet.elb/check-string-value)
 
 (def xml (->  (slurp "test/shuppet/unit/resources/DescribeLoadBalancersResponse.xml")
@@ -112,5 +113,16 @@
             (fact "missing subnets are added and extra removed"
                   (let [config (assoc config :Subnets ["different"])]
                     (ensure-subnets {:local config :remote xml})=> {:local config :remote xml}
+                    (provided
+                     (elb-request anything) => nil :times 2)))
+
+            (fact "nothing done when listeners are identical"
+                  (ensure-listeners {:local config :remote xml})=> {:local config :remote xml}
+                  (provided
+                   (elb-request anything) => nil :times 0))
+
+            (fact "missing listeners are added and extra removed"
+                  (let [config (assoc config :Listeners [{:something "different"}])]
+                    (ensure-listeners {:local config :remote xml})=> {:local config :remote xml}
                     (provided
                      (elb-request anything) => nil :times 2))))

@@ -11,10 +11,13 @@
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
-(defn get-elements [xml path]
+(defn- sg-names-to-ids [config]
+  (assoc config :SecurityGroups (map #(security-group-id %) (:SecurityGroups config))))
+
+(defn- get-elements [xml path]
   (apply xml-> xml (concat [:DescribeLoadBalancersResult :LoadBalancerDescriptions :member] path)))
 
-(defn elb-name [config]
+(defn- elb-name [config]
   (:LoadBalancerName config))
 
 (defn- map-to-dot [prefix m]
@@ -80,18 +83,6 @@
               local))
   config)
 
-(defn- create-listeners [config]
-  (elb-request (merge {"Action" "CreateLoadBalancerListeners"} (to-aws-format config))))
-
-(defn- delete-listener [elb-name listener-port]
-  (elb-request {"Action" "DeleteLoadBalancerListeners"
-                "LoadBalancerName" elb-name
-                "LoadBalancerPorts.member.1" listener-port}))
-
-(defn- delete-elb [elb-name]
-  (elb-request {"Action" "DeleteLoadBalancer"
-                "LoadBalancerName" elb-name}))
-
 (defn ensure-health-check [{:keys [local remote] :as config}]
   (let [remote-health-check (-> remote
                                 (get-elements [:HealthCheck children])
@@ -102,11 +93,21 @@
     config))
 
 (defn ensure-listeners [{:keys [local remote] :as config}]
-  (let [remote-listenters (-> remote
-                              (get-elements [:ListenerDescriptions :member children])
-                              (filter-children :Listener)
-                              (children-to-maps))]
-    ; compare lists
+  (let [remote (-> remote
+                   (get-elements [:ListenerDescriptions :member children])
+                   (filter-children :Listener)
+                   (children-to-maps))
+        name (elb-name local)
+        local (map #(values-to-uppercase %) (:Listeners local))
+        [r l] (compare-config local remote)]
+    (when-not (empty? r)
+      (elb-request (into {"Action" "DeleteLoadBalancerListeners"
+                          "LoadBalancerName" name}
+                         (list-to-member "LoadBalancerPorts" (map #(:LoadBalancerPort %) r)))))
+    (when-not (empty? l)
+      (elb-request (merge {"Action" "CreateLoadBalancerListeners"
+                          "LoadBalancerName" name}
+                          (apply hash-map (flatten (list-to-member "Listeners" l))))))
     config))
 
 (defn ensure-subnets [{:keys [local remote] :as config}]
@@ -135,9 +136,6 @@
                           "LoadBalancerName" name}
                          (list-to-member "SecurityGroups" local))))
     config))
-
-(defn sg-names-to-ids [config]
-  (assoc config :SecurityGroups (map #(security-group-id %) (:SecurityGroups config))))
 
 (defn ensure-config [local]
   (let [local (sg-names-to-ids local)

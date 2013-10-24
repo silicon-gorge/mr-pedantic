@@ -1,5 +1,10 @@
 (ns shuppet.util
-  (:require [clojure.string :refer [join]]))
+  (:require [clojure.string :refer [join upper-case]]))
+
+(defn values-to-uppercase [m]
+  (into {} (map (fn [[k v]]
+               [k (upper-case v)])
+             m)))
 
 (defn children-to-map
   "transform children of an xml element to a map"
