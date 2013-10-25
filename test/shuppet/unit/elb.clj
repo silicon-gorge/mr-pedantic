@@ -78,7 +78,7 @@
                   (check-string-value xml :missing "value") =>  (throws clojure.lang.ExceptionInfo))
 
             (fact "error when fixed value changed"
-                  (ensure-config config) => (throws clojure.lang.ExceptionInfo)
+                  (ensure-elb config) => (throws clojure.lang.ExceptionInfo)
                   (provided
                    (find-elb anything) => xml))
 
