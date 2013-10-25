@@ -2,8 +2,10 @@
   (:require [clojure.string :refer [lower-case]]
             [clojure.data.json :refer [json-str]]
             [shuppet.util :refer :all]
-            [shuppet.git :as git]
-            [shuppet.securitygroups :refer :all]
+            [shuppet
+             [git :as git]
+             [securitygroups :refer [ensure-sg]]
+             [elb :refer [ensure-elb]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]))
 
@@ -52,34 +54,34 @@
     (slurp file-name)))
 
 
-(defn execute-string
-  [default-vars clojure-string]
+(defn- execute-string
+  [clojure-string name environment]
   (let [ns (-> (java.util.UUID/randomUUID) (str) (symbol) (create-ns))]
-    (try
-      (binding [*ns* ns
-                default-config default-vars]
-        (clojure.core/refer 'clojure.core)
-        (refer 'clojure.data.json)
-        (refer 'shuppet.core)
-        (refer 'shuppet.util)
-        (refer 'shuppet.securitygroups)
-        (eval (load-string clojure-string)))
-      (finally (remove-ns (symbol (ns-name ns)))))))
-
-(defn- get-default-config
-  [app-name env print-json defaults]
-  (merge defaults {:Application (lower-case app-name)
-                   :Environment (keyword (lower-case env))
-                   :PrintJson print-json}))
+    (binding [*ns* ns]
+      (clojure.core/refer 'clojure.core)
+      (refer 'clojure.data.json)
+      (refer 'shuppet.core)
+      (refer 'shuppet.util)
+      (refer 'shuppet.securitygroups)
+      (def app-name name)
+      (def environment (keyword environment))
+      (let [config (load-string clojure-string)]
+        (remove-ns (symbol (ns-name ns)))
+        config))))
 
 (defn configure
-  ([app-name env print-json]
-     (let [defaults (execute-string nil (contents (FromGit. env)))]
-       (execute-string (get-default-config app-name
-                                           env
-                                           print-json
-                                           defaults)
-                       (contents (FromGit. app-name))))))
+  ([env app-name print-json]
+     (let [defaults (contents (FromGit.
+                               env))
+           config (contents (FromGit.
+                             app-name))
+           config (execute-string (str defaults "\n" config) app-name env)
+           ]
+       (if print-json
+         (json-str config)
+         (do
+           (ensure-sg (:sg config))
+           (ensure-elb (:elb config)))))))
 
 (defn update
   [env]
