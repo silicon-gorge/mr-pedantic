@@ -135,7 +135,7 @@
       (update-elb name :ApplySecurityGroupsToLoadBalancer :SecurityGroups local))
     config))
 
-(defn ensure-config [local]
+(defn ensure-elb [local]
   (let [local (sg-names-to-ids local)
         remote (find-elb (:LoadBalancerName local))]
     (if remote
