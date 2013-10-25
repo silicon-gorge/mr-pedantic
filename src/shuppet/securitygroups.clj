@@ -136,7 +136,10 @@
    if not present create and apply ingress/outgress
    if present compare with the local config and apply changes if needed"
   [opts]
-  (let [response (process :DescribeSecurityGroups (filter-params opts))]
+  (let [opts (->
+              (assoc opts :Ingress (flatten (:Ingress opts)))
+              (assoc opts :Egress (flatten (:Egress opts))))
+        response (process :DescribeSecurityGroups (filter-params opts))]
     (if-let [sg-id (first (xml-> response :securityGroupInfo :item :groupId text)) ]
       (compare-sg sg-id response opts)
       (build-sg opts))))
