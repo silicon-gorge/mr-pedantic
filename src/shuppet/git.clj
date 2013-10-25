@@ -112,9 +112,9 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   (let [git (Git/open (as-file (repo-path repo-name)))]
     (info "Fetching repository to" (repo-path repo-name))
     (->
-     (.fetch git)
+     (.pull git)
      (.call))
-    (info "Fetch completed.")))
+    (info "Pull completed.")))
 
 (defn- repo-exists?
   [repo-name]
