@@ -120,17 +120,6 @@
     (balance-ingress sg-id ingress)
     (balance-egress sg-id egress)))
 
-(defn- apply-defaults
-  [opts defaults key]
-  (if (empty? (get opts key))
-    (assoc opts key (get defaults key))
-    opts))
-
-(defn ingress-egress
-  [opts defaults]
-  (let [params (apply-defaults opts defaults :Ingress)]
-    (apply-defaults params defaults :Egress)))
-
 (defn ensure-sg
   "Get details of the security group, if one exists
    if not present create and apply ingress/outgress

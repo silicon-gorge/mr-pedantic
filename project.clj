@@ -60,6 +60,9 @@
         :service-graphite-enabled "ENABLED"
         :service-production "false"
 
+        ;;to-check
+        :environment-entertainment-onix-url "http://onix.brislabs.com:8080/1.x"
+
         ;;aws-config
         :service-aws-access-key-id "AKIAI7INFGUXMYXWWBYQ"
         :service-aws-secret-access-key "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"

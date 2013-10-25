@@ -4,15 +4,13 @@
             [shuppet.util :refer :all]
             [shuppet
              [git :as git]
+             [campfire :as cf]
              [securitygroups :refer [ensure-sg]]
              [elb :refer [ensure-elb]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]))
 
-(def ^:const onix-url (or (env :environment-onix-url) "http://onix.brislabs.com:8080/1.x")) ;todo check
-(def ^:const file-ext ".clj")
-
-(declare ^:dynamic default-config)
+(def ^:const onix-url (env :environment-onix-url) ) ;todo check
 
 (defprotocol ApplicationNames
   (list-names
@@ -47,11 +45,11 @@
     [this]
     (git/get-data (lower-case name))))
 
-(defrecord FromFile [^String file-name]
+(defrecord FromFile [^String name]
   Configuration
   (contents
     [this]
-    (slurp file-name)))
+    (slurp (str (lower-case name) ".clj"))))
 
 
 (defn- execute-string
@@ -80,6 +78,7 @@
        (if print-json
          (json-str config)
          (do
+           (cf/set-rooms! (:campfire config))
            (ensure-sg (:sg config))
            (ensure-elb (:elb config)))))))
 
@@ -88,5 +87,5 @@
   (let [names (list-names (NamesFromService. onix-url))]
     (map #(configure % env false) names)))
 
-;(configure  "shuppet-test" "dev" true)
+;(configure  "test" "dev" true)
 ;(update "dev")
