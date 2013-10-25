@@ -9,11 +9,11 @@
    [clojure.zip :as zip]
    [clojure.tools.logging :as log]))
 
-(def ^:const ec2-url (or (env :service-aws-ec2-url) "https://ec2.eu-west-1.amazonaws.com"))
-(def ^:const ec2-version (or (env :service-aws-ec2-api-version) "2013-10-01"))
+(def ^:const ec2-url (env :service-aws-ec2-url))
+(def ^:const ec2-version (env :service-aws-ec2-api-version))
 
-(def ^:const sts-url (or (env :service-aws-sts-url) "https://sts.amazonaws.com"))
-(def ^:const sts-version (or (env :service-aws-sts-api-version) "2011-06-15"))
+(def ^:const sts-url (env :service-aws-sts-url))
+(def ^:const sts-version (env :service-aws-sts-api-version))
 
 (defn ec2-request
   [params]

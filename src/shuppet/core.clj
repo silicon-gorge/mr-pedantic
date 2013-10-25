@@ -2,6 +2,7 @@
   (:require [clojure.string :refer [lower-case]]
             [clojure.data.json :refer [json-str]]
             [shuppet.util :refer :all]
+            [shuppet.git :as git]
             [shuppet.securitygroups :refer :all]
             [clj-http.client :as client]
             [environ.core :refer [env]]))
@@ -21,7 +22,7 @@
   (list-names
     [this]
     (let [response (client/get (str url "/applications") {:as :json
-                                                          :throw-exceptions true})]
+                                                          :throw-exceptions false})]
       (if (= 200 (:status response))
         (get-in response [:body :applications])
         (prn "Cant get a proper response from onix application " response)))))
@@ -38,14 +39,13 @@
     [this]
     "Gets the configuration file contents for evaluation"))
 
-(defrecord GitConfiguration [^String file-name]
+(defrecord FromGit [^String name]
   Configuration
   (contents
     [this]
-   ; (git/contents file-name) todo
-    ))
+    (git/get-data (lower-case name))))
 
-(defrecord FileConfiguration [^String file-name]
+(defrecord FromFile [^String file-name]
   Configuration
   (contents
     [this]
@@ -74,19 +74,17 @@
 
 (defn configure
   ([app-name env print-json]
-     (let [defaults (execute-string nil (contents (FileConfiguration.
-                                                   (str (lower-case env) file-ext))))]
+     (let [defaults (execute-string nil (contents (FromGit. env)))]
        (execute-string (get-default-config app-name
                                            env
                                            print-json
                                            defaults)
-                       (contents (FileConfiguration.
-                                  (str (lower-case app-name) file-ext)))))))
+                       (contents (FromGit. app-name))))))
 
 (defn update
   [env]
   (let [names (list-names (NamesFromService. onix-url))]
     (map #(configure % env false) names)))
 
-;(configure  "test" "dev" false)
+;(configure  "shuppet-test" "dev" true)
 ;(update "dev")

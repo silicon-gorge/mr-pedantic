@@ -26,7 +26,10 @@
                  [nokia/ring-utils "1.0.1"]
                  [metrics-clojure "1.0.1"]
                  [metrics-clojure-ring "1.0.1"]
-                 [commons-collections "3.2.1"]]
+                 [commons-collections "3.2.1"]
+                 [org.eclipse.jgit "3.0.0.201306101825-r"]
+                 [me.raynes/conch "0.5.0"]
+                 [clj-campfire "2.1.0"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
                                    :exclusions [org.slf4j/slf4j-nop
@@ -56,10 +59,21 @@
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
         :service-production "false"
+
+        ;;aws-config
+        :service-aws-access-key-id "AKIAI7INFGUXMYXWWBYQ"
+        :service-aws-secret-access-key "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"
         :service-aws-ec2-url "https://ec2.eu-west-1.amazonaws.com"
         :service-aws-ec2-api-version "2013-10-01"
         :service-aws-elb-url "https://elasticloadbalancing.eu-west-1.amazonaws.com"
         :service-aws-elb-version "2012-06-01"
+        :service-aws-sts-url "https://sts.amazonaws.com"
+        :service-aws-sts-api-version "2011-06-15"
+
+        ;;git-config
+        :service-base-git-repository-url "ssh://snc@source.nokia.com/shuppet/git/"
+        :service-base-git-repository-path "/tmp/repos/"
+        :service-base-git-repository-branch "dev"
         }
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]

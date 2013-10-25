@@ -15,7 +15,8 @@
 (def ^:const hmac-sha256-algorithm  "HmacSHA256")
 (def ^:const new-line "\n")
 
-(defn- current-time []
+(defn- current-time
+  []
   (->>
    (DateTime. (DateTimeZone/UTC))
    (.toString)))
@@ -23,29 +24,35 @@
 (def ^:const aws-access-key-id (env :service-aws-access-key-id))
 (def ^:const aws-access-key-secret (env :service-aws-secret-access-key))
 
-(defn- aws-key []
+(defn- aws-key
+  []
   (if (empty? aws-access-key-id)
     (System/getenv "AWS_ACCESS_KEY_ID")
     aws-access-key-id))
 
-(defn- aws-secret []
+(defn- aws-secret
+  []
   (if (empty? aws-access-key-secret)
     (System/getenv "AWS_SECRET_KEY")
     aws-access-key-secret))
 
-(defn- auth-params []
+(defn- auth-params
+  []
   {"SignatureVersion" "2"
    "AWSAccessKeyId" (aws-key)
    "Timestamp" (current-time)
    "SignatureMethod" hmac-sha256-algorithm})
 
-(defn- bytes [str]
+(defn- bytes
+  [str]
   (.getBytes str "UTF-8"))
 
-(defn- base64 [b]
+(defn- base64
+  [b]
   (Base64/encodeBase64String b))
 
-(defn- get-mac []
+(defn- get-mac
+  []
   (let [signing-key (SecretKeySpec. (bytes (aws-secret)) hmac-sha256-algorithm)
         mac (Mac/getInstance hmac-sha256-algorithm)]
     (.init mac signing-key)
@@ -53,14 +60,16 @@
 
 (def ^:private mac-obj (delay (get-mac)))
 
-(defn- calculate-hmac [data]
+(defn- calculate-hmac
+  [data]
   (try
     (let [raw-mac (.doFinal @mac-obj (bytes data))]
       (base64 raw-mac))
     (catch Exception e
       (log/error e "Failed to generate HMAC"))))
 
-(defn- get-path [url]
+(defn- get-path
+  [url]
   (let [path (.getPath url)]
     (if (empty? path)
       "/"
@@ -72,13 +81,15 @@
   (-> (java.net.URLEncoder/encode s "UTF-8")
       (.replace "+" "%20")))
 
-(defn- build-query-string [params]
+(defn- build-query-string
+  [params]
   (join "&"
         (map (fn [[k v]] (str (url-encode (name k)) "="
                              (url-encode (str v))))
              params)))
 
-(defn- url-to-sign [method host path query-params]
+(defn- url-to-sign
+  [method host path query-params]
   (str (upper-case method)
        new-line
        host
@@ -87,7 +98,8 @@
        new-line
        (build-query-string query-params)))
 
-(defn- generate-signature [method uri query-params]
+(defn- generate-signature
+  [method uri query-params]
   (let [query-params (into (sorted-map) query-params)
         url (URL. uri)
         host (lower-case (.getHost url))
