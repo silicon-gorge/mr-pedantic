@@ -74,6 +74,10 @@
         :service-base-git-repository-url "ssh://snc@source.nokia.com/shuppet/git/"
         :service-base-git-repository-path "/tmp/repos/"
         :service-base-git-repository-branch "dev"
+
+        ;;campfire
+        :service-campfire-api-token "acec839becb8d253b2973f1614d46ce34e640da4"
+        :service-campfire-sub-domain "nokia-entertainment"
         }
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
