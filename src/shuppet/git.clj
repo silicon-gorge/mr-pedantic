@@ -85,14 +85,15 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   (str base-git-path name))
 
 (defn- repo-branch
-  [name]
-  (if (or (= name "dev") (= name "prod"))
+  "Always look for the master branch for the environment default configuration file"
+  [env name]
+  (if (= env name)
     "master"
     base-git-branch))
 
 (defn clone-repo
   "Clones the latest version of the specified repo from GIT."
-  [repo-name]
+  [branch repo-name]
   (info "First ensuring that repository directory does not exist")
   (rm "-rf" (repo-path repo-name))
   (info "Cloning repository to" (repo-path repo-name))
@@ -101,7 +102,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
    (.setURI (repo-url repo-name))
    (.setDirectory (as-file (repo-path repo-name)))
    (.setRemote "origin")
-   (.setBranch (repo-branch repo-name))
+   (.setBranch branch)
    (.setBare false)
    (.call))
   (info "Cloning completed."))
@@ -122,12 +123,12 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- ensure-repo-up-to-date
   "Gets or updates the specified repo from GIT"
-  [repo-name]
+  [branch repo-name]
   (if (repo-exists? repo-name)
     (pull-repo repo-name)
     (do
       (info (str "Repo '" repo-name "' not found - attempting to clone"))
-      (clone-repo repo-name))))
+      (clone-repo branch repo-name))))
 
 (defn- get-head
   "Get the contents of the application config file for head revision"
@@ -146,9 +147,9 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn get-data
    "Fetches the data corresponding to the given application from GIT"
-   [application]
+   [env application]
    (try
-      (ensure-repo-up-to-date application)
+      (ensure-repo-up-to-date (repo-branch env application) application)
       (get-head application)
       (catch InvalidRemoteException e
         (info (str "Can't communicate with remote repo '" application  "': " e))
