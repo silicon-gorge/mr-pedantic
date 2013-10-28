@@ -6,23 +6,28 @@
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
 (defn- create-params [opts]
-  (without-nils {"GroupName" (get opts :GroupName)
-                 "GroupDescription" (get opts :GroupDescription)
-                 "VpcId" (get opts :VpcId)}))
+  (without-nils {"GroupName" (:GroupName opts)
+                 "GroupDescription" (:GroupDescription opts)
+                 "VpcId" (:VpcId opts)}))
 
 (defn- create
   "Creates a security group and returns the id"
   [opts]
   (let [params (create-params opts)]
     (if-let [response (ec2-request (merge params {"Action" "CreateSecurityGroup"}))]
-      (do
-        (xml1-> response :groupId text)))))
+      (xml1-> response :groupId text))))
 
 (defn- process
   [action params]
   (condp = (keyword action)
     :CreateSecurityGroup (create params)
     (ec2-request (merge params {"Action" (name action)}))))
+
+(def vpc-id
+  (delay (let [response (process "DescribeVpcs" nil)]
+           (first (map #(when (= (xml1-> %  :state text) "available")
+                          (xml1-> % :vpcId text))
+                       (xml-> response :vpcSet :item))))))
 
 (defn- network-query-params
   [index [k v]]
@@ -40,9 +45,9 @@
     (process action (merge params {"GroupId" sg-id}))))
 
 (defn- check-default-egress [opts]
-  (let [egress (get opts :Egress)]
-    (filter #(and (not= (get % :IpRanges) "0.0.0.0/0")
-                  (not= (str (get % :IpPermission)) "-1")) egress) ))
+  (let [egress (:Egress opts)]
+    (filter #(and (not= (:IpRanges %) "0.0.0.0/0")
+                  (not= (str (:IpPermission %)) "-1")) egress) ))
 
 (defn- configure-network
   "Applies all the ingress rules to the new security group.
@@ -51,35 +56,12 @@
    If we get a custom egress rules other than the default one, then we revoke the default egress rule
    and apply the custom ones"
   [sg-id opts]
-  (when-let [ingress (get opts :Ingress)]
+  (when-let [ingress (:Ingress opts)]
     (network-action sg-id ingress :AuthorizeSecurityGroupIngress))
   (let [egress (check-default-egress opts)]
     (when-not (empty? egress)
       (network-action sg-id egress :AuthorizeSecurityGroupEgress)
       (network-action sg-id {:IpRanges "0.0.0.0/0" :IpProtocol "-1"} :RevokeSecurityGroupEgress))))
-
-(defn- delete-sg
-  [sg-name]
-  (let [response (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
-                                                   "Filter.1.Value" sg-name})]
-    (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text)]
-      (process :DeleteSecurityGroup {"GroupId" sg-id}))))
-
-(defn- build-sg
-  [opts]
-  (delete-sg (get opts :GroupName))
-  (if-let [sg-id (create opts)]
-    (configure-network sg-id opts)
-    (prn "security group already exists")))
-
-(defn- filter-params
-  [opts]
-  {"Filter.1.Name" "group-name"
-   "Filter.1.Value" (get opts :GroupName)
-   "Filter.2.Name" "vpc-id"
-   "Filter.2.Value" (get opts :VpcId)
-   "Filter.3.Name" "description"
-   "Filter.3.Value" (get opts :GroupDescription)})
 
 (defn- network-config
   [params]
@@ -94,7 +76,7 @@
   {:Ingress (flatten (map network-config (xml-> opts :securityGroupInfo :item :ipPermissions :item)))
    :Egress (flatten (map network-config (xml-> opts :securityGroupInfo :item :ipPermissionsEgress :item)))})
 
-(defn- balance-ingress
+(defn- ensure-ingress
   [sg-id opts]
   (let [revoke-config (nth opts 0)
         add-config (nth opts 1)]
@@ -103,7 +85,7 @@
     (when-not (empty? revoke-config)
       (network-action sg-id revoke-config :RevokeSecurityGroupIngress))))
 
-(defn- balance-egress
+(defn- ensure-egress
   [sg-id opts]
   (let [revoke-config (nth opts 0)
         add-config (nth opts 1)]
@@ -115,10 +97,38 @@
 (defn- compare-sg
   [sg-id aws local]
   (let [remote (build-config aws)
-        ingress (compare-config  (get local :Ingress) (get remote :Ingress))
-        egress  (compare-config (get local :Egress) (get remote :Egress))]
-    (balance-ingress sg-id ingress)
-    (balance-egress sg-id egress)))
+        ingress (compare-config  (:Ingress local) (:Ingress remote))
+        egress  (compare-config (:Egress local) (:Egress remote))]
+    (ensure-ingress sg-id ingress)
+    (ensure-egress sg-id egress)
+    (log/info "Succesfully validated the security group " sg-id "with the shuppet configuration")))
+
+(defn- delete-sg
+  [sg-name]
+  (let [response (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
+                                                   "Filter.1.Value" sg-name})]
+    (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text)]
+      (do
+        (process :DeleteSecurityGroup {"GroupId" sg-id})
+        (log/info  "Succesfully deleted security group " sg-name "with id: " sg-id)))))
+
+(defn- build-sg
+  [opts]
+  (delete-sg (get opts :GroupName))
+  (if-let [sg-id (create opts)]
+    (do
+      (configure-network sg-id opts)
+      (log/info "Succesfully created and configured a security group with the config " opts))
+    (log/error "Security group already exists for the config " opts)))
+
+(defn- filter-params
+  [opts]
+  {"Filter.1.Name" "group-name"
+   "Filter.1.Value" (:GroupName opts)
+   "Filter.2.Name" "vpc-id"
+   "Filter.2.Value" (:VpcId opts)
+   "Filter.3.Name" "description"
+   "Filter.3.Value" (:GroupDescription opts)})
 
 (defn ensure-sg
   "Get details of the security group, if one exists
@@ -126,9 +136,10 @@
    if present compare with the local config and apply changes if needed"
   [opts]
   (let [opts (-> opts
-              (assoc :Ingress (flatten (:Ingress opts)))
-              (assoc :Egress (flatten (:Egress opts))))
+                 (assoc :Ingress (flatten (:Ingress opts)))
+                 (assoc :Egress (flatten (:Egress opts))))
+        opts (merge {:VpcId @vpc-id} opts)
         response (process :DescribeSecurityGroups (filter-params opts))]
-    (if-let [sg-id (first (xml-> response :securityGroupInfo :item :groupId text)) ]
+    (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text) ]
       (compare-sg sg-id response opts)
       (build-sg opts))))

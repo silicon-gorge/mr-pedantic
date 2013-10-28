@@ -8,7 +8,8 @@
              [securitygroups :refer [ensure-sg]]
              [elb :refer [ensure-elb]]]
             [clj-http.client :as client]
-            [environ.core :refer [env]]))
+            [environ.core :refer [env]]
+            [slingshot.slingshot :refer [try+ throw+]]))
 
 (def ^:const onix-url (env :environment-onix-url) ) ;todo check
 
@@ -50,8 +51,8 @@
   (contents
     [this]
     (let [f-name (if (= env name)
-                      (str (lower-case env) ".clj")
-                      (str (lower-case name) ".clj"))
+                   (str (lower-case env) ".clj")
+                   (str (lower-case name) ".clj"))
           res (clojure.java.io/resource f-name)
           resource (if (nil? res) ; will be nil if its executed outside the web context
                      (str  "shared/" f-name)
@@ -88,16 +89,15 @@
            config (execute-string (str defaults "\n" config) app-name env)]
        (if print-json
          (json-str config)
-         (do
-           (set-rooms! (:campfire config))
-           (ensure-sg (:sg config))
-           (ensure-elb (:elb config)))))))
+         (try+
+          (do
+            (set-rooms! (:campfire config))
+            (ensure-sg (:sg config))
+            (ensure-elb (:elb config)))
+          (catch map? error
+            (throw+ (merge error {:name app-name}))))))))
 
 (defn update
   [env]
   (let [names (list-names (NamesFromService. onix-url))]
     (map #(configure % env false) names)))
-
-;(prn (configure  "local" "test" true))
-
-;(update "dev")

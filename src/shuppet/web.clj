@@ -12,7 +12,7 @@
    [clojure.string :refer [split]]
    [clojure.tools.logging :refer [info warn error]]
    [environ.core :refer [env]]
-   [nokia.ring-utils.error :refer [wrap-error-handling error-response]]
+   [shuppet.errorhandler :refer [wrap-error-handling error-response]]
    [nokia.ring-utils.metrics :refer [wrap-per-resource-metrics replace-outside-app
                                      replace-guid replace-mongoid replace-number]]
    [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
@@ -34,7 +34,8 @@
 
   (GET "/:env/application/:name"
        [env name]
-       (core/configure env name false))
+       (core/configure env name false)
+       {:status 200})
 
   (GET "/:env/application/:name/json"
        [env name]

@@ -112,7 +112,7 @@
   ([method uri params]
      (let [query-params (merge params (auth-params))
            signature (generate-signature method uri query-params)
-           query-string (build-query-string (merge {"Signature" signature} query-params))]
+           query-string (build-query-string (into (sorted-map) (merge {"Signature" signature} query-params)))]
        (str uri "?" query-string)))
   ([uri params]
      (build-url "get" uri params)))

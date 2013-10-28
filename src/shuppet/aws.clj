@@ -26,11 +26,13 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw+ {:type ::clj-http
+      (throw+ {:type ::clj-http-ec2
+               :action (get params "Action")
                :status status
                :url url
-               :title  (xml1-> body :Errors :Error :Code text)
-               :message (xml1-> body :Errors :Error :Message text)}))))
+               :message (str (xml1-> body :Errors :Error :Code text)
+                             "\n"
+                             (xml1-> body :Errors :Error :Message text))}))))
 
 (defn elb-request
   [params]
@@ -45,7 +47,8 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw+ {:type ::clj-http :status status
+      (throw+ {:type ::clj-http-elb
+               :status status
                :code (xml1-> body :Error :Code text)
                :message (xml1-> body :Error :Message text) }))))
 

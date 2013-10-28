@@ -8,7 +8,7 @@
 
 {:sg {:GroupName (str app-name "-sg")
       :GroupDescription (str "Security group for application " app-name)
-      :VpcId vpc-id
+      :VpcId @vpc-id
       :Ingress override-sg-ingress
       :Egress override-sg-egress}
  :elb {:LoadBalancerName app-name
