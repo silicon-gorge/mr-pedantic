@@ -3,7 +3,8 @@
    [shuppet.aws :refer [ec2-request]]
    [shuppet.util :refer :all]
    [clojure.tools.logging :as log]
-   [clojure.data.zip.xml :refer [xml1-> text xml->]]))
+   [clojure.data.zip.xml :refer [xml1-> text xml->]]
+   [slingshot.slingshot :refer [try+ throw+]]))
 
 (defn- create-params [opts]
   (without-nils {"GroupName" (:GroupName opts)
@@ -37,7 +38,7 @@
 
 (defn- build-network-params
   [index opts]
-  (into {} (map #(network-query-params index %1) opts)))
+  (into {} (map #(network-query-params index %) opts)))
 
 (defn- network-action
   [sg-id opts action]
@@ -61,7 +62,7 @@
   (let [egress (check-default-egress opts)]
     (when-not (empty? egress)
       (network-action sg-id egress :AuthorizeSecurityGroupEgress)
-      (network-action sg-id {:IpRanges "0.0.0.0/0" :IpProtocol "-1"} :RevokeSecurityGroupEgress))))
+      (network-action sg-id (list {:IpRanges "0.0.0.0/0" :IpProtocol "-1"}) :RevokeSecurityGroupEgress))))
 
 (defn- network-config
   [params]
@@ -114,11 +115,15 @@
 
 (defn- build-sg
   [opts]
-  (delete-sg (get opts :GroupName))
+  (delete-sg (:GroupName opts))
   (if-let [sg-id (create opts)]
-    (do
-      (configure-network sg-id opts)
-      (log/info "Succesfully created and configured a security group with the config " opts))
+    (try+
+     (do
+       (configure-network sg-id opts)
+       (log/info "Succesfully created and configured a security group with the config " opts))
+     (catch map? error
+       (delete-sg (:GroupName opts))
+       (throw+ error)))
     (log/error "Security group already exists for the config " opts)))
 
 (defn- filter-params
@@ -138,7 +143,6 @@
   (let [opts (-> opts
                  (assoc :Ingress (flatten (:Ingress opts)))
                  (assoc :Egress (flatten (:Egress opts))))
-        opts (merge {:VpcId @vpc-id} opts)
         response (process :DescribeSecurityGroups (filter-params opts))]
     (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text) ]
       (compare-sg sg-id response opts)
