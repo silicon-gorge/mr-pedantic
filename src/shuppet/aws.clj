@@ -12,6 +12,9 @@
 (def ^:const ec2-url (env :service-aws-ec2-url))
 (def ^:const ec2-version (env :service-aws-ec2-api-version))
 
+(def ^:const iam-url (env :service-aws-iam-url))
+(def ^:const iam-version (env :service-aws-iam-api-version))
+
 (def ^:const sts-url (env :service-aws-sts-url))
 (def ^:const sts-version (env :service-aws-sts-api-version))
 
@@ -27,6 +30,26 @@
     (if (= 200 status)
       body
       (throw+ {:type ::ec2
+               :action (get params "Action")
+               :status status
+               :url url
+               :message (str (xml1-> body :Errors :Error :Code text)
+                             "\n"
+                             (xml1-> body :Errors :Error :Message text))}))))
+
+(defn iam-request
+  [params]
+  (let [url (urlbuilder/build-url iam-url (merge {"Version" iam-version} params))
+        response (client/get url {:as :stream
+                                  :throw-exceptions false})
+        status (:status response)
+        body (-> (:body response)
+                 (xml/parse)
+                 (zip/xml-zip))]
+    (condp = status
+      200 body
+      404 nil
+      (throw+ {:type ::iam
                :action (get params "Action")
                :status status
                :url url

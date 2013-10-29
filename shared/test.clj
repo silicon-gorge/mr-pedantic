@@ -6,11 +6,16 @@
    (group-record "udp" 80 8090 '("198.0.2.0/24" "198.51.100.0/32"))])
 
 
-{:sg {:GroupName (str app-name "-sg")
-      :GroupDescription (str "Security group for application " app-name)
-      :VpcId @vpc-id
-      :Ingress override-sg-ingress
-      :Egress override-sg-egress}
+{:sg [{:GroupName app-name
+       :GroupDescription (str "Security group for application " app-name)
+       :VpcId vpc-id
+       :Ingress override-sg-ingress
+       :Egress override-sg-egress }
+      {:GroupName (str app-name "-lb")
+       :GroupDescription (str "Security group for load balancer " app-name)
+       :VpcId vpc-id
+       :Ingress override-sg-ingress
+       :Egress override-sg-egress }]
  :elb {:LoadBalancerName app-name
        :Listeners [{:LoadBalancerPort "8080"
                     :InstancePort "8080"
@@ -20,7 +25,7 @@
                     :InstancePort "8080"
                     :Protocol "http"
                     :InstanceProtocol "http"}]
-       :SecurityGroups [(str app-name "-sg")]
+       :SecurityGroups [(str app-name "-lb")]
        :Subnets elb-subnets
        :Scheme "internal"
        :HealthCheck {:Target "HTTP:8080/1.x/ping"

@@ -5,7 +5,7 @@
             [shuppet
              [git :as git]
              [campfire :refer [set-rooms!]]
-             [securitygroups :refer [ensure-sg]]
+             [securitygroups :refer [ensure-sgs]]
              [elb :refer [ensure-elb]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
@@ -92,7 +92,7 @@
          (try+
           (do
             (set-rooms! (:campfire config))
-            (ensure-sg (:sg config))
+            (ensure-sgs (:sg config))
             (ensure-elb (:elb config)))
           (catch map? error
             (throw+ (merge error {:name app-name :env env}))))))))

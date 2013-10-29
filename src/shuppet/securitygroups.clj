@@ -24,12 +24,6 @@
     :CreateSecurityGroup (create params)
     (ec2-request (merge params {"Action" (name action)}))))
 
-(def vpc-id
-  (delay (let [response (process "DescribeVpcs" nil)]
-           (first (map #(when (= (xml1-> %  :state text) "available")
-                          (xml1-> % :vpcId text))
-                       (xml-> response :vpcSet :item))))))
-
 (defn- network-query-params
   [index [k v]]
   (if (= (name k) "IpRanges")
@@ -82,18 +76,22 @@
   (let [revoke-config (nth opts 0)
         add-config (nth opts 1)]
     (when-not (empty? add-config)
-      (network-action sg-id add-config :AuthorizeSecurityGroupIngress))
+      (network-action sg-id add-config :AuthorizeSecurityGroupIngress)
+      (log/info "Added new ingress rule for security group: " sg-id))
     (when-not (empty? revoke-config)
-      (network-action sg-id revoke-config :RevokeSecurityGroupIngress))))
+      (network-action sg-id revoke-config :RevokeSecurityGroupIngress)
+      (log/info "Revoked ingress rule for security group: " sg-id))))
 
 (defn- ensure-egress
   [sg-id opts]
   (let [revoke-config (nth opts 0)
         add-config (nth opts 1)]
     (when-not (empty? add-config)
-      (network-action sg-id add-config :AuthorizeSecurityGroupEgress))
+      (network-action sg-id add-config :AuthorizeSecurityGroupEgress)
+      (log/info "Added new egress rule for security group: " sg-id))
     (when-not (empty? revoke-config)
-      (network-action sg-id revoke-config :RevokeSecurityGroupEgress))))
+      (network-action sg-id revoke-config :RevokeSecurityGroupEgress)
+      (log/info "Revoked egress rule for security group: " sg-id))))
 
 (defn- compare-sg
   [sg-id aws local]
@@ -102,7 +100,7 @@
         egress  (compare-config (:Egress local) (:Egress remote))]
     (ensure-ingress sg-id ingress)
     (ensure-egress sg-id egress)
-    (log/info "Succesfully validated the security group " sg-id "with the shuppet configuration")))
+    (log/info "Succesfully validated the security group " sg-id " with the shuppet configuration")))
 
 (defn- delete-sg
   [sg-name]
@@ -147,3 +145,7 @@
     (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text) ]
       (compare-sg sg-id response opts)
       (build-sg opts))))
+
+(defn ensure-sgs [sg-opts]
+  (doseq [opts sg-opts]
+    (ensure-sg opts)))

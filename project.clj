@@ -72,6 +72,8 @@
         :service-aws-elb-version "2012-06-01"
         :service-aws-sts-url "https://sts.amazonaws.com"
         :service-aws-sts-api-version "2011-06-15"
+        :service-aws-iam-url "https://iam.amazonaws.com"
+        :service-aws-iam-api-version "2010-05-08"
 
         ;;git-config
         :service-base-git-repository-url "ssh://snc@source.nokia.com/shuppet/git/"
