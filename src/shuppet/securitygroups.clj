@@ -2,6 +2,7 @@
   (:require
    [shuppet.aws :refer [ec2-request]]
    [shuppet.util :refer :all]
+   [shuppet.config-util :refer [sg-rule]]
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
    [slingshot.slingshot :refer [try+ throw+]]))
@@ -60,7 +61,7 @@
 
 (defn- network-config
   [params]
-  (group-record (xml1-> params :ipProtocol text)
+  (sg-rule (xml1-> params :ipProtocol text)
                 (xml1-> params :fromPort text)
                 (xml1-> params :toPort text)
                 (vec (xml-> params :ipRanges :item :cidrIp text))))

@@ -2,6 +2,7 @@
   (:require [clojure.string :refer [lower-case]]
             [clojure.data.json :refer [json-str]]
             [shuppet.util :refer :all]
+            [clojure.string :refer [join]]
             [shuppet
              [git :as git]
              [campfire :refer [set-rooms!]]
@@ -61,6 +62,11 @@
           (clojure.java.io/as-file)
           (slurp)))))
 
+(defn- with-vars [vars clojure-string]
+  (str (join (map (fn [[k v]]
+                    (str "(def " (name k) " " (if (string? v) (str "\""v "\"")  v) ")\n"))
+                  vars))
+       clojure-string))
 
 (defn- execute-string
   [clojure-string name environment]
@@ -68,12 +74,9 @@
     (binding [*ns* ns]
       (clojure.core/refer 'clojure.core)
       (refer 'clojure.data.json)
-      (refer 'shuppet.core)
-      (refer 'shuppet.util)
-      (refer 'shuppet.securitygroups)
-      (def app-name name)
-      (def environment (keyword environment))
-      (let [config (load-string clojure-string)]
+      (refer 'shuppet.config-util)
+      (let [config (load-string (with-vars {:app-name name :environment (keyword environment)}
+                                  clojure-string))]
         (remove-ns (symbol (ns-name ns)))
         config))))
 
