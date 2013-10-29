@@ -19,7 +19,8 @@
   [name]
   (process :CreateRole {"RoleName" name
                         "Path" "/"
-                        "AssumeRolePolicyDocument" default-policy}))
+                        "AssumeRolePolicyDocument" default-policy})
+  (log/info "Succesfully created the iam role : " name))
 
 (defn ensure-role
   [name]
@@ -34,7 +35,8 @@
 (defn- add-role-to-profile
   [r-name p-name]
   (process :AddRoleToInstanceProfile {"RoleName" r-name
-                                      "InstanceProfileName" p-name}))
+                                      "InstanceProfileName" p-name})
+  (log/info "Succesfully attached the tole name " r-name " to the profile " p-name))
 
 (defn- ensure-profile-with-role
   [role-name profile-name]
@@ -43,7 +45,8 @@
 
 (defn- create-iprofile
   [name]
-  (process :CreateInstanceProfile {"InstanceProfileName" name}))
+  (process :CreateInstanceProfile {"InstanceProfileName" name})
+  (log/info "Succesfully created the instance profile : " name))
 
 (defn- iprofile-exists?
   [name]

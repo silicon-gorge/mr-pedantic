@@ -29,10 +29,10 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw+ {:type ::ec2
-               :action (get params "Action")
-               :status status
+      (throw+ {:type ::aws
+               :title (str "EC2 request failed while performing security group action '" (get params "Action") "'")
                :url url
+               :status status
                :message (str (xml1-> body :Errors :Error :Code text)
                              "\n"
                              (xml1-> body :Errors :Error :Message text))}))))
@@ -49,19 +49,20 @@
     (condp = status
       200 body
       404 nil
-      (throw+ {:type ::iam
-               :action (get params "Action")
-               :status status
+      (throw+ {:type ::aws
+               :title (str "IAM request failed while performing the action '" (get params "Action") "'")
                :url url
+               :status status
                :message (str (xml1-> body :Errors :Error :Code text)
                              "\n"
                              (xml1-> body :Errors :Error :Message text))}))))
 
 (defn elb-request
   [params]
-  (let [response (client/get (urlbuilder/build-url
+  (let [url (urlbuilder/build-url
                               (env :service-aws-elb-url)
                               (merge {"Version" (env  :service-aws-elb-version)}  params))
+        response (client/get url
                              {:as :stream
                               :throw-exceptions false})
         status (:status response)
@@ -70,7 +71,9 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw+ {:type ::elb
+      (throw+ {:type ::aws
+               :title (str "ELB request failed while performing the action '" (get params "Action") "'")
+               :url url
                :status status
                :code (xml1-> body :Error :Code text)
                :message (xml1-> body :Error :Message text) }))))

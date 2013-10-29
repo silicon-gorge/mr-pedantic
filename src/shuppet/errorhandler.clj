@@ -36,8 +36,10 @@
   [^Exception e id]
   (assoc-in (error-response e) [:body :log-id] id))
 
-(defn- cf-message [title env url message status]
+(defn- cf-message [title env name url message status]
   (str "*******ALERT*******"
+       "\n"
+       "Application: " name
        "\n"
        "Title: " title
        "\n"
@@ -49,11 +51,10 @@
        "\n"
        "Status: " status))
 
-(defn- ec2-message-title [action app-name]
-  (let [message (str "EC2 failure while performing security group action '" action "'")]
-    (if (empty?  app-name)
-      message
-      (str message " for  application '" app-name "'"))))
+(defn- add-name [message app-name]
+  (if (empty? app-name)
+    message
+    (str message " for application '" app-name "'")))
 
 (defn wrap-error-handling
   "A middleware function to add catch and log uncaught exceptions, then return a nice xml  response to the client"
@@ -61,8 +62,8 @@
   (fn [request]
     (try+
      (handler request)
-     (catch [:type :shuppet.aws/ec2] {:keys [env action name url message status]}
-       (cf/send-message (cf-message (ec2-message-title action name) env url message status))
-       (error-response (ec2-message-title action name) url message status))
+     (catch [:type :shuppet.aws/aws] {:keys [title env name url message status]}
+       (cf/send-message (cf-message title env name url message status))
+       (error-response (add-name title name) url message status))
      (catch Throwable e
        (id-error-response e (log/error e request))))))
