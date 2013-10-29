@@ -94,9 +94,9 @@
          (json-str config)
          (try+
           (do
-            (set-rooms! (:campfire config))
-            (ensure-sgs (:sg config))
-            (ensure-elb (:elb config)))
+            (set-rooms! (:Campfire config))
+            (ensure-sgs (:SecurityGroups config))
+            (ensure-elb (:LoadBalancer config)))
           (catch map? error
             (throw+ (merge error {:name app-name :env env}))))))))
 
