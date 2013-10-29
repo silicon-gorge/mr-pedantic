@@ -36,10 +36,12 @@
   [^Exception e id]
   (assoc-in (error-response e) [:body :log-id] id))
 
-(defn- cf-message [title url message status]
+(defn- cf-message [title env url message status]
   (str "*******ALERT*******"
        "\n"
        "Title: " title
+       "\n"
+       "Environment: " env
        "\n"
        "Message: " message
        "\n"
@@ -59,8 +61,8 @@
   (fn [request]
     (try+
      (handler request)
-     (catch [:type :shuppet.aws/clj-http-ec2] {:keys [action name url message status]}
-       (cf/send-message (cf-message (ec2-message-title action name) url message status))
+     (catch [:type :shuppet.aws/ec2] {:keys [env action name url message status]}
+       (cf/send-message (cf-message (ec2-message-title action name) env url message status))
        (error-response (ec2-message-title action name) url message status))
      (catch Throwable e
        (id-error-response e (log/error e request))))))

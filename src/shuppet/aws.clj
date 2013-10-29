@@ -26,7 +26,7 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw+ {:type ::clj-http-ec2
+      (throw+ {:type ::ec2
                :action (get params "Action")
                :status status
                :url url
@@ -47,7 +47,7 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw+ {:type ::clj-http-elb
+      (throw+ {:type ::clj-http
                :status status
                :code (xml1-> body :Error :Code text)
                :message (xml1-> body :Error :Message text) }))))

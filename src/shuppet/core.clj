@@ -95,7 +95,7 @@
             (ensure-sg (:sg config))
             (ensure-elb (:elb config)))
           (catch map? error
-            (throw+ (merge error {:name app-name}))))))))
+            (throw+ (merge error {:name app-name :env env}))))))))
 
 (defn update
   [env]
