@@ -3,12 +3,12 @@
 
 (defn elb-listener
   "http://docs.aws.amazon.com/ElasticLoadBalancing/latest/APIReference/API_Listener.html"
-  [elb-port instance-port elb-protocol & [instance-protocol]]
+  [elb-port instance-port protocol]
   (without-nils
    {:LoadBalancerPort elb-port
     :InstancePort instance-port
-    :Protocol elb-protocol
-    :InstanceProtocol instance-protocol}))
+    :Protocol protocol
+    :InstanceProtocol protocol}))
 
 (defn elb-healthcheck
   "http://docs.aws.amazon.com/ElasticLoadBalancing/latest/APIReference/API_HealthCheck.html"
