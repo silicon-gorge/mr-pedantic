@@ -32,16 +32,16 @@
 
 (defroutes applications-routes
 
-  (GET "/:env/application/:name"
+  (GET "/:env/app/:name/apply"
        [env name]
        (core/configure env name false)
        {:status 200})
 
-  (GET "/:env/application/:name/json"
+  (GET "/:env/app/:name"
        [env name]
        (core/configure env name true))
 
-  (GET "/:env/update"
+  (GET "/:env/apply"
        [env]
        (core/update env)))
 
