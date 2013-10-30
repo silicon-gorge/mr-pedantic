@@ -18,19 +18,22 @@
 (def ^:const sts-url (env :service-aws-sts-url))
 (def ^:const sts-version (env :service-aws-sts-api-version))
 
+(defn- get-message
+  [body]
+  (str (or (xml1-> body :Error :Message text) (xml1-> body :Errors :Error :Message text))))
+
+(defn- get-code
+  [body]
+  (str (or (xml1-> body :Error :Code text) (xml1-> body :Errors :Error :Code text))))
+
 (defn throw-aws-exception
-  [title action url status message]
+  [title action url status body]
   (throw+ {:type ::aws
            :title (str title " request failed while performing the action '" action "'")
            :url url
            :status status
-           :message message}))
-
-(defn- get-message
-  [body]
-  (str (xml1-> body :Errors :Error :Code text)
-       "\n"
-       (xml1-> body :Errors :Error :Message text)))
+           :message (get-message body)
+           :code (get-code body)}))
 
 (defn ec2-request
   [params]
@@ -43,7 +46,7 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw-aws-exception "EC2" (get params "Action") url status (get-message body)))))
+      (throw-aws-exception "EC2" (get params "Action") url status body))))
 
 (defn iam-request
   [params]
@@ -57,7 +60,7 @@
     (condp = status
       200 body
       404 nil
-      (throw-aws-exception "IAM" (get params "Action") url status (get-message body)))))
+      (throw-aws-exception "IAM" (get params "Action") url status body))))
 
 (defn elb-request
   [params]
@@ -73,7 +76,7 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw-aws-exception "ELB" (get params "Action") url status (get-message body))))
+      (throw-aws-exception "ELB" (get params "Action") url status body)))
 
   (defn decode-message
     [encoded-message]
