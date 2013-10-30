@@ -1,6 +1,6 @@
 (ns shuppet.securitygroups
   (:require
-   [shuppet.aws :refer [ec2-request]]
+   [shuppet.aws :refer [ec2-request throw-aws-exception]]
    [shuppet.util :refer :all]
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
@@ -24,10 +24,15 @@
     :CreateSecurityGroup (create params)
     (ec2-request (merge params {"Action" (name action)}))))
 
+(defn- ip-ranges-param [index v]
+  (if (empty? (re-find #"[a-z]*" v))
+    {(str "IpPermissions." index ".IpRanges.1.CidrIp") v}
+    {(str "IpPermissions." index ".Groups.1.GroupId") v}))
+
 (defn- network-query-params
   [index [k v]]
   (if (= (name k) "IpRanges")
-    {(str "IpPermissions." index ".IpRanges.1.CidrIp") v}
+    (ip-ranges-param index v)
     {(str "IpPermissions." index "." (name k)) v}))
 
 (defn- build-network-params
@@ -60,10 +65,12 @@
 
 (defn- network-config
   [params]
-  (sg-rule (xml1-> params :ipProtocol text)
-                (xml1-> params :fromPort text)
-                (xml1-> params :toPort text)
-                (vec (xml-> params :ipRanges :item :cidrIp text))))
+  (let [ip-ranges (vec (xml-> params :ipRanges :item :cidrIp text))
+        ip-ranges (if (empty? ip-ranges) (xml-> params :groups :item :groupId text) ip-ranges)]
+    (sg-rule (xml1-> params :ipProtocol text)
+             (xml1-> params :fromPort text)
+             (xml1-> params :toPort text)
+             ip-ranges)))
 
 
 (defn- build-config
@@ -103,13 +110,11 @@
     (log/info "Succesfully validated the security group " sg-id " with the shuppet configuration")))
 
 (defn- delete-sg
-  [sg-name]
-  (let [response (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
-                                                   "Filter.1.Value" sg-name})]
-    (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text)]
-      (do
-        (process :DeleteSecurityGroup {"GroupId" sg-id})
-        (log/info  "Succesfully deleted security group " sg-name "with id: " sg-id)))))
+  [name]
+  (if-let [id (sg-id name)]
+    (do
+      (process :DeleteSecurityGroup {"GroupId" id})
+      (log/info  "Succesfully deleted security group " name "with id: " id))))
 
 (defn- build-sg
   [opts]
@@ -133,16 +138,39 @@
    "Filter.3.Name" "description"
    "Filter.3.Value" (:GroupDescription opts)})
 
+(defn sg-id
+  [name]
+  (xml1-> (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
+                                                "Filter.1.Value" name})
+              :securityGroupInfo :item :groupId text))
+
+
+(defn- update-sg-id
+  [name]
+  (if (and (empty? (re-find #"[\d\/.]*" name))
+           (empty? (re-find #"^sg-" name)))
+    (if-let [id (sg-id name)]
+      id
+      (throw-aws-exception "EC2"
+                           "DescribeSecurityGroups"
+                           "config-check"
+                           404
+                           (str  "A security group with the name '" name "' cannot be found.")))
+    name))
+
+(defn- update-sg-ids [gress]
+  (map #(update-in % [:IpRanges] update-sg-id) (flatten gress)))
+
 (defn ensure-sg
   "Get details of the security group, if one exists
    if not present create and apply ingress/outgress
    if present compare with the local config and apply changes if needed"
   [opts]
   (let [opts (-> opts
-                 (assoc :Ingress (flatten (:Ingress opts)))
-                 (assoc :Egress (flatten (:Egress opts))))
+                 (assoc :Ingress (update-sg-ids (:Ingress opts)))
+                 (assoc :Egress (update-sg-ids (:Egress opts))))
         response (process :DescribeSecurityGroups (filter-params opts))]
-    (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text) ]
+    (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text)]
       (compare-sg sg-id response opts)
       (build-sg opts))))
 

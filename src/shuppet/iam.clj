@@ -58,6 +58,21 @@
     (create-iprofile name))
   (ensure-profile-with-role name name))
 
+(defn- list-role-policies [r-name]
+  (if-let [response (process :ListRolePolicies {"RoleName" r-name
+                                               "MaxItems" 100})]
+    (xml-> response :ListRolePoliciesResult :PolicyNames :member text)))
+
+(defn- ensure-role-policies
+  [r-name policies]
+  (let [[r l] (compare-config policies (list-role-policies r-name))]
+    (when-not (empty? r)
+      ;remove from remote deleterolepolicy
+      )
+    (when-not (empty? l)
+     ;add to remote putrolepolicy
+      )))
+
 
 (defn- ensure-role-and-profile
   [name]
@@ -65,4 +80,4 @@
   (ensure-iprofile name))
 
 
-;(prn (ensure-role-and-profile "test-role"))
+;(prn (list-role-policies "test-role"))
