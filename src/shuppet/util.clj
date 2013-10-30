@@ -48,11 +48,15 @@
   (into {} (map (fn [[k v]] [k (str v)]) m)))
 
 (defn sg-rule
-  "Creates a Ingress/Egress config for a security group"
+  "Creates a Ingress/Egress config for a security group
+   http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-AuthorizeSecurityGroupEgress.html"
   ([protocol from-port to-port ip-ranges]
-      (let [record (without-nils {:IpProtocol (str protocol)
-                                  :FromPort (str from-port)
-                                  :ToPort (str to-port)})]
-        (map #(merge record {:IpRanges %}) ip-ranges)))
+     (let [record (without-nils {:IpProtocol (str protocol)
+                                 :FromPort (str from-port)
+                                 :ToPort (str to-port)
+                                 :IpRanges ip-ranges})]
+       (if (coll? ip-ranges)
+         (map #(merge record {:IpRanges %}) ip-ranges)
+         record)))
   ([protocol ip-ranges]
      (sg-rule protocol nil nil ip-ranges)))

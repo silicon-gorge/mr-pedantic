@@ -24,6 +24,12 @@
     :CreateSecurityGroup (create params)
     (ec2-request (merge params {"Action" (name action)}))))
 
+(defn sg-id
+  [name]
+  (xml1-> (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
+                                            "Filter.1.Value" name})
+          :securityGroupInfo :item :groupId text))
+
 (defn- ip-ranges-param [index v]
   (if (empty? (re-find #"[a-z]*" v))
     {(str "IpPermissions." index ".IpRanges.1.CidrIp") v}
@@ -71,7 +77,6 @@
              (xml1-> params :fromPort text)
              (xml1-> params :toPort text)
              ip-ranges)))
-
 
 (defn- build-config
   [opts]
@@ -138,13 +143,6 @@
    "Filter.3.Name" "description"
    "Filter.3.Value" (:GroupDescription opts)})
 
-(defn sg-id
-  [name]
-  (xml1-> (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
-                                                "Filter.1.Value" name})
-              :securityGroupInfo :item :groupId text))
-
-
 (defn- update-sg-id
   [name]
   (if (and (empty? (re-find #"[\d\/.]*" name))
@@ -158,7 +156,8 @@
                            (str  "A security group with the name '" name "' cannot be found.")))
     name))
 
-(defn- update-sg-ids [gress]
+(defn- update-sg-ids
+  [gress]
   (map #(update-in % [:IpRanges] update-sg-id) (flatten gress)))
 
 (defn ensure-sg
@@ -174,6 +173,7 @@
       (compare-sg sg-id response opts)
       (build-sg opts))))
 
-(defn ensure-sgs [sg-opts]
+(defn ensure-sgs
+  [sg-opts]
   (doseq [opts sg-opts]
     (ensure-sg opts)))

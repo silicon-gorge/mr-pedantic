@@ -18,11 +18,7 @@
                    :GroupDescription (str "Security group for load balancer " $app-name)
                    :VpcId $vpc-id
                    :Ingress $sg-ingress
-                   :Egress [{:IpRanges "198.0.2.0/24"
-                             :IpProtocol "tcp"
-                             :FromPort 80
-                             :ToPort 8080}
-                            {:IpRanges  "198.51.100.0/24"
+                   :Egress [{:IpRanges ["198.0.2.0/24" "198.51.100.0/24"]
                              :IpProtocol "tcp"
                              :FromPort 80
                              :ToPort 8080}]}]
