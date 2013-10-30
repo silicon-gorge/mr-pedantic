@@ -73,7 +73,6 @@
   (let [ns (-> (java.util.UUID/randomUUID) (str) (symbol) (create-ns))]
     (binding [*ns* ns]
       (clojure.core/refer 'clojure.core)
-      (refer 'clojure.data.json)
       (refer 'shuppet.config-util)
       (let [config (load-string (with-vars {:app-name name :environment (keyword environment)}
                                   clojure-string))]
