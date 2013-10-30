@@ -1,31 +1,37 @@
-(def elb-8080->8080 (elb-listener 8080 8080 "http"))
-(def elb-healthcheck-ping (elb-healthcheck "HTTP:8080/1.x/ping" 2 2 6 5))
-(def elb-sg-name (str app-name "-lb"))
+(def elb-8080->8080  {:LoadBalancerPort 8080
+                      :InstancePort 8080
+                      :Protocol "http"
+                      :InstanceProtocol "http"})
+(def elb-healthcheck-ping {:Target "HTTP:8080/1.x/ping"
+                           :HealthyThreshold 2
+                           :UnhealthyThreshold 2
+                           :Interval 6
+                           :Timeout 5})
+(def elb-sg-name (str $app-name "-lb"))
 
-(def override-sg-ingress
-  [(sg-rule "tcp" 80 8080 ["198.0.2.0/24" "198.51.100.0/24"])])
-
-(def override-sg-egress
-  [(sg-rule "tcp" 80 8090 ["198.0.2.0/24" "198.51.100.0/24"])
-   (sg-rule "udp" 80 8090 ["198.0.2.0/24" "198.51.100.0/32"])])
-
-{:SecurityGroups [{:GroupName app-name
-                   :GroupDescription (str "Security group for application " app-name)
-                   :VpcId vpc-id
-                   :Ingress sg-ingress
-                   :Egress sg-egress}
+{:SecurityGroups [{:GroupName $app-name
+                   :GroupDescription (str "Security group for application " $app-name)
+                   :VpcId $vpc-id
+                   :Ingress $sg-ingress
+                   :Egress $sg-egress}
                   {:GroupName elb-sg-name
-                   :GroupDescription (str "Security group for load balancer " app-name)
-                   :VpcId vpc-id
-                   :Ingress override-sg-ingress
-                   :Egress override-sg-egress }]
+                   :GroupDescription (str "Security group for load balancer " $app-name)
+                   :VpcId $vpc-id
+                   :Ingress $sg-ingress
+                   :Egress [{:IpRanges "198.0.2.0/24"
+                             :IpProtocol "tcp"
+                             :FromPort 80
+                             :ToPort 8080}
+                            {:IpRanges  "198.51.100.0/24"
+                             :IpProtocol "tcp"
+                             :FromPort 80
+                             :ToPort 8080}]}]
 
- :LoadBalancer {:LoadBalancerName app-name
-                :Listeners [elb-8080->8080
-                            (elb-listener 80 8080 "http")]
+ :LoadBalancer {:LoadBalancerName $app-name
+                :Listeners [elb-8080->8080]
                 :SecurityGroups [elb-sg-name]
-                :Subnets elb-subnets
+                :Subnets $elb-subnets
                 :Scheme "internal"
                 :HealthCheck elb-healthcheck-ping}
 
- :Campfire [cf-shuppet]}
+ :Campfire [$cf-shuppet]}

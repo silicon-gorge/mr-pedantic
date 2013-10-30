@@ -46,3 +46,13 @@
 
 (defn values-tostring [m]
   (into {} (map (fn [[k v]] [k (str v)]) m)))
+
+(defn sg-rule
+  "Creates a Ingress/Egress config for a security group"
+  ([protocol from-port to-port ip-ranges]
+      (let [record (without-nils {:IpProtocol (str protocol)
+                                  :FromPort (str from-port)
+                                  :ToPort (str to-port)})]
+        (map #(merge record {:IpRanges %}) ip-ranges)))
+  ([protocol ip-ranges]
+     (sg-rule protocol nil nil ip-ranges)))

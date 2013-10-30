@@ -2,7 +2,6 @@
   (:require
    [shuppet.aws :refer [ec2-request]]
    [shuppet.util :refer :all]
-   [shuppet.config-util :refer [sg-rule]]
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
    [slingshot.slingshot :refer [try+ throw+]]))

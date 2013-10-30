@@ -72,9 +72,8 @@
   [clojure-string name environment]
   (let [ns (-> (java.util.UUID/randomUUID) (str) (symbol) (create-ns))]
     (binding [*ns* ns]
-      (clojure.core/refer 'clojure.core)
-      (refer 'shuppet.config-util)
-      (let [config (load-string (with-vars {:app-name name :environment (keyword environment)}
+      (refer 'clojure.core)
+      (let [config (load-string (with-vars {:$app-name name}
                                   clojure-string))]
         (remove-ns (symbol (ns-name ns)))
         config))))
