@@ -157,8 +157,11 @@
     name))
 
 (defn- update-sg-ids
-  [gress]
-  (map #(update-in % [:IpRanges] update-sg-id) (flatten gress)))
+  [opts]
+  (->> opts
+       (map sg-rule)
+       (flatten)
+       (map #(update-in % [:IpRanges] update-sg-id))))
 
 (defn ensure-sg
   "Get details of the security group, if one exists

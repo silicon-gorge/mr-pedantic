@@ -12,20 +12,24 @@
 {:SecurityGroups [{:GroupName $app-name
                    :GroupDescription (str "Security group for application " $app-name)
                    :VpcId $vpc-id
-                   :Ingress $sg-ingress
+                   :Ingress [{:IpRanges ["sg-14fe1a7b" "Brislabs-SSH"]
+                             :IpProtocol "tcp"
+                             :FromPort 80
+                             :ToPort 8080}]
                    :Egress $sg-egress}
                   {:GroupName elb-sg-name
                    :GroupDescription (str "Security group for load balancer " $app-name)
                    :VpcId $vpc-id
                    :Ingress $sg-ingress
-                   :Egress [{:IpRanges "198.0.2.0/24"
+                   :Egress [{:IpRanges ["198.0.2.0/24" "198.51.100.0/24"]
                              :IpProtocol "tcp"
                              :FromPort 80
                              :ToPort 8080}
-                            {:IpRanges  "198.51.100.0/24"
-                             :IpProtocol "tcp"
+                            {:IpRanges "198.100.2.0/24"
+                             :IpProtocol "udp"
                              :FromPort 80
-                             :ToPort 8080}]}]
+                             :ToPort 8080}
+                            ]}]
 
  :LoadBalancer {:LoadBalancerName $app-name
                 :Listeners [elb-8080->8080]

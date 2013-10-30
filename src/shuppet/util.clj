@@ -59,4 +59,6 @@
          (map #(merge record {:IpRanges %}) ip-ranges)
          record)))
   ([protocol ip-ranges]
-     (sg-rule protocol nil nil ip-ranges)))
+     (sg-rule protocol nil nil ip-ranges))
+  ([{:keys [IpProtocol FromPort ToPort IpRanges]}]
+     (sg-rule IpProtocol FromPort ToPort IpRanges)))
