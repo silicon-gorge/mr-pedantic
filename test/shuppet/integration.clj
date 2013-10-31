@@ -42,6 +42,7 @@
                body (read-body response)]
            response => (contains {:status 200})))
 
-
-
-         )
+   (fact "Test config is applied without errors"
+         (client/get (url+ "/env/dev/app/test/clean"))
+         (client/get (url+ "/env/dev/app/test/apply")) => (contains {:status 200})
+         (client/get (url+ "/env/dev/app/test/clean"))))
