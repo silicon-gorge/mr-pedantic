@@ -7,7 +7,7 @@
              [git :as git]
              [campfire :refer [set-rooms!]]
              [securitygroups :refer [ensure-sgs]]
-             [elb :refer [ensure-elb]]]
+             [elb :refer [ensure-elb delete-elb]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -83,20 +83,29 @@
     (FromFile. env name)
     (FromGit. env name)))
 
+(defn load-config [env app-name]
+  (let [environment (contents (get-configuration env env))
+        application (contents (get-configuration env app-name))]
+    (execute-string (str environment "\n" application) app-name env)))
+
 (defn configure
   ([env app-name print-json]
-     (let [defaults (contents (get-configuration env env))
-           config (contents (get-configuration env app-name))
-           config (execute-string (str defaults "\n" config) app-name env)]
+     (let [config (load-config env app-name)]
        (if print-json
          (json-str config)
          (try+
           (do
             (set-rooms! (:Campfire config))
             (ensure-sgs (:SecurityGroups config))
-            (ensure-elb (:LoadBalancer config)))
+            (ensure-elb config))
           (catch map? error
             (throw+ (merge error {:name app-name :env env}))))))))
+
+(defn clean [environment app-name]
+  (when-not (= "dev" (lower-case (env :environment-name)))
+    (throw+ {:type ::wrong-environment}))
+  (let [config (load-config environment app-name)]
+    (delete-elb config)))
 
 (defn update
   [env]

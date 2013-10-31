@@ -37,6 +37,11 @@
        (core/configure env name false)
        {:status 200})
 
+  (GET "/:env/app/:name/clean"
+       [env name]
+       (core/clean env name)
+       {:status 200})
+
   (GET "/:env/app/:name"
        [env name]
        (core/configure env name true))
