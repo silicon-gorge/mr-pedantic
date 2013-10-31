@@ -43,7 +43,7 @@
    "Timestamp" (current-time)
    "SignatureMethod" hmac-sha256-algorithm})
 
-(defn- bytes
+(defn- to-bytes
   [str]
   (.getBytes str "UTF-8"))
 
@@ -53,7 +53,7 @@
 
 (defn- get-mac
   []
-  (let [signing-key (SecretKeySpec. (bytes (aws-secret)) hmac-sha256-algorithm)
+  (let [signing-key (SecretKeySpec. (to-bytes (aws-secret)) hmac-sha256-algorithm)
         mac (Mac/getInstance hmac-sha256-algorithm)]
     (.init mac signing-key)
     mac))
@@ -63,7 +63,7 @@
 (defn- calculate-hmac
   [data]
   (try
-    (let [raw-mac (.doFinal @mac-obj (bytes data))]
+    (let [raw-mac (.doFinal @mac-obj (to-bytes data))]
       (base64 raw-mac))
     (catch Exception e
       (log/error e "Failed to generate HMAC"))))
