@@ -141,3 +141,12 @@
     ensure-role
     ensure-iprofile
     ensure-policies))
+
+(defn delete-role [config]
+  (let [r-name (get-in config [:IAMPolicies :RoleName])
+        p-names (map :PolicyName (get-in config [:IAMPolicies :Policies]))]
+    (doseq [p-name p-names]
+      (process :DeleteRolePolicy {"RoleName" r-name
+                                  "PolicyName" p-name}))
+    (process :DeleteRole {"RoleName" r-name}))
+  config)

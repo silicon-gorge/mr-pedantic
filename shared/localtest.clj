@@ -38,4 +38,16 @@
                   :Scheme "internal"
                   :HealthCheck elb-healthcheck-ping}]
 
- :Campfire [$cf-shuppet]}
+ :IAMPolicies {:RoleName $app-name
+               :Policies  [{:PolicyName "s3-read-only"
+                            :PolicyDocument [{:Effect "Allow"
+                                              :Action "EC2:Describe*"
+                                              :Resource "*"}
+                                             {:Effect "Allow"
+                                              :Sid "s3ReposReadOnly"
+                                              :Action ["s3:GetObject" "s3:ListBucket"]
+                                              :Resource "*"}]}
+                           {:PolicyName "s3-full-access"
+                            :PolicyDocument [{:Action "s3:*"
+                                              :Resource "*"}]}]}
+  :Campfire [$cf-shuppet]}
