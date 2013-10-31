@@ -1,4 +1,4 @@
-(defproject shuppet "0.0"
+(defproject shuppet "0.1-SNAPSHOT"
   :description "Shuppet service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Shuppet"
 
@@ -100,11 +100,11 @@
                  "rm.brislabs.com"
                  "http://rm.brislabs.com/nexus/content/groups/all-releases"}
 
-  :uberjar-name "shuppet.jar"
+  :uberjar-name "Shuppet.jar"
 
   :resource-paths ["shared"]
 
-  :rpm {:name "shuppet"
+  :rpm {:name "Shuppet1"
         :summary "RPM for Shuppet service"
         :copyright "Nokia 2013"
         :preinstall {:scriptFile "scripts/rpm/preinstall.sh"}
