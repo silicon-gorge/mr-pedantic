@@ -76,16 +76,16 @@
                  (zip/xml-zip))]
     (if (= 200 status)
       body
-      (throw-aws-exception "ELB" (get params "Action") url status body)))
+      (throw-aws-exception "ELB" (get params "Action") url status body))))
 
-  (defn decode-message
-    [encoded-message]
-    (let [url (urlbuilder/build-url "post" sts-url {"Action" "DecodeAuthorizationMessage"
-                                                    "EncodedMessage" encoded-message
-                                                    "Version" sts-version})
-          response (client/post url { :content-type "application/x-www-form-urlencoded; charset=utf-8" :throw-exceptions false})]
-      (prn "Decoded message response = " response)
-      response)))
+(defn decode-message
+  [encoded-message]
+  (let [url (urlbuilder/build-url "post" sts-url {"Action" "DecodeAuthorizationMessage"
+                                                  "EncodedMessage" encoded-message
+                                                  "Version" sts-version})
+        response (client/post url { :content-type "application/x-www-form-urlencoded; charset=utf-8" :throw-exceptions false})]
+    (prn "Decoded message response = " response)
+    response))
 
 (defn security-group-id [group-name]
   (xml1-> (ec2-request {"Action" "DescribeSecurityGroups"
