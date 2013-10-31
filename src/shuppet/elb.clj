@@ -152,4 +152,5 @@
 
 (defn delete-elb [config]
   (elb-request {"Action" "DeleteLoadBalancer"
-                "LoadBalancerName" (get-in config [:LoadBalancer :LoadBalancerName])}))
+                "LoadBalancerName" (get-in config [:LoadBalancer :LoadBalancerName])})
+  config)

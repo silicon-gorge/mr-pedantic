@@ -163,7 +163,7 @@
        (flatten)
        (map #(update-in % [:IpRanges] update-sg-id))))
 
-(defn ensure-sg
+(defn- ensure-sg
   "Get details of the security group, if one exists
    if not present create and apply ingress/outgress
    if present compare with the local config and apply changes if needed"
@@ -177,6 +177,13 @@
       (build-sg opts))))
 
 (defn ensure-sgs
-  [sg-opts]
-  (doseq [opts sg-opts]
-    (ensure-sg opts)))
+  [{:keys [SecurityGroups] :as config}]
+  (doseq [opts SecurityGroups]
+    (ensure-sg opts))
+  config)
+
+(defn delete-sgs
+  [{:keys [SecurityGroups] :as config}]
+  (doseq [group SecurityGroups]
+         (delete-sg (:GroupName group)))
+  config)

@@ -6,7 +6,7 @@
             [shuppet
              [git :as git]
              [campfire :refer [set-rooms!]]
-             [securitygroups :refer [ensure-sgs]]
+             [securitygroups :refer [ensure-sgs delete-sgs]]
              [elb :refer [ensure-elb delete-elb]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
@@ -96,7 +96,7 @@
          (try+
           (do
             (set-rooms! (:Campfire config))
-            (ensure-sgs (:SecurityGroups config))
+            (ensure-sgs config)
             (ensure-elb config))
           (catch map? error
             (throw+ (merge error {:name app-name :env env}))))))))
@@ -105,7 +105,9 @@
   (when-not (= "dev" (lower-case (env :environment-name)))
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
-    (delete-elb config)))
+    (-> config
+        (delete-elb)
+        (delete-sgs))))
 
 (defn update
   [env]
