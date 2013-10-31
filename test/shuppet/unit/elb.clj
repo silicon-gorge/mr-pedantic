@@ -1,7 +1,7 @@
 (ns shuppet.unit.elb
   (:require [cheshire.core :as json]
             [clojure.xml :as xml]
-            [shuppet.aws :refer [elb-request security-group-id]]
+            [shuppet.aws :refer [elb-request]]
             [clojure.zip :as zip :refer [children]]
             [clojure.data.zip.xml :refer [xml1-> xml->]])
   (:import (java.io ByteArrayInputStream))
@@ -32,6 +32,7 @@
 (def to-aws-format @#'shuppet.elb/to-aws-format)
 (def update-elb @#'shuppet.elb/update-elb)
 (def ensure-subnets @#'shuppet.elb/ensure-subnets)
+(def check-fixed-values @#'shuppet.elb/check-fixed-values)
 (def ensure-security-groups @#'shuppet.elb/ensure-security-groups)
 (def ensure-health-check @#'shuppet.elb/ensure-health-check)
 (def ensure-listeners @#'shuppet.elb/ensure-listeners)
@@ -78,9 +79,8 @@
                   (check-string-value xml :missing "value") =>  (throws clojure.lang.ExceptionInfo))
 
             (fact "error when fixed value changed"
-                  (ensure-elb config) => (throws clojure.lang.ExceptionInfo)
-                  (provided
-                   (find-elb anything) => xml))
+                  (let [config (assoc config :LoadBalancerName "wrong")])
+                  (check-fixed-values {:local config :remote xml}) => (throws clojure.lang.ExceptionInfo))
 
             (fact "health check is not created when identical"
                   (ensure-health-check {:local config :remote xml}) => {:local config :remote xml}
@@ -104,11 +104,6 @@
                    (ensure-security-groups {:local config :remote xml}) => {:local config :remote xml}
                    (provided
                     (elb-request anything) => nil))
-
-            (fact "security group names are replaced by ids"
-                  (sg-names-to-ids config) => (assoc config :SecurityGroups ["id"])
-                  (provided
-                   (security-group-id anything) => "id"))
 
             (fact "nothing done when subnets are identical"
                   (ensure-subnets {:local config :remote xml})=> {:local config :remote xml}

@@ -1,7 +1,8 @@
 (ns shuppet.elb
   (:require
    [shuppet
-    [aws :refer [elb-request ec2-request security-group-id]]
+    [securitygroups :refer [sg-id]]
+    [aws :refer [elb-request ec2-request]]
     [util :refer :all]]
    [clj-http.client :as client]
    [clojure.tools.logging :as log]
@@ -11,7 +12,7 @@
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
 (defn- sg-names-to-ids [config]
-  (assoc config :SecurityGroups (map #(security-group-id %) (:SecurityGroups config))))
+  (assoc config :SecurityGroups (map #(sg-id %) (:SecurityGroups config))))
 
 (defn- get-elements [xml path]
   (apply xml-> xml (concat [:DescribeLoadBalancersResult :LoadBalancerDescriptions :member] path)))
