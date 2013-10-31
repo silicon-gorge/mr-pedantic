@@ -1,6 +1,18 @@
 (ns shuppet.util
   (:require [clojure.string :refer [join upper-case]]))
 
+(defn url-encode
+  "The java.net.URLEncoder class encodes for application/x-www-form-urlencoded. (RFC 3986 encoding)"
+  [s]
+  (-> (java.net.URLEncoder/encode s "UTF-8")
+      (.replace "+" "%20")
+      (.replace "*" "%2A")
+      (.replace "%7E" "~")))
+
+(defn url-decode
+  [s]
+  (java.net.URLDecoder/decode s "UTF-8"))
+
 (defn values-to-uppercase [m]
   (into {} (map (fn [[k v]]
                [k (upper-case v)])
@@ -26,10 +38,16 @@
   (map #(children-to-map (:content %))
        children))
 
+(defn- str-val
+  [val]
+  (if (coll? val)
+    val
+    (str val)))
+
 (defn without-nils
   "Remove all keys from a map that have nil/empty values."
   [m]
-  (into {} (filter (comp not empty? str val) m)))
+  (into {} (filter (comp not empty? str-val val) m)))
 
 (defn in?
   "true if seq contains element"

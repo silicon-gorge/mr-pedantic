@@ -1,5 +1,6 @@
 (ns shuppet.urlbuilder
   (:require
+   [shuppet.util :refer [url-encode]]
    [clojure.string :refer [join lower-case upper-case]]
    [clojure.tools.logging :as log]
    [environ.core :refer [env]])
@@ -75,12 +76,6 @@
       "/"
       path)))
 
-(defn- url-encode
-  "The java.net.URLEncoder class encodes for application/x-www-form-urlencoded."
-  [s]
-  (-> (java.net.URLEncoder/encode s "UTF-8")
-      (.replace "+" "%20")))
-
 (defn- build-query-string
   [params]
   (join "&"
@@ -111,8 +106,8 @@
   "Builds a signed url, which can be used with the aws api"
   ([method uri params]
      (let [query-params (merge params (auth-params))
-           signature (generate-signature method uri query-params)
+           signature (generate-signature (name method) uri query-params)
            query-string (build-query-string (into (sorted-map) (merge {"Signature" signature} query-params)))]
        (str uri "?" query-string)))
   ([uri params]
-     (build-url "get" uri params)))
+     (build-url :GET uri params)))

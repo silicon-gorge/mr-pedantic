@@ -48,6 +48,19 @@
       body
       (throw-aws-exception "EC2" (get params "Action") url status body))))
 
+(defn iam-post-request
+  [params]
+  (let [url (urlbuilder/build-url :POST iam-url (merge {"Version" iam-version} params))
+        response (client/post url {:as :stream
+                                  :throw-exceptions false})
+        status (:status response)
+        body (-> (:body response)
+                 (xml/parse)
+                 (zip/xml-zip))]
+    (condp = status
+      200 body
+      (throw-aws-exception "IAM" (get params "Action") url status body))))
+
 (defn iam-request
   [params]
   (let [url (urlbuilder/build-url iam-url (merge {"Version" iam-version} params))
@@ -79,10 +92,10 @@
       (throw-aws-exception "ELB" (get params "Action") url status body))))
 
 (defn decode-message
-  [encoded-message]
-  (let [url (urlbuilder/build-url "post" sts-url {"Action" "DecodeAuthorizationMessage"
-                                                  "EncodedMessage" encoded-message
-                                                  "Version" sts-version})
-        response (client/post url { :content-type "application/x-www-form-urlencoded; charset=utf-8" :throw-exceptions false})]
-    (prn "Decoded message response = " response)
-    response))
+    [encoded-message]
+    (let [url (urlbuilder/build-url "post" sts-url {"Action" "DecodeAuthorizationMessage"
+                                                    "EncodedMessage" encoded-message
+                                                    "Version" sts-version})
+          response (client/post url { :content-type "application/x-www-form-urlencoded; charset=utf-8" :throw-exceptions false})]
+      (prn "Decoded message response = " response)
+      response))
