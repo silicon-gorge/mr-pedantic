@@ -62,8 +62,8 @@
   (fn [request]
     (try+
      (handler request)
-     (catch [:type :shuppet.aws/aws] {:keys [title env name url message status]}
-       (cf/send-message (cf-message title env name url message status))
+     (catch [:type :shuppet.aws/aws] {:keys [title env name url message status cf-rooms]}
+       (cf/send-message (cf-message title env name url message status) cf-rooms)
        (error-response (add-name title name) url message status))
      (catch Throwable e
        (id-error-response e (log/error e request))))))

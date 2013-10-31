@@ -5,7 +5,6 @@
             [clojure.string :refer [join]]
             [shuppet
              [git :as git]
-             [campfire :refer [set-rooms!]]
              [securitygroups :refer [ensure-sgs delete-sgs]]
              [elb :refer [ensure-elbs delete-elbs]]
              [iam :refer [ensure-iam delete-role]]]
@@ -97,7 +96,7 @@
          (try+
           (doto config
             ensure-sgs
-            ensure-elb
+            ensure-elbs
             ensure-iam)
           (catch map? error
             (throw+ (merge error {:name app-name
@@ -108,10 +107,11 @@
   (when-not (= "dev" (lower-case (env :environment-name)))
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
+    (delete-elbs config)
+    (Thread/sleep 2000)
     (doto config
-        delete-elb
-        delete-sgs
-        delete-role)))
+      delete-sgs
+      delete-role)))
 
 (defn update
   [env]
