@@ -136,8 +136,8 @@
       (update-elb name :ApplySecurityGroupsToLoadBalancer :SecurityGroups local))
     config))
 
-(defn ensure-elb [{:keys [LoadBalancer] :as config}]
-  (let [local (sg-names-to-ids LoadBalancer)
+(defn- ensure-elb [config]
+  (let [local (sg-names-to-ids config)
         remote (find-elb (:LoadBalancerName local))]
     (if remote
       (-> {:local local :remote remote}
@@ -148,10 +148,15 @@
           (ensure-listeners))
       (-> local
           (create-elb)
-          (create-healthcheck))))
+          (create-healthcheck)))))
+
+(defn ensure-elbs [{:keys [LoadBalancers] :as config}]
+  (doseq [elb LoadBalancers]
+    (ensure-elb elb))
   config)
 
-(defn delete-elb [config]
-  (elb-request {"Action" "DeleteLoadBalancer"
-                "LoadBalancerName" (get-in config [:LoadBalancer :LoadBalancerName])})
+(defn delete-elbs [{:keys [LoadBalancers] :as config}]
+  (doseq [elb LoadBalancers]
+    (elb-request {"Action" "DeleteLoadBalancer"
+                  "LoadBalancerName" (:LoadBalancerName elb)}))
   config)

@@ -13,9 +13,9 @@
                    :GroupDescription (str "Security group for application " $app-name)
                    :VpcId $vpc-id
                    :Ingress [{:IpRanges ["sg-14fe1a7b" "Brislabs-SSH"]
-                             :IpProtocol "tcp"
-                             :FromPort 80
-                             :ToPort 8080}]
+                              :IpProtocol "tcp"
+                              :FromPort 80
+                              :ToPort 8080}]
                    :Egress $sg-egress}
                   {:GroupName elb-sg-name
                    :GroupDescription (str "Security group for load balancer " $app-name)
@@ -31,11 +31,11 @@
                              :ToPort 8080}
                             ]}]
 
- :LoadBalancer {:LoadBalancerName $app-name
-                :Listeners [elb-8080->8080]
-                :SecurityGroups [elb-sg-name]
-                :Subnets $elb-subnets
-                :Scheme "internal"
-                :HealthCheck elb-healthcheck-ping}
+ :LoadBalancers [{:LoadBalancerName $app-name
+                  :Listeners [elb-8080->8080]
+                  :SecurityGroups [elb-sg-name]
+                  :Subnets $elb-subnets
+                  :Scheme "internal"
+                  :HealthCheck elb-healthcheck-ping}]
 
  :Campfire [$cf-shuppet]}

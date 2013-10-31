@@ -7,7 +7,7 @@
              [git :as git]
              [campfire :refer [set-rooms!]]
              [securitygroups :refer [ensure-sgs delete-sgs]]
-             [elb :refer [ensure-elb delete-elb]]]
+             [elb :refer [ensure-elbs delete-elbs]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -97,7 +97,7 @@
           (do
             (set-rooms! (:Campfire config))
             (ensure-sgs config)
-            (ensure-elb config))
+            (ensure-elbs config))
           (catch map? error
             (throw+ (merge error {:name app-name :env env}))))))))
 
@@ -106,7 +106,7 @@
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
     (-> config
-        (delete-elb)
+        (delete-elbs)
         (delete-sgs))))
 
 (defn update
