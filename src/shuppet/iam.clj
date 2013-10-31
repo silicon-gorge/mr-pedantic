@@ -136,8 +136,8 @@
         (put-role-policy RoleName policy)))))
 
 (defn ensure-iam
-  [opts]
-  (doto opts
+  [{:keys [IAMPolicies]}]
+  (doto IAMPolicies
     ensure-role
     ensure-iprofile
     ensure-policies))
@@ -148,5 +148,4 @@
     (doseq [p-name p-names]
       (process :DeleteRolePolicy {"RoleName" r-name
                                   "PolicyName" p-name}))
-    (process :DeleteRole {"RoleName" r-name}))
-  config)
+    (process :DeleteRole {"RoleName" r-name})))

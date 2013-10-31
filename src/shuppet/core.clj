@@ -7,7 +7,8 @@
              [git :as git]
              [campfire :refer [set-rooms!]]
              [securitygroups :refer [ensure-sgs delete-sgs]]
-             [elb :refer [ensure-elbs delete-elbs]]]
+             [elb :refer [ensure-elbs delete-elbs]]
+             [iam :refer [ensure-iam delete-role]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -94,20 +95,23 @@
        (if print-json
          (json-str config)
          (try+
-          (do
-            (set-rooms! (:Campfire config))
-            (ensure-sgs config)
-            (ensure-elbs config))
+          (doto config
+            ensure-sgs
+            ensure-elb
+            ensure-iam)
           (catch map? error
-            (throw+ (merge error {:name app-name :env env}))))))))
+            (throw+ (merge error {:name app-name
+                                  :env env
+                                  :cf-rooms (:Campfire config)}))))))))
 
 (defn clean [environment app-name]
   (when-not (= "dev" (lower-case (env :environment-name)))
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
-    (-> config
-        (delete-elbs)
-        (delete-sgs))))
+    (doto config
+        delete-elb
+        delete-sgs
+        delete-role)))
 
 (defn update
   [env]

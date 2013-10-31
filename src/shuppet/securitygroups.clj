@@ -177,13 +177,11 @@
       (build-sg opts))))
 
 (defn ensure-sgs
-  [{:keys [SecurityGroups] :as config}]
+  [{:keys [SecurityGroups]}]
   (doseq [opts SecurityGroups]
-    (ensure-sg opts))
-  config)
+    (ensure-sg opts)))
 
 (defn delete-sgs
   [{:keys [SecurityGroups] :as config}]
   (doseq [group SecurityGroups]
-         (delete-sg (:GroupName group)))
-  config)
+         (delete-sg (:GroupName group))))
