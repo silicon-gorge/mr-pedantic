@@ -100,11 +100,11 @@
                  "rm.brislabs.com"
                  "http://rm.brislabs.com/nexus/content/groups/all-releases"}
 
-  :uberjar-name "Shuppet.jar"
+  :uberjar-name "shuppet.jar"
 
   :resource-paths ["shared"]
 
-  :rpm {:name "Shuppet1"
+  :rpm {:name "shuppet"
         :summary "RPM for Shuppet service"
         :copyright "Nokia 2013"
         :preinstall {:scriptFile "scripts/rpm/preinstall.sh"}
@@ -116,13 +116,13 @@
                     :filemode "444"
                     :username "jetty"
                     :groupname "jetty"
-                    :sources {:source [{:location "target/Shuppet.jar"}]}}
+                    :sources {:source [{:location "target/shuppet.jar"}]}}
                    {:directory "/usr/local/jetty/bin"
                     :filemode "744"
                     :username "jetty"
                     :groupname "jetty"
                     :sources {:source [{:location "scripts/bin"}]}}
-                   {:directory "/usr/local/deployment/Shuppet1/bin"
+                   {:directory "/usr/local/deployment/shuppet/bin"
                     :filemode "744"
                     :sources {:source [{:location "scripts/dmt"}]}}
                    {:directory "/etc/rc.d/init.d"
