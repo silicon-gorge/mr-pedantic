@@ -80,3 +80,31 @@
      (sg-rule protocol nil nil ip-ranges))
   ([{:keys [IpProtocol FromPort ToPort IpRanges]}]
      (sg-rule IpProtocol FromPort ToPort IpRanges)))
+
+(defn join-policies
+  [policy-docs]
+  {:Statement (vec (map #(first (:Statement %)) policy-docs))})
+
+(defn- create-policy-statement
+  ([sid effect services actions resources condition]
+     (let [effect (if (empty? effect) "Allow" effect)
+           services (if (string? services) [services] (vec services))
+           actions (if (string? actions) [actions] (vec actions))
+           resources (if (string? resources) [resources] (vec resources))]
+       (without-nils {:Effect effect
+                      :Sid sid
+                      :Principal (without-nils {:Service services})
+                      :Action actions
+                      :Resource resources
+                      :Conditions condition}))))
+
+(defn create-policy
+  "http://docs.aws.amazon.com/IAM/latest/UserGuide/PoliciesOverview.html"
+  ([sid effect services actions resources condition]
+     {:Statement [(create-policy-statement sid effect services actions resources condition)]})
+  ([sid actions resources]
+     (create-policy sid nil nil actions resources nil))
+  ([actions resources]
+     (create-policy nil actions resources))
+  ([{:keys [Sid Effect Service Action Resource Condition]}]
+     (create-policy Sid Effect Service Action Resource Condition)))

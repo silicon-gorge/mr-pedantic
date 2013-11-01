@@ -8,25 +8,8 @@
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
    [slingshot.slingshot :refer [try+ throw+]]))
 
-(defn- create-policy-document
-  ([sid effect services actions resources]
-     (let [effect (if (empty? effect) "Allow" effect)
-           services (if (string? services) [services] (vec services))
-           actions (if (string? actions) [actions] (vec actions))
-           resources (if (string? resources) [resources] (vec resources))]
-       (without-nils {:Effect effect
-                      :Sid sid
-                      :Principal (without-nils {:Service services})
-                      :Action actions
-                      :Resource resources}))))
-
-(defn- create-policy
-  ([sid effect services actions resources]
-     {:Statement [(create-policy-document sid effect services actions resources)]})
-  ([{:keys [Sid Effect Service Action Resource]}]
-     (create-policy Sid Effect Service Action Resource)))
-
-(def default-policy (write-str (create-policy nil "Allow" "ec2.amazonaws.com" "sts:AssumeRole" nil)))
+(def default-role-policy (write-str (create-policy {:Service "ec2.amazonaws.com"
+                                                    :Action "sts:AssumeRole"})))
 
 (defn- process
   [action params]
@@ -42,7 +25,7 @@
   [name]
   (process :CreateRole {"RoleName" name
                         "Path" "/"
-                        "AssumeRolePolicyDocument" default-policy})
+                        "AssumeRolePolicyDocument" default-role-policy})
   (log/info "Succesfully created the iam role : " name))
 
 (defn ensure-role
@@ -82,9 +65,7 @@
     (create-iprofile RoleName))
   (ensure-profile-with-role RoleName RoleName))
 
-(defn- join-policies
-  [policy-docs]
-  {:Statement (vec (map #(first (:Statement %)) policy-docs))})
+
 
 (defn- create-policy-stmt
   [opts]
@@ -127,7 +108,7 @@
         [r l] (compare-config local remote)]
     (when-not (empty? r)
       (doseq [policy r]
-        ;delete it iff the policyname is not present in the local config
+        ;delete the policy iff the policyname is not present in the local config
         ;otherwise put role policy will update the changes on the existing policy.
         (when-not (contains? lp-names (:PolicyName policy))
           (delete-role-policy RoleName policy))))
@@ -136,15 +117,15 @@
         (put-role-policy RoleName policy)))))
 
 (defn ensure-iam
-  [{:keys [IAMPolicies]}]
-  (doto IAMPolicies
+  [{:keys [IAM]}]
+  (doto IAM
     ensure-role
     ensure-iprofile
     ensure-policies))
 
 (defn delete-role [config]
-  (let [r-name (get-in config [:IAMPolicies :RoleName])
-        p-names (map :PolicyName (get-in config [:IAMPolicies :Policies]))]
+  (let [r-name (get-in config [:IAM :RoleName])
+        p-names (map :PolicyName (get-in config [:IAM :Policies]))]
     (doseq [p-name p-names]
       (process :DeleteRolePolicy {"RoleName" r-name
                                   "PolicyName" p-name}))

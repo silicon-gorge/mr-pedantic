@@ -108,7 +108,7 @@
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
     (delete-elbs config)
-    (Thread/sleep 2000)
+    (Thread/sleep 6000)
     (doto config
       delete-sgs
       delete-role)))
