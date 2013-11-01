@@ -119,15 +119,15 @@
         (put-role-policy RoleName policy)))))
 
 (defn ensure-iam
-  [{:keys [IAM]}]
-  (doto IAM
+  [{:keys [Role]}]
+  (doto Role
     ensure-role
     ensure-iprofile
     ensure-policies))
 
 (defn delete-role [config]
-  (let [r-name (get-in config [:IAM :RoleName])
-        p-names (map :PolicyName (get-in config [:IAM :Policies]))]
+  (let [r-name (get-in config [:Role :RoleName])
+        p-names (map :PolicyName (get-in config [:Role :Policies]))]
     (doseq [p-name p-names]
       (process :DeleteRolePolicy {"RoleName" r-name
                                   "PolicyName" p-name}))
