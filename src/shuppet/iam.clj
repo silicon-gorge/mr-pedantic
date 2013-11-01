@@ -92,13 +92,15 @@
 (defn- delete-role-policy
   [r-name {:keys [PolicyName]}]
   (process :DeleteRolePolicy {"RoleName" r-name
-                              "PolicyName" PolicyName}))
+                              "PolicyName" PolicyName})
+  (log/info "Succesfully deleted policy " PolicyName " for role " r-name))
 
 (defn- put-role-policy
   [r-name {:keys [PolicyName PolicyDocument]}]
   (process :PutRolePolicy {"RoleName" r-name
                                  "PolicyName" PolicyName
-                                 "PolicyDocument" PolicyDocument}))
+                                 "PolicyDocument" PolicyDocument})
+  (log/info "Succesfully created/updated policy " PolicyName " for role " r-name " with statement " PolicyDocument))
 
 (defn- ensure-policies
   [{:keys [RoleName Policies]}]
