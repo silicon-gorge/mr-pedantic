@@ -136,25 +136,22 @@
       (update-elb name :ApplySecurityGroupsToLoadBalancer :SecurityGroups local))
     config))
 
-(defn- ensure-elb [config]
-  (let [local (sg-names-to-ids config)
-        remote (find-elb (:LoadBalancerName local))]
-    (if remote
-      (-> {:local local :remote remote}
-          (check-fixed-values)
-          (ensure-health-check)
-          (ensure-security-groups)
-          (ensure-subnets)
-          (ensure-listeners))
-      (-> local
-          (create-elb)
-          (create-healthcheck)))))
+(defn ensure-elb [{:keys [LoadBalancer]}]
+  (when LoadBalancer
+    (let [local (sg-names-to-ids LoadBalancer)
+          remote (find-elb (:LoadBalancerName local))]
+      (if remote
+        (-> {:local local :remote remote}
+            (check-fixed-values)
+            (ensure-health-check)
+            (ensure-security-groups)
+            (ensure-subnets)
+            (ensure-listeners))
+        (-> local
+            (create-elb)
+            (create-healthcheck))))))
 
-(defn ensure-elbs [{:keys [LoadBalancers]}]
-  (doseq [elb LoadBalancers]
-    (ensure-elb elb)))
-
-(defn delete-elbs [{:keys [LoadBalancers] :as config}]
-  (doseq [elb LoadBalancers]
+(defn delete-elb [{:keys [LoadBalancer]}]
+  (when LoadBalancer
     (elb-request {"Action" "DeleteLoadBalancer"
-                  "LoadBalancerName" (:LoadBalancerName elb)})))
+                  "LoadBalancerName" (:LoadBalancerName LoadBalancer)})))

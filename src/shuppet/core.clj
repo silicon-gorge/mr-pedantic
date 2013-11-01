@@ -6,7 +6,7 @@
             [shuppet
              [git :as git]
              [securitygroups :refer [ensure-sgs delete-sgs]]
-             [elb :refer [ensure-elbs delete-elbs]]
+             [elb :refer [ensure-elb delete-elb]]
              [iam :refer [ensure-iam delete-role]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
@@ -96,7 +96,7 @@
          (try+
           (doto config
             ensure-sgs
-            ensure-elbs
+            ensure-elb
             ensure-iam)
           (catch map? error
             (throw+ (merge error {:name app-name
@@ -107,7 +107,7 @@
   (when-not (= "dev" (lower-case (env :environment-name)))
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
-    (delete-elbs config)
+    (delete-elb config)
     (Thread/sleep 6000)
     (doto config
       delete-sgs

@@ -31,12 +31,12 @@
                              :ToPort 8080}
                             ]}]
 
- :LoadBalancers [{:LoadBalancerName $app-name
-                  :Listeners [elb-8080->8080]
-                  :SecurityGroups [elb-sg-name]
-                  :Subnets $elb-subnets
-                  :Scheme "internal"
-                  :HealthCheck elb-healthcheck-ping}]
+ :LoadBalancer {:LoadBalancerName $app-name
+                :Listeners [elb-8080->8080]
+                :SecurityGroups [elb-sg-name]
+                :Subnets $elb-subnets
+                :Scheme "internal"
+                :HealthCheck elb-healthcheck-ping}
 
  :Role {:RoleName $app-name
         :Policies  [{:PolicyName "s3-read-only"
