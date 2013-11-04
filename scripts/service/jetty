@@ -7,13 +7,13 @@
 # Here is a little (and extremely primitive) startup/shutdown script
 # for RedHat systems. It assumes that Jetty lives in /usr/local/jetty,
 # it's run by user 'jetty' and JDK binaries are in /usr/java/default/bin.
-# All this can be changed in the script itself. 
+# All this can be changed in the script itself.
 #
 # Either modify this script for your requirements or just ensure that
 # the following variables are set correctly before calling the script.
-# chkconfig: 345 99 05 
-# description: Runs the Jetty Server 
-# processname: jetty 
+# chkconfig: 345 99 05
+# description: Runs the Jetty Server
+# processname: jetty
 
 #define where jetty is
 GIVEN_HOME="/usr/local/jetty"
@@ -25,9 +25,6 @@ JETTY_USER=${JETTY_USER:-"jetty"}
 
 #make sure java is in your path
 JAVAPTH=${JAVAPTH:-"/usr/java/default/bin"}
-
-#define property file location
-export SERVICE_JVMARGS="-Dconfig=/usr/local/deployment/shuppet/config/post_install.properties"
 
 #define the script to use to start jetty
 JETTYSH=${JETTYSH:-"$JETTY_HOME/bin/start.sh"}
@@ -68,7 +65,7 @@ stop)
         $JETTY_CMD_STOP
     else
         $SUBIT "$JETTY_CMD_STOP"
-    fi 
+    fi
     ;;
 restart)
     $0 stop
