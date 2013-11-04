@@ -33,6 +33,7 @@ IFS="$(echo -e " ")"
 SERVICE_PORT=${SERVICE_PORT:-"8080"}
 STATUS_PATH=${SERVICE_STATUS_PATH:-"/1.x/status"}
 SERVICE_JETTY_START_TIMEOUT_SECONDS=${SERVICE_JETTY_START_TIMEOUT_SECONDS:-"15"}
+SERVICE_LOGGING_PATH=${SERVICE_LOGGING_PATH:-"/var/log"${SERVICE_NAME}}
 
 nohup java $SERVICE_JVMARGS -Dservice.logging.path=${SERVICE_LOGGING_PATH} -jar $JAR_NAME > $LOG_FILE 2> $ERR_FILE < /dev/null &
 
@@ -40,13 +41,13 @@ statusUrl=http://localhost:$SERVICE_PORT$STATUS_PATH
 waitTimeout=$SERVICE_JETTY_START_TIMEOUT_SECONDS
 sleepCounter=0
 sleepIncrement=2
-
+  
 echo "Giving Jetty $waitTimeout seconds to start successfully"
 echo "Using $statusUrl to determine service status"
 
 retVal=0
 
-until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -eq 200 ]
+until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -eq 200 ]  
 do
   if [ $sleepCounter -ge $waitTimeout ]
   then
