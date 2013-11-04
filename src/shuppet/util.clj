@@ -1,5 +1,22 @@
 (ns shuppet.util
-  (:require [clojure.string :refer [join upper-case]]))
+  (:require
+   [clj-time.local :refer [local-now]]
+   [clj-time.format :as format]
+   [clojure.string :refer [join upper-case]]))
+
+(def ^:const new-line "\n")
+
+(def rfc2616-format (format/formatter "EEE, dd MMM yyyy HH:mm:ss 'GMT'"))
+(defn rfc2616-time
+  []
+  (format/unparse rfc2616-format (local-now)))
+
+(defn current-time
+  []
+  (.toString (local-now)))
+
+(def ^:const hmac-sha256-algorithm  "HmacSHA256")
+
 
 (defn url-encode
   "The java.net.URLEncoder class encodes for application/x-www-form-urlencoded. (RFC 3986 encoding)"

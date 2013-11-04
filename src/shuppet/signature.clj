@@ -1,6 +1,6 @@
-(ns shuppet.urlbuilder
+(ns shuppet.signature
   (:require
-   [shuppet.util :refer [url-encode]]
+   [shuppet.util :refer :all]
    [clojure.string :refer [join lower-case upper-case]]
    [clojure.tools.logging :as log]
    [environ.core :refer [env]])
@@ -9,18 +9,7 @@
    [java.net URLEncoder]
    [javax.crypto Mac]
    [javax.crypto.spec SecretKeySpec]
-   [org.apache.commons.codec.binary Base64]
-   [org.joda.time DateTime DateTimeZone]))
-
-
-(def ^:const hmac-sha256-algorithm  "HmacSHA256")
-(def ^:const new-line "\n")
-
-(defn- current-time
-  []
-  (->>
-   (DateTime. (DateTimeZone/UTC))
-   (.toString)))
+   [org.apache.commons.codec.binary Base64]))
 
 (def ^:const aws-access-key-id (env :service-aws-access-key-id))
 (def ^:const aws-access-key-secret (env :service-aws-secret-access-key))
@@ -37,7 +26,7 @@
     (System/getenv "AWS_SECRET_KEY")
     aws-access-key-secret))
 
-(defn- auth-params
+(defn- v2-auth-params
   []
   {"SignatureVersion" "2"
    "AWSAccessKeyId" (aws-key)
@@ -102,12 +91,12 @@
         data (url-to-sign method host path query-params)]
     (calculate-hmac data)))
 
-(defn build-url
-  "Builds a signed url, which can be used with the aws api"
-  ([method uri params]
-     (let [query-params (merge params (auth-params))
+(defn v2-url
+  "Builds a v2 signed url, which can be used with the aws api"
+  ([method uri opts]
+     (let [query-params (merge opts (v2-auth-params))
            signature (generate-signature (name method) uri query-params)
            query-string (build-query-string (into (sorted-map) (merge {"Signature" signature} query-params)))]
        (str uri "?" query-string)))
   ([uri params]
-     (build-url :GET uri params)))
+     (v2-url :GET uri params)))

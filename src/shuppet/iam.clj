@@ -2,7 +2,6 @@
   (:require
    [shuppet.aws :refer [iam-request iam-post-request]]
    [shuppet.util :refer :all]
-   [shuppet.policy :refer :all]
    [clojure.data.json :refer [write-str]]
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
