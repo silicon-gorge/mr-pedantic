@@ -48,7 +48,7 @@
             [lein-release "1.0.73"]]
 
   ;; development token values
-  :env {:environment-name "Dev"
+  :env {:environment-name "poke"
         :service-name "shuppet"
         :service-port "8080"
         :service-url "http://localhost:%s/1.x"

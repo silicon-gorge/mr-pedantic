@@ -104,7 +104,7 @@
                                   :cf-rooms (:Campfire config)}))))))))
 
 (defn clean [environment app-name]
-  (when-not (= "dev" (lower-case (env :environment-name)))
+  (when-not (= "poke" (lower-case (env :environment-name)))
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
     (delete-elb config)
