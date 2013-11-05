@@ -54,10 +54,7 @@
     (let [f-name (if (= env name)
                    (str (lower-case env) ".clj")
                    (str (lower-case name) ".clj"))
-          res (clojure.java.io/resource f-name)
-          resource (if (nil? res) ; will be nil if its executed outside the web context
-                     (str  "shared/" f-name)
-                     res)]
+          resource (str  "test/shuppet/resources/" f-name)]
       (-> resource
           (clojure.java.io/as-file)
           (slurp)))))
