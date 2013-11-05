@@ -1,12 +1,14 @@
 (ns shuppet.core
   (:require [clojure.string :refer [lower-case]]
+            [clojure.data.json :refer [json-str]]
             [shuppet.util :refer :all]
             [clojure.string :refer [join]]
             [shuppet
              [git :as git]
              [securitygroups :refer [ensure-sgs delete-sgs]]
              [elb :refer [ensure-elb delete-elb]]
-             [iam :refer [ensure-iam delete-role]]]
+             [iam :refer [ensure-iam delete-role]]
+             [s3 :refer [ensure-s3s delete-s3s]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -94,7 +96,8 @@
         (doto config
           ensure-sgs
           ensure-elb
-          ensure-iam)
+          ensure-iam
+          ensure-s3s)
         (catch map? error
           (throw+ (merge error {:name app-name
                                 :env env
@@ -113,7 +116,8 @@
     (Thread/sleep 6000)
     (doto config
       delete-sgs
-      delete-role)))
+      delete-role
+      delete-s3s)))
 
 (defn update-configs
   [env]

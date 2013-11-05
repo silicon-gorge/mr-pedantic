@@ -1,6 +1,6 @@
 (ns shuppet.securitygroups
   (:require
-   [shuppet.aws :refer [ec2-request throw-aws-exception]]
+   [shuppet.aws :refer [ec2-request]]
    [shuppet.util :refer :all]
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
@@ -182,6 +182,6 @@
     (ensure-sg opts)))
 
 (defn delete-sgs
-  [{:keys [SecurityGroups] :as config}]
+  [{:keys [SecurityGroups]}]
   (doseq [group SecurityGroups]
          (delete-sg (:GroupName group))))

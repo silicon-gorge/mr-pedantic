@@ -7,7 +7,7 @@
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
    [slingshot.slingshot :refer [try+ throw+]]))
 
-(def default-role-policy (write-str (create-policy {:Service "ec2.amazonaws.com"
+(def default-role-policy (write-str (create-policy {:Principal {:Service "ec2.amazonaws.com"}
                                                     :Action "sts:AssumeRole"})))
 
 (defn- process

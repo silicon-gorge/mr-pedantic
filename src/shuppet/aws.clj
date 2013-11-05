@@ -4,6 +4,7 @@
    [slingshot.slingshot :refer [throw+ try+]]
    [environ.core :refer [env]]
    [shuppet.signature :as sign]
+   [shuppet.util :refer :all]
    [clojure.data.zip.xml :refer [xml1-> text]]
    [clojure.xml :as xml]
    [clojure.zip :as zip]
@@ -17,23 +18,6 @@
 
 (def ^:const sts-url (env :service-aws-sts-url))
 (def ^:const sts-version (env :service-aws-sts-api-version))
-
-(defn- get-message
-  [body]
-  (str (or (xml1-> body :Error :Message text) (xml1-> body :Errors :Error :Message text))))
-
-(defn- get-code
-  [body]
-  (str (or (xml1-> body :Error :Code text) (xml1-> body :Errors :Error :Code text))))
-
-(defn throw-aws-exception
-  [title action url status body]
-  (throw+ {:type ::aws
-           :title (str title " request failed while performing the action '" action "'")
-           :url url
-           :status status
-           :message (get-message body)
-           :code (get-code body)}))
 
 (defn ec2-request
   [params]

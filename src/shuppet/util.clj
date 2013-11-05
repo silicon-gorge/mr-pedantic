@@ -2,7 +2,9 @@
   (:require
    [clj-time.local :refer [local-now]]
    [clj-time.format :as format]
-   [clojure.string :refer [join upper-case]]))
+   [clojure.string :refer [join upper-case]]
+   [slingshot.slingshot :refer [try+ throw+]]
+   [clojure.data.zip.xml :refer [xml1-> text]]))
 
 (def ^:const new-line "\n")
 
@@ -16,6 +18,7 @@
   (.toString (local-now)))
 
 (def ^:const hmac-sha256-algorithm  "HmacSHA256")
+(def ^:const hmac-sha1-algorithm  "HmacSHA1")
 
 
 (defn url-encode
@@ -82,6 +85,27 @@
 (defn values-tostring [m]
   (into {} (map (fn [[k v]] [k (str v)]) m)))
 
+(defn- get-message
+  [body]
+  (str (or (xml1-> body :Message text)
+           (xml1-> body :Error :Message text)
+           (xml1-> body :Errors :Error :Message text))))
+
+(defn- get-code
+  [body]
+  (str (or (xml1-> body :Code text)
+           (xml1-> body :Error :Code text)
+           (xml1-> body :Errors :Error :Code text))))
+
+(defn throw-aws-exception
+  [title action url status body]
+  (throw+ {:type ::aws
+           :title (str title " request failed while performing the action '" action "'")
+           :url url
+           :status status
+           :message (get-message body)
+           :code (get-code body)}))
+
 (defn sg-rule
   "Creates a Ingress/Egress config for a security group
    http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-AuthorizeSecurityGroupEgress.html"
@@ -102,26 +126,40 @@
   [policy-docs]
   {:Statement (vec (map #(first (:Statement %)) policy-docs))})
 
+(defn- to-vec
+  [item]
+ (if (string? item) [item] (vec item)))
+
 (defn- create-policy-statement
-  ([sid effect services actions resources condition]
-     (let [effect (if (empty? effect) "Allow" effect)
-           services (if (string? services) [services] (vec services))
-           actions (if (string? actions) [actions] (vec actions))
-           resources (if (string? resources) [resources] (vec resources))]
+  ([sid effect principal action resource conditions]
+     (let [effect (if (empty? effect) "Allow" effect)]
        (without-nils {:Effect effect
                       :Sid sid
-                      :Principal (without-nils {:Service services})
-                      :Action actions
-                      :Resource resources
-                      :Conditions condition}))))
+                      :Principal principal
+                      :Action (to-vec action)
+                      :Resource (to-vec resource)
+                      :Conditions conditions}))))
 
 (defn create-policy
   "http://docs.aws.amazon.com/IAM/latest/UserGuide/PoliciesOverview.html"
-  ([sid effect services actions resources condition]
-     {:Statement [(create-policy-statement sid effect services actions resources condition)]})
-  ([sid actions resources]
-     (create-policy sid nil nil actions resources nil))
-  ([actions resources]
-     (create-policy nil actions resources))
-  ([{:keys [Sid Effect Service Action Resource Condition]}]
-     (create-policy Sid Effect Service Action Resource Condition)))
+  ([sid effect principal action resource conditions]
+     {:Statement [(create-policy-statement sid effect principal action resource conditions)]})
+  ([sid action resource]
+     (create-policy sid nil nil action resource nil))
+  ([action resource]
+     (create-policy nil action resource))
+  ([{:keys [Sid Effect Principal Action Resource Conditions]}]
+     (create-policy Sid Effect Principal Action Resource Conditions)))
+
+(defn- create-grant
+  [display-name permission keyword value]
+  {:DisplayName display-name
+   :Permission permission
+   keyword value})
+
+(defn create-acl
+  [display-name {:keys [Permission ID URI EmailAddress]}]
+  (let [id-grants (map #(create-grant display-name Permission :ID %) (to-vec ID))
+        uri-grants (map #(create-grant display-name Permission :URI %) (to-vec URI))
+        email-grants (map #(create-grant display-name Permission :EmailAddress %) (to-vec EmailAddress))]
+    (vec (distinct (concat id-grants uri-grants email-grants)))))

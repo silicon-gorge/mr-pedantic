@@ -38,6 +38,7 @@
                 :Scheme "internal"
                 :HealthCheck elb-healthcheck-ping}
 
+
  :Role {:RoleName $app-name
         :Policies  [{:PolicyName "s3-read-only"
                      :PolicyDocument [{:Effect "Allow"
@@ -45,9 +46,26 @@
                                        :Resource "*"}
                                       {:Effect "Allow"
                                        :Sid "s3ReposReadOnly"
+                                       :Principal {:AWS ["arn:aws:iam::513894612423:user/amanas"]}
                                        :Action ["s3:GetObject" "s3:ListBucket"]
                                        :Resource "*"}]}
                     {:PolicyName "s3-full-access"
                      :PolicyDocument [{:Action "s3:*"
                                        :Resource "*"}]}]}
+
+ :S3 [{:BucketName "shuppet-test"
+       :Id "local-test"
+       :Statement [{:Sid "1"
+                    :Principal {:AWS ["arn:aws:iam::513894612423:user/bot/bakins"]}
+                    :Action "s3:*"
+                    :Resource "arn:aws:s3:::shuppet-test/*"}
+                   {:Sid "2"
+                    :Principal {:AWS ["arn:aws:iam::513894612423:user/bot/bakins"]}
+                    :Action "s3:*"
+                    :Resource "arn:aws:s3:::shuppet-test/*"}]
+       :AccessControlPolicy {:Owner {:ID "9de2bfc0800fb4335f649e259431d7dca8bbce19b39e98bfed0fb70911b8e9bb"
+                                     :DisplayName "I_EXT_AWS_ENTERTAINMENT_RD"}
+                             :AccessControlList [{:Permission "FULL_CONTROL"
+                                                  :ID "9de2bfc0800fb4335f649e259431d7dca8bbce19b39e98bfed0fb70911b8e9bb"}]}}]
+
  :Campfire [$cf-shuppet]}
