@@ -41,11 +41,11 @@
     [this]
     "Gets the configuration file contents for evaluation"))
 
-(defrecord FromGit [^String env ^String name]
+(defrecord FromGit [^String env ^String filename]
   Configuration
   (contents
     [this]
-    (git/get-data (lower-case env) (lower-case name))))
+    (git/get-data (lower-case env) (lower-case filename))))
 
 (defrecord FromFile [^String env ^String name]
   Configuration
@@ -69,11 +69,11 @@
        clojure-string))
 
 (defn- execute-string
-  [clojure-string name environment]
+  [clojure-string & [app-name]]
   (let [ns (-> (java.util.UUID/randomUUID) (str) (symbol) (create-ns))]
     (binding [*ns* ns]
       (refer 'clojure.core)
-      (let [config (load-string (with-vars {:$app-name name}
+      (let [config (load-string (with-vars {:$app-name app-name}
                                   clojure-string))]
         (remove-ns (symbol (ns-name ns)))
         config))))
@@ -83,13 +83,16 @@
     (FromFile. env name)
     (FromGit. env name)))
 
-(defn load-config [env app-name]
-  (let [environment (contents (get-configuration env env))
-        application (contents (get-configuration env app-name))]
-    (execute-string (str environment "\n" application) app-name env)))
+(defn load-config
+  [env app-name]
+  (let [environment (contents (get-configuration env env))]
+    (if app-name
+      (let [application (contents (get-configuration env app-name))]
+        (execute-string (str environment "\n" application) app-name))
+      (execute-string environment))))
 
 (defn configure
-  ([env app-name print-json]
+  ([env print-json & [app-name]]
      (let [config (load-config env app-name)]
        (if print-json
          (json-str config)
@@ -116,4 +119,4 @@
 (defn update
   [env]
   (let [names (list-names (NamesFromService. onix-url))]
-    (map #(configure % env false) names)))
+    (map #(configure env false %) names)))

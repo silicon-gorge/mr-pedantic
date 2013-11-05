@@ -34,7 +34,7 @@
 
   (GET "/:env/app/:name/apply"
        [env name]
-       (core/configure env name false)
+       (core/configure env false name)
        {:status 200})
 
   (GET "/:env/app/:name/clean"
@@ -42,11 +42,15 @@
        (core/clean env name)
        {:status 200})
 
+  (GET "/:env"
+       [env]
+       (core/configure env true))
+
   (GET "/:env/app/:name"
        [env name]
-       (core/configure env name true))
+       (core/configure env true name))
 
-  (GET "/:env/apply"
+  (GET "/:env/app/apply"
        [env]
        (core/update env)))
 
