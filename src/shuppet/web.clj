@@ -1,10 +1,12 @@
 (ns shuppet.web
   (:require
    [shuppet.core :as core]
+   [clojure.data.json :refer [write-str]]
    [compojure.core :refer [defroutes context GET PUT POST DELETE]]
    [compojure.route :as route]
    [compojure.handler :as handler]
    [ring.middleware.format-response :refer [wrap-json-response]]
+   [ring.util.response :as ring-response]
    [ring.middleware.json-params :refer [wrap-json-params]]
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
@@ -24,40 +26,37 @@
   [version]
   (alter-var-root #'*version* (fn [_] version)))
 
-(defn response
-  [data content-type & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" content-type}
-   :body data})
-
 (defroutes applications-routes
 
   (GET "/:env/app/:name/apply"
        [env name]
-       (core/configure env false name)
+       (core/apply-config env name)
        {:status 200})
 
   (GET "/:env/app/:name/clean"
        [env name]
-       (core/clean env name)
+       (core/clean-config env name)
        {:status 200})
 
   (GET "/:env"
        [env]
-       (core/configure env true))
+       (->  (ring-response/response (-> (core/get-config env) (write-str)))
+            (ring-response/content-type "application/json")))
 
   (GET "/:env/apply"
        [env]
-       (core/configure env false)
+       (core/apply-config env)
        {:status 200})
 
-  (GET "/:env/app/:name"
-       [env name]
-       (core/configure env true name))
+  (GET "/:env/app/:app-name"
+       [env app-name]
+       (->  (ring-response/response (-> (core/get-config env app-name) (write-str)))
+            (ring-response/content-type "application/json")))
 
   (GET "/:env/app/apply"
        [env]
-       (core/update env)))
+       (core/update-configs env)
+       {:status 200}))
 
 (defroutes routes
   (context
@@ -83,7 +82,8 @@
 
   (GET "/healthcheck"
        []
-       (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
+       (->  (ring-response/response "I am healthy. Thank you for asking.")
+            (ring-response/content-type  "text/plain;charset=utf-8")))
 
   (route/not-found (error-response "Resource not found" 404)))
 

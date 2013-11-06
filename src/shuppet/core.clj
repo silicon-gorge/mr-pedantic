@@ -1,6 +1,5 @@
 (ns shuppet.core
   (:require [clojure.string :refer [lower-case]]
-            [clojure.data.json :refer [json-str]]
             [shuppet.util :refer :all]
             [clojure.string :refer [join]]
             [shuppet
@@ -88,22 +87,25 @@
         (execute-string (str environment "\n" application) app-name))
       (execute-string environment))))
 
-(defn configure
-  ([env print-json & [app-name]]
+(defn apply-config
+  ([env & [app-name]]
      (let [config (load-config env app-name)]
-       (if print-json
-         (json-str config)
-         (try+
-          (doto config
-            ensure-sgs
-            ensure-elb
-            ensure-iam)
-          (catch map? error
-            (throw+ (merge error {:name app-name
-                                  :env env
-                                  :cf-rooms (:Campfire config)}))))))))
+       (try+
+        (doto config
+          ensure-sgs
+          ensure-elb
+          ensure-iam)
+        (catch map? error
+          (throw+ (merge error {:name app-name
+                                :env env
+                                :cf-rooms (:Campfire config)})))))))
 
-(defn clean [environment app-name]
+(defn get-config
+  ([env & [app-name]]
+     (load-config env app-name)))
+
+
+(defn clean-config [environment app-name]
   (when-not (= "poke" (lower-case (env :environment-name)))
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
@@ -113,7 +115,7 @@
       delete-sgs
       delete-role)))
 
-(defn update
+(defn update-configs
   [env]
   (let [names (list-names (NamesFromService. onix-url))]
-    (map #(configure env false %) names)))
+    (map #(apply-config env %) names)))
