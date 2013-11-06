@@ -119,10 +119,11 @@
 
 (defn ensure-iam
   [{:keys [Role]}]
-  (doto Role
-    ensure-role
-    ensure-iprofile
-    ensure-policies))
+  (when Role
+    (doto Role
+      ensure-role
+      ensure-iprofile
+      ensure-policies)))
 
 (defn delete-role [config]
   (let [r-name (get-in config [:Role :RoleName])
