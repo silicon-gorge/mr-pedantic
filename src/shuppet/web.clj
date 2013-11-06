@@ -46,6 +46,11 @@
        [env]
        (core/configure env true))
 
+  (GET "/:env/apply"
+       [env]
+       (core/configure env false)
+       {:status 200})
+
   (GET "/:env/app/:name"
        [env name]
        (core/configure env true name))
