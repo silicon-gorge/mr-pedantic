@@ -2,7 +2,7 @@
 
 SERVICE_NAME=shuppet
 
-PIDS=$(pgrep java -lf | grep shuppet | cut -d" " -f1);
+PIDS=$(pgrep java -lf | grep $SERVICE_NAME | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then
@@ -10,8 +10,8 @@ then
   exit 1
 fi
 
-JETTY_HOME=/usr/local/jetty
-JAR_NAME=$JETTY_HOME/${SERVICE_NAME}.jar
+JETTY_HOME=/usr/local/$SERVICE_NAME
+JAR_NAME=$JETTY_HOME/$SERVICE_NAME.jar
 LOG_FILE=$JETTY_HOME/log/jetty.log
 ERR_FILE=$JETTY_HOME/log/jetty.err
 
@@ -32,7 +32,7 @@ IFS="$(echo -e " ")"
 
 SERVICE_PORT=${SERVICE_PORT:-"8080"}
 STATUS_PATH=${SERVICE_STATUS_PATH:-"/1.x/status"}
-SERVICE_JETTY_START_TIMEOUT_SECONDS=${SERVICE_JETTY_START_TIMEOUT_SECONDS:-"15"}
+SERVICE_JETTY_START_TIMEOUT_SECONDS=${SERVICE_JETTY_START_TIMEOUT_SECONDS:-"60"}
 SERVICE_LOGGING_PATH=${SERVICE_LOGGING_PATH:-"/var/log"${SERVICE_NAME}}
 
 nohup java $SERVICE_JVMARGS -Dservice.logging.path=${SERVICE_LOGGING_PATH} -jar $JAR_NAME > $LOG_FILE 2> $ERR_FILE < /dev/null &
@@ -52,7 +52,7 @@ do
   if [ $sleepCounter -ge $waitTimeout ]
   then
     echo "Jetty didn't start within $waitTimeout seconds."
-    PIDS=$(pgrep java -lf | grep shuppet | cut -d" " -f1);
+    PIDS=$(pgrep java -lf | grep $SERVICE_NAME | cut -d" " -f1);
     if [ -n "$PIDS" ]
 	then
 	  echo "Killing $PIDS";

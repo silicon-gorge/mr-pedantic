@@ -2,8 +2,8 @@
 
 if [ "$1" = 0 ]
 then
-  /usr/sbin/userdel -r jetty 2> /dev/null || :
-  /bin/rm -rf /usr/local/jetty
+  /usr/sbin/userdel -r shuppet 2> /dev/null || :
+  /bin/rm -rf /usr/local/shuppet
 fi
 
 /bin/echo "postremove script finished"

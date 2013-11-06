@@ -1,7 +1,8 @@
 /bin/echo "preremove script started [$1]"
 
-prefixDir=/usr/local/jetty
-identifier=shuppet.jar
+SERVICE_NAME=shuppet
+prefixDir=/usr/local/$SERVICE_NAME
+identifier=$SERVICE_NAME.jar
 
 isJettyRunning=`pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l`
 if [ $isJettyRunning -eq 0 ]
@@ -13,10 +14,10 @@ else
   waitTimeOut=600
   /bin/echo "Timeout is $waitTimeOut seconds"
   /bin/echo "Jetty is running, stopping service"
-  /sbin/service jetty stop &
+  /sbin/service $SERVICE_NAME stop &
   myPid=$!
-  
-  until [ `pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l` -eq 0 ]  
+
+  until [ `pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l` -eq 0 ]
   do
     if [ $sleepCounter -ge $waitTimeOut ]
     then
@@ -35,9 +36,9 @@ fi
 
 if [ "$1" = 0 ]
 then
-  /sbin/chkconfig --del jetty
+  /sbin/chkconfig --del $SERVICE_NAME
 else
-  /sbin/chkconfig --list jetty
+  /sbin/chkconfig --list $SERVICE_NAME
 fi
 
 /bin/echo "preremove script finished"

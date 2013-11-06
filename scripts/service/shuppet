@@ -12,16 +12,16 @@
 # Either modify this script for your requirements or just ensure that
 # the following variables are set correctly before calling the script.
 # chkconfig: 345 99 05
-# description: Runs the Jetty Server
-# processname: jetty
+# description: Runs Shuppet
+# processname: shuppet
 
 #define where jetty is
-GIVEN_HOME="/usr/local/jetty"
+GIVEN_HOME="/usr/local/shuppet"
 
 JETTY_HOME=${JETTY_HOME:-"$GIVEN_HOME"}
 
 #define the user under which jetty will run, or use 'RUNASIS' to run as the current user
-JETTY_USER=${JETTY_USER:-"jetty"}
+JETTY_USER=${JETTY_USER:-"shuppet"}
 
 #make sure java is in your path
 JAVAPTH=${JAVAPTH:-"/usr/java/default/bin"}
