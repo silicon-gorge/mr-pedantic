@@ -64,8 +64,6 @@
     (create-iprofile RoleName))
   (ensure-profile-with-role RoleName RoleName))
 
-
-
 (defn- create-policy-stmt
   [opts]
   (write-str (join-policies (map create-policy opts))))

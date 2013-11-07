@@ -252,10 +252,10 @@
   [{:keys [BucketName AccessControlPolicy]}]
   (Thread/sleep 1000);Bucket creation can be slow
   (let [url (str s3-url "/" BucketName "/?acl")
-        get-response (process :GetBucketAcl url)
+       ; get-response (process :GetBucketAcl url)
         local-config (local-acls AccessControlPolicy)]
-    (if (empty? get-response) ;Not doing the comparison here as is not a requirement now.
-      (put-acl AccessControlPolicy local-config url))))
+    ;Not doing the comparison here as is not a requirement now.
+    (put-acl AccessControlPolicy local-config url)))
 
 (defn- ensure-policy
   [{:keys [BucketName Id Statement]}]
