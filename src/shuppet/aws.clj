@@ -16,9 +16,6 @@
 (def ^:const iam-url (env :service-aws-iam-url))
 (def ^:const iam-version (env :service-aws-iam-api-version))
 
-(def ^:const sts-url (env :service-aws-sts-url))
-(def ^:const sts-version (env :service-aws-sts-api-version))
-
 (defn ec2-request
   [params]
   (let [url (sign/v2-url ec2-url (merge {"Version" ec2-version} params))
@@ -34,9 +31,13 @@
 
 (defn iam-post-request
   [params]
-  (let [url (sign/v2-url :POST iam-url (merge {"Version" iam-version} params))
-        response (client/post url {:as :stream
-                                  :throw-exceptions false})
+  (let [q-string (map-to-query-string (merge {"Version" iam-version} params))
+        url (str iam-url "/?" q-string)
+        auth-headers (sign/v4-auth-headers {:url url
+                                            :method :post} )
+        response (client/post url {:headers auth-headers
+                                   :as :stream
+                                   :throw-exceptions false})
         status (:status response)
         body (-> (:body response)
                  (xml/parse)
@@ -47,8 +48,11 @@
 
 (defn iam-request
   [params]
-  (let [url (sign/v2-url iam-url (merge {"Version" iam-version} params))
-        response (client/get url {:as :stream
+  (let [q-string (map-to-query-string (merge {"Version" iam-version} params))
+        url (str iam-url "/?" q-string)
+        auth-headers (sign/v4-auth-headers {:url url} )
+        response (client/get url {:headers auth-headers
+                                  :as :stream
                                   :throw-exceptions false})
         status (:status response)
         body (-> (:body response)
@@ -61,11 +65,12 @@
 
 (defn elb-request
   [params]
-  (let [url (sign/v2-url
-             (env :service-aws-elb-url)
-             (merge {"Version" (env  :service-aws-elb-version)}  params))
+  (let [q-string (map-to-query-string (merge {"Version" (env  :service-aws-elb-version)} params))
+        url (str (env :service-aws-elb-url) "/?" q-string)
+        auth-headers (sign/v4-auth-headers {:url url} )
         response (client/get url
-                             {:as :stream
+                             {:headers auth-headers
+                              :as :stream
                               :throw-exceptions false})
         status (:status response)
         body (-> (:body response)
@@ -74,12 +79,3 @@
     (if (= 200 status)
       body
       (throw-aws-exception "ELB" (get params "Action") url status body))))
-
-(defn decode-message
-    [encoded-message]
-    (let [url (sign/v2-url "post" sts-url {"Action" "DecodeAuthorizationMessage"
-                                                    "EncodedMessage" encoded-message
-                                                    "Version" sts-version})
-          response (client/post url { :content-type "application/x-www-form-urlencoded; charset=utf-8" :throw-exceptions false})]
-      (prn "Decoded message response = " response)
-      response))

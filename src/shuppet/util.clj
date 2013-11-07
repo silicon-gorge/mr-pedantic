@@ -1,8 +1,8 @@
 (ns shuppet.util
   (:require
-   [clj-time.local :refer [local-now]]
+   [clj-time.local :refer [local-now to-local-date-time]]
    [clj-time.format :as format]
-   [clojure.string :refer [join upper-case]]
+   [clojure.string :refer [join upper-case split]]
    [slingshot.slingshot :refer [try+ throw+]]
    [clojure.data.zip.xml :refer [xml1-> text]]))
 
@@ -12,6 +12,16 @@
 (defn rfc2616-time
   []
   (format/unparse rfc2616-format (local-now)))
+
+(def v4-format (format/formatter "yyyyMMdd"))
+(defn v4-date
+  [time]
+  (format/unparse v4-format (to-local-date-time time)))
+
+(def ISO8601-format (format/formatter "yyyyMMdd'T'HHmmss'Z'"))
+(defn ISO8601-time
+  []
+  (format/unparse ISO8601-format (local-now)))
 
 (defn current-time
   []
@@ -33,10 +43,23 @@
   [s]
   (java.net.URLDecoder/decode s "UTF-8"))
 
-(defn values-to-uppercase [m]
+(defn values-to-uppercase
+  [m]
   (into {} (map (fn [[k v]]
-               [k (upper-case v)])
-             m)))
+                  [k (upper-case v)])
+                m)))
+
+(defn keys-as-string
+  [m]
+  (into {}
+        (for [[k v] m]
+          [(name k) v])))
+
+(defn keys-as-keyword
+  [m]
+  (into {}
+        (for [[k v] m]
+          [(keyword k) v])))
 
 (defn children-to-map
   "transform children of an xml element to a map"
@@ -82,29 +105,36 @@
   (list (vec (filter #(not (in? (set local) %)) (set remote)))
         (vec (filter #(not (in? (set remote) %)) (set local)))))
 
-(defn values-tostring [m]
+(defn values-tostring
+  [m]
   (into {} (map (fn [[k v]] [k (str v)]) m)))
 
 (defn- get-message
-  [body]
-  (str (or (xml1-> body :Message text)
-           (xml1-> body :Error :Message text)
-           (xml1-> body :Errors :Error :Message text))))
+  [body content-type]
+  (if (= :json content-type)
+    (:message body)
+    (str (or (xml1-> body :Message text)
+             (xml1-> body :Error :Message text)
+             (xml1-> body :Errors :Error :Message text)))))
 
 (defn- get-code
-  [body]
-  (str (or (xml1-> body :Code text)
-           (xml1-> body :Error :Code text)
-           (xml1-> body :Errors :Error :Code text))))
+  [body content-type]
+  (if (= :json content-type)
+    (:__type body)
+    (str (or (xml1-> body :Code text)
+             (xml1-> body :Error :Code text)
+             (xml1-> body :Errors :Error :Code text)))))
 
 (defn throw-aws-exception
-  [title action url status body]
-  (throw+ {:type ::aws
-           :title (str title " request failed while performing the action '" action "'")
-           :url url
-           :status status
-           :message (get-message body)
-           :code (get-code body)}))
+  ([title action url status body content-type]
+      (throw+ {:type ::aws
+               :title (str title " request failed while performing the action '" action "'")
+               :url url
+               :status status
+               :message (get-message body content-type)
+               :code (get-code body content-type)}))
+  ([title action url status body]
+     (throw-aws-exception title action url status body :xml)))
 
 (defn sg-rule
   "Creates a Ingress/Egress config for a security group
@@ -128,7 +158,7 @@
 
 (defn- to-vec
   [item]
- (if (string? item) [item] (vec item)))
+  (if (string? item) [item] (vec item)))
 
 (defn- create-policy-statement
   ([sid effect principal action resource conditions]
@@ -139,6 +169,23 @@
                       :Action (to-vec action)
                       :Resource (to-vec resource)
                       :Conditions conditions}))))
+
+(defn query-string-to-map
+  [query]
+  (when query (->> (split query #"&")
+                   (map #(split % #"="))
+                   (map (fn [[k v]] [(keyword (url-encode k)) (when v (url-encode v))]))
+                   (into (sorted-map)))))
+
+(defn map-to-query-string
+  ([params use-empty-str]
+     (join "&"
+           (map (fn [[k v]] (if (empty? (str v))
+                              (str (name k) (when use-empty-str "="))
+                              (str (name k) "=" (str v))))
+                params)))
+  ([params]
+     (map-to-query-string params false)))
 
 (defn create-policy
   "http://docs.aws.amazon.com/IAM/latest/UserGuide/PoliciesOverview.html"

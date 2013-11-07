@@ -8,7 +8,8 @@
              [securitygroups :refer [ensure-sgs delete-sgs]]
              [elb :refer [ensure-elb delete-elb]]
              [iam :refer [ensure-iam delete-role]]
-             [s3 :refer [ensure-s3s delete-s3s]]]
+             [s3 :refer [ensure-s3s delete-s3s]]
+             [ddb :refer [ensure-ddbs delete-ddbs]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -97,7 +98,8 @@
           ensure-sgs
           ensure-elb
           ensure-iam
-          ensure-s3s)
+          ensure-s3s
+          ensure-ddbs)
         (catch map? error
           (throw+ (merge error {:name app-name
                                 :env env
@@ -117,7 +119,8 @@
     (doto config
       delete-sgs
       delete-role
-      delete-s3s)))
+      delete-s3s
+      delete-ddbs)))
 
 (defn update-configs
   [env]

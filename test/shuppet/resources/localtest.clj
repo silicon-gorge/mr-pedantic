@@ -68,4 +68,20 @@
                              :AccessControlList [{:Permission "FULL_CONTROL"
                                                   :ID "9de2bfc0800fb4335f649e259431d7dca8bbce19b39e98bfed0fb70911b8e9bb"}]}}]
 
- :Campfire [$cf-shuppet]}
+ :DynamoDB [{:TableName "shuppet-test"
+             :ProvisionedThroughput {:ReadCapacityUnits 3
+                                     :WriteCapacityUnits 5}
+             :AttributeDefinitions {"Subject" "S"
+                                    "ForumName" "S"
+                                    "LastPostDateTime" "S"
+                                    }
+             :KeySchema {:ForumName "HASH"
+                         :Subject "RANGE"}
+             :LocalSecondaryIndexes [{:IndexName "LastPostIndex"
+                                      :KeySchema {:LastPostDateTime "RANGE"
+                                                  :ForumName "HASH"}
+                                      :Projection {:ProjectionType "KEYS_ONLY"}}]
+
+             :ForceDelete false}]
+
+  :Campfire [$cf-shuppet]}

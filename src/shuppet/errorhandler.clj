@@ -57,7 +57,7 @@
     (str message " for application '" app-name "'")))
 
 (defn wrap-error-handling
-  "A middleware function to add catch and log uncaught exceptions, then return a nice xml  response to the client"
+  "A middleware function to add catch and log uncaught exceptions, and send messages to the campfire rooms"
   [handler]
   (fn [request]
     (try+

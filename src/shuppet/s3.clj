@@ -16,7 +16,7 @@
   (:import
    [java.net URL]))
 
-;Need to supply this when we use temporary IAM roles
+;Need to supply this when we use temporary creadentials via IAM roles
 (def ^:dynamic *session-token* nil)
 
 (defn xml-to-map [xml-string]
@@ -26,15 +26,12 @@
 (def ^:const s3-valid-locations #{:eu :eu-west-1 :eu-west-2 :ap-southeast-1
                                   :ap-southeast-2 :ap-northeast-1 :sa-east-1})
 
-(def location ;todo if the bucket name contains dots in it
+(def location
   (let [host (-> s3-url
                  URL.
                  .getHost)
-        location (if (empty? (re-find #"^s3.*.amazonaws.com" host))
-                   (second (split host #"[.]"))
-                   (first (split host #"[.]")))
+        location (first (split (subs host 0 (.indexOf  host ".amazonaws.com")) #"[.]"))
         s3-location (if (= "s3" location) "" (lower-case (subs location 3)))]
-
     (if (contains? s3-valid-locations (keyword s3-location))
       s3-location
       "")))
@@ -54,27 +51,12 @@
     (str "/" (first (split host #".s3")) path)
     path))
 
-(defn- query-string-to-map
-  [query]
-  (->> (split query #"&")
-       (map #(split % #"="))
-       (map (fn [[k v]] [(keyword k) v]))
-       (into {})))
-
-(defn- build-query-string
-  [params]
-  (join "&"
-        (map (fn [[k v]] (if (empty? v)
-                          (str (name k))
-                          (str (name k) "=" v)))
-             params)))
-
 (defn- add-query
   [path q-map]
   (let [opts  (into (sorted-map) (map #(if (contains? q-map %) {% (% q-map)}) s3-sub-resources))]
     (if (empty? opts)
       path
-      (str path "?" (build-query-string opts)))))
+      (str path "?" (map-to-query-string opts)))))
 
 (defn- canon-path
   [url]
