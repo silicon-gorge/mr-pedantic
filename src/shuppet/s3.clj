@@ -40,9 +40,8 @@
       "")))
 
 (def create-bucket-body
-  (emit-str (sexp-as-element
-             [:CreateBucketConfiguration {}
-              [:LocationConstraint location]])))
+  (emit-str (element :CreateBucketConfiguration {}
+             (element :LocationConstraint {} location))))
 
 (def s3-sub-resources #{:versioning :location :acl :torrent
                         :lifecycle :versionId :logging :notification
