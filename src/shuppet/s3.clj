@@ -39,14 +39,14 @@
       s3-location
       "")))
 
-(def create-bucket-body
-  (emit-str (element :CreateBucketConfiguration {}
-             (element :LocationConstraint {} location))))
-
 (def s3-sub-resources #{:versioning :location :acl :torrent
                         :lifecycle :versionId :logging :notification
                         :partNumber :policy :requestPayment :uploadId
                         :uploads :versions :website})
+
+(defn- create-bucket-body []
+  (emit-str (element :CreateBucketConfiguration {}
+             (element :LocationConstraint {} location))))
 
 (defn- s3-path
   [host path]
@@ -276,7 +276,7 @@
   (let [url (str s3-url  "/" BucketName)
         get-response (process :ListBucket url)]
     (when (empty? get-response)
-      (process :CreateBucket url create-bucket-body))
+      (process :CreateBucket url (create-bucket-body)))
     (when (:Statement opts)
       (ensure-policy opts))
     (when (:AccessControlPolicy opts)
