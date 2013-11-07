@@ -114,23 +114,23 @@
         :preremove {:scriptFile "scripts/rpm/preremove.sh"}
         :postremove {:scriptFile "scripts/rpm/postremove.sh"}
         :requires ["jdk >= 2000:1.6.0_31-fcs"]
-        :mappings [{:directory "/usr/local/jetty"
+        :mappings [{:directory "/usr/local/shuppet"
                     :filemode "444"
-                    :username "jetty"
-                    :groupname "jetty"
+                    :username "shuppet"
+                    :groupname "shuppet"
                     :sources {:source [{:location "target/shuppet.jar"}]}}
-                   {:directory "/usr/local/jetty/bin"
+                   {:directory "/usr/local/shuppet/bin"
                     :filemode "744"
-                    :username "jetty"
-                    :groupname "jetty"
+                    :username "shuppet"
+                    :groupname "shuppet"
                     :sources {:source [{:location "scripts/bin"}]}}
                    {:directory "/usr/local/deployment/shuppet/bin"
                     :filemode "744"
                     :sources {:source [{:location "scripts/dmt"}]}}
                    {:directory "/etc/rc.d/init.d"
                     :filemode "744"
-                    :username "jetty"
-                    :groupname "jetty"
+                    :username "shuppet"
+                    :groupname "shuppet"
                     :sources {:source [{:location "scripts/service/shuppet"}]}}]}
 
   :main shuppet.setup)
