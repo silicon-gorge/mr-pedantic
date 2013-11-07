@@ -131,6 +131,6 @@
                     :filemode "744"
                     :username "jetty"
                     :groupname "jetty"
-                    :sources {:source [{:location "scripts/service/jetty"}]}}]}
+                    :sources {:source [{:location "scripts/service/shuppet"}]}}]}
 
   :main shuppet.setup)
