@@ -1,5 +1,5 @@
 (ns shuppet.errorhandler
-  (:require [nokia.ring-utils.logging :as log :only (error)]
+  (:require [clojure.tools.logging :as log]
             [environ.core :refer [env]]
             [shuppet.campfire :as cf]
             [shuppet.util :refer [without-nils]])
