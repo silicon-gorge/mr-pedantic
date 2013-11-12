@@ -140,7 +140,7 @@
           (cf/info (str "I've succesfully updated the dynamodb table "
                         (:TableName local)
                         " with :ProvisionedThroughput "
-                        (vec (:ProvisionedThroughput local)))))
+                        (:ProvisionedThroughput local))))
         (confirm-and-delete opts local remote)))))
 
 (defn- ensure-ddb
