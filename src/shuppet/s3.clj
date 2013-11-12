@@ -1,7 +1,9 @@
 (ns shuppet.s3
   (:require
-   [shuppet.signature :refer [s3-header]]
-   [shuppet.util :refer :all]
+   [shuppet
+    [signature :refer [s3-header]]
+    [util :refer :all]
+    [campfire :as cf]]
    [environ.core :refer [env]]
    [slingshot.slingshot :refer [try+ throw+]]
    [clojure.string :refer [split join upper-case trim lower-case]]
@@ -16,7 +18,7 @@
   (:import
    [java.net URL]))
 
-                                        ;Need to supply this when we use temporary creadentials via IAM roles
+;Need to supply this when we use temporary creadentials via IAM roles
 (def ^:dynamic *session-token* nil)
 
 (defn- xml-to-map [xml-string]
@@ -234,10 +236,11 @@
   [{:keys [BucketName AccessControlPolicy]}]
   (Thread/sleep 1000);Bucket creation can be slow
   (let [url (str s3-url "/" BucketName "/?acl")
-                                        ; get-response (process :GetBucketAcl url)
+        ; get-response (process :GetBucketAcl url)
         local-config (local-acls AccessControlPolicy)]
-                                        ;Not doing the comparison here as is not a requirement now.
-    (put-acl AccessControlPolicy local-config url)))
+        ;Not doing the comparison here as is not a requirement now.
+    (put-acl AccessControlPolicy local-config url)
+    (cf/info (str "I've succesfully applied the acl for '" BucketName "'"))))
 
 (defn- ensure-policy
   [{:keys [BucketName Id Statement]}]
@@ -248,17 +251,20 @@
         local (vec (map to-amazon-format (get l-config :Statement)))
         [r l] (compare-config local remote)]
     (when-not (empty? l)
-      (process :CreateBucketPolicy url (write-str (without-nils (merge l-config {:Id Id})))))
+      (process :CreateBucketPolicy url (write-str (without-nils (merge l-config {:Id Id}))))
+      (cf/info (str "I've succesfully created a bucket policy for '" BucketName "'")))
     (when-not (empty? r)
       (when (empty? l)
-        (process :DeleteBucketPolicy url)))))
+        (process :DeleteBucketPolicy url)
+        (cf/info (str "I've succesfully deleted the bucket policy for '" BucketName "'"))))))
 
 (defn- ensure-s3
   [{:keys [BucketName] :as opts}]
   (let [url (str s3-url  "/" BucketName)
         get-response (process :ListBucket url)]
     (when (empty? get-response)
-      (process :CreateBucket url (create-bucket-body)))
+      (process :CreateBucket url (create-bucket-body))
+      (cf/info (str "I've created a new S3 bucket called '" BucketName "'")))
     (when (:Statement opts)
       (ensure-policy opts))
     (when (:AccessControlPolicy opts)

@@ -46,7 +46,6 @@
                                        :Resource "*"}
                                       {:Effect "Allow"
                                        :Sid "s3ReposReadOnly"
-                                       :Principal {:AWS ["arn:aws:iam::513894612423:user/amanas"]}
                                        :Action ["s3:GetObject" "s3:ListBucket"]
                                        :Resource "*"}]}
                     {:PolicyName "s3-full-access"

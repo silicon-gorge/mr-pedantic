@@ -1,7 +1,9 @@
 (ns shuppet.iam
   (:require
-   [shuppet.signature :refer [v4-auth-headers]]
-   [shuppet.util :refer :all]
+   [shuppet
+    [signature :refer [v4-auth-headers]]
+    [util :refer :all]
+    [campfire :as cf]]
    [environ.core :refer [env]]
    [clj-http.client :as client]
    [clojure.data.json :refer [write-str]]
@@ -65,7 +67,7 @@
   (process :CreateRole {"RoleName" name
                         "Path" "/"
                         "AssumeRolePolicyDocument" default-role-policy})
-  (log/info "Succesfully created the iam role : " name))
+  (cf/info (str "I've created a new iam role  called '" name "'")))
 
 (defn- ensure-role
   [{:keys [RoleName] :as opts}]
@@ -82,7 +84,7 @@
   [r-name p-name]
   (process :AddRoleToInstanceProfile {"RoleName" r-name
                                       "InstanceProfileName" p-name})
-  (log/info "Succesfully attached the tole name " r-name " to the profile " p-name))
+  (cf/info (str  "I've succesfully attached the role name " r-name " to the profile " p-name)))
 
 (defn- ensure-profile-with-role
   [role-name profile-name]
@@ -92,7 +94,7 @@
 (defn- create-iprofile
   [name]
   (process :CreateInstanceProfile {"InstanceProfileName" name})
-  (log/info "Succesfully created the instance profile : " name))
+  (cf/info (str "I've succesfully created the instance profile : " name)))
 
 (defn- iprofile-exists?
   [name]
@@ -130,14 +132,14 @@
   [r-name {:keys [PolicyName]}]
   (process :DeleteRolePolicy {"RoleName" r-name
                               "PolicyName" PolicyName})
-  (log/info "Succesfully deleted policy " PolicyName " for role " r-name))
+  (cf/info (str "I've succesfully deleted the policy " PolicyName " for role " r-name)))
 
 (defn- put-role-policy
   [r-name {:keys [PolicyName PolicyDocument]}]
   (process :PutRolePolicy {"RoleName" r-name
                            "PolicyName" PolicyName
                            "PolicyDocument" PolicyDocument})
-  (log/info "Succesfully created/updated policy " PolicyName " for role " r-name " with statement " PolicyDocument))
+  (cf/info (str "I've succesfully created/updated the policy " PolicyName " for role '" r-name "' with statement " PolicyDocument)))
 
 (defn- ensure-policies
   [{:keys [RoleName Policies]}]
@@ -147,8 +149,8 @@
         [r l] (compare-config local remote)]
     (when-not (empty? r)
       (doseq [policy r]
-                                        ;delete the policy iff the policyname is not present in the local config
-                                        ;otherwise put role policy will update the changes on the existing policy.
+        ;delete the policy iff the policyname is not present in the local config
+        ;otherwise put role policy will update the changes on the existing policy.
         (when-not (contains? lp-names (:PolicyName policy))
           (delete-role-policy RoleName policy))))
     (when-not (empty? l)

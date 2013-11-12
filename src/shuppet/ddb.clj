@@ -1,7 +1,9 @@
 (ns shuppet.ddb
   (:require
-   [shuppet.util :refer :all]
-   [shuppet.signature :refer [v4-auth-headers]]
+   [shuppet
+    [util :refer :all]
+    [signature :refer [v4-auth-headers]]
+    [campfire :as cf]]
    [environ.core :refer [env]]
    [clj-http.client :as client]
    [clojure.string :refer [replace]]
@@ -82,7 +84,8 @@
 
 (defn- create-table
   [opts]
-  (post-request :CreateTable (create-table-body opts)))
+  (post-request :CreateTable (create-table-body opts))
+  (cf/info (str "I've created a new dynamodb table called '" (:TableName opts) "'")))
 
 (defn- formatted-throughput
   [{:keys [ProvisionedThroughput]}]
@@ -119,8 +122,10 @@
     (if ForceDelete
       (dorun
        (post-request :DeleteTable {:TableName TableName})
+       (cf/info (str "I've succesfully deleted the dynamodb table '" TableName "'"))
        (Thread/sleep 45000)
-       (post-request :CreateTable local))
+       (post-request :CreateTable local)
+       (cf/info (str "I've created a new dynamodb table called '" TableName "'")))
       (throw-aws-exception "DynamoDB" "POST" ddb-url "400" {:__type "Table Configuration Mismatch" :message "Mismatch in table configuration. If you want to apply the current local configuration, please add :ForceDelete true confirming that its ok to delete the current table and create a new table with the new configuration.Note: All data in the current table will be lost after this operation"} :json))))
 
 (defn- compare-table
@@ -129,8 +134,13 @@
         remote (without-nils (to-local-format body))]
     (when-not (= local remote)
       (if-not (= (:ProvisionedThroughput local) (:ProvisionedThroughput remote))
-        (post-request :UpdateTable (merge {:ProvisionedThroughput (:ProvisionedThroughput local)}
-                                          {:TableName (:TableName local)}))
+        (do
+          (post-request :UpdateTable (merge {:ProvisionedThroughput (:ProvisionedThroughput local)}
+                                            {:TableName (:TableName local)}))
+          (cf/info (str "I've succesfully updated the dynamodb table "
+                        (:TableName local)
+                        " with :ProvisionedThroughput "
+                        (vec (:ProvisionedThroughput local)))))
         (confirm-and-delete opts local remote)))))
 
 (defn- ensure-ddb
@@ -138,8 +148,7 @@
   (let [body {:TableName TableName}]
     (if-let [response (post-request :DescribeTable body)]
       (compare-table opts (:Table response))
-      (create-table opts)
-      )))
+      (create-table opts))))
 
 (defn ensure-ddbs
   [{:keys [DynamoDB]}]
