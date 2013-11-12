@@ -1,10 +1,30 @@
 (ns shuppet.securitygroups
   (:require
-   [shuppet.aws :refer [ec2-request]]
+   [shuppet.signature :refer [v2-url]]
    [shuppet.util :refer :all]
+   [environ.core :refer [env]]
+   [clj-http.client :as client]
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
+   [clojure.xml :as xml]
+   [clojure.zip :as zip]
    [slingshot.slingshot :refer [try+ throw+]]))
+
+(def ^:const ec2-url (env :service-aws-ec2-url))
+(def ^:const ec2-version (env :service-aws-ec2-api-version))
+
+(defn- get-request
+  [params]
+  (let [url (v2-url ec2-url (merge {"Version" ec2-version} params))
+        response (client/get url {:as :stream
+                                  :throw-exceptions false})
+        status (:status response)
+        body (-> (:body response)
+                 (xml/parse)
+                 (zip/xml-zip))]
+    (if (= 200 status)
+      body
+      (throw-aws-exception "EC2" (get params "Action") url status body))))
 
 (defn- create-params [opts]
   (without-nils {"GroupName" (:GroupName opts)
@@ -15,14 +35,14 @@
   "Creates a security group and returns the id"
   [opts]
   (let [params (create-params opts)]
-    (if-let [response (ec2-request (merge params {"Action" "CreateSecurityGroup"}))]
+    (if-let [response (get-request (merge params {"Action" "CreateSecurityGroup"}))]
       (xml1-> response :groupId text))))
 
 (defn- process
   [action params]
   (condp = (keyword action)
     :CreateSecurityGroup (create params)
-    (ec2-request (merge params {"Action" (name action)}))))
+    (get-request (merge params {"Action" (name action)}))))
 
 (defn sg-id
   [name]
@@ -149,8 +169,9 @@
                            "DescribeSecurityGroups"
                            "config-check"
                            404
-                           (str  "A security group with the name '" name "' cannot be found.")))
-    name))
+                           {:message (str  "A security group with the name '" name "' cannot be found.")
+                            :__type "Bad Configuration"}
+                           :json)) name))
 
 (defn- update-sg-ids
   [opts]

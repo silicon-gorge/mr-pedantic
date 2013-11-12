@@ -1,20 +1,60 @@
 (ns shuppet.iam
   (:require
-   [shuppet.aws :refer [iam-request iam-post-request]]
+   [shuppet.signature :refer [v4-auth-headers]]
    [shuppet.util :refer :all]
+   [environ.core :refer [env]]
+   [clj-http.client :as client]
    [clojure.data.json :refer [write-str]]
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
-   [slingshot.slingshot :refer [try+ throw+]]))
+   [clojure.xml :as xml]
+   [clojure.zip :as zip]))
+
+(def ^:const iam-url (env :service-aws-iam-url))
+(def ^:const iam-version (env :service-aws-iam-api-version))
 
 (def default-role-policy (write-str (create-policy {:Principal {:Service "ec2.amazonaws.com"}
                                                     :Action "sts:AssumeRole"})))
 
+(defn- post-request
+  [params]
+  (let [url (str iam-url "/?" (map-to-query-string
+                               (merge {"Version" iam-version} params)))
+        auth-headers (v4-auth-headers {:url url
+                                            :method :post} )
+        response (client/post url {:headers auth-headers
+                                   :as :stream
+                                   :throw-exceptions false})
+        status (:status response)
+        body (-> (:body response)
+                 (xml/parse)
+                 (zip/xml-zip))]
+    (condp = status
+      200 body
+      (throw-aws-exception "IAM" (get params "Action") url status body))))
+
+(defn- get-request
+  [params]
+  (let [url (str iam-url "/?" (map-to-query-string
+                               (merge {"Version" iam-version} params)))
+        auth-headers (v4-auth-headers {:url url} )
+        response (client/get url {:headers auth-headers
+                                  :as :stream
+                                  :throw-exceptions false})
+        status (:status response)
+        body (-> (:body response)
+                 (xml/parse)
+                 (zip/xml-zip))]
+    (condp = status
+      200 body
+      404 nil
+      (throw-aws-exception "IAM" (get params "Action") url status body))))
+
 (defn- process
   [action params]
   (if (= action "PutRolePolicy")
-    (iam-post-request (merge params {"Action" (name action)}))
-    (iam-request (merge params {"Action" (name action)}))))
+    (post-request (merge params {"Action" (name action)}))
+    (get-request (merge params {"Action" (name action)}))))
 
 (defn- role-exists?
   [name]

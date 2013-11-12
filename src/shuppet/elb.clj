@@ -2,14 +2,36 @@
   (:require
    [shuppet
     [securitygroups :refer [sg-id]]
-    [aws :refer [elb-request ec2-request]]
+    [signature :refer [v4-auth-headers]]
     [util :refer :all]]
    [clj-http.client :as client]
+   [environ.core :refer [env]]
    [clojure.tools.logging :as log]
    [clojure.xml :as xml]
-   [clojure.zip :as zip :refer [children]]
+   [clojure.zip :as zip :refer [children xml-zip]]
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
+
+(def ^:const elb-url (env :service-aws-elb-url))
+(def ^:const elb-version (env :service-aws-elb-api-version))
+
+
+(defn get-request
+  [params]
+  (let [url (str elb-url  "/?" (map-to-query-string
+                                                  (merge {"Version" elb-version} params)))
+        auth-headers (v4-auth-headers {:url url} )
+        response (client/get url
+                             {:headers auth-headers
+                              :as :stream
+                              :throw-exceptions false})
+        status (:status response)
+        body (-> (:body response)
+                 (xml/parse)
+                 (zip/xml-zip))]
+    (if (= 200 status)
+      body
+      (throw-aws-exception "ELB" (get params "Action") url status body))))
 
 (defn- sg-names-to-ids [config]
   (assoc config :SecurityGroups (map #(sg-id %) (:SecurityGroups config))))
@@ -52,18 +74,18 @@
   (dissoc config :HealthCheck))
 
 (defn create-healthcheck [config]
-  (elb-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
+  (get-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
   (log/info "I've created a new health check config for" (elb-name config))
   config)
 
 (defn create-elb [config]
-  (elb-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format  (elb-config config))))
+  (get-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format  (elb-config config))))
   (log/info "I've created a new ELB called" (elb-name config))
   config)
 
 (defn find-elb [name]
   (try+
-   (elb-request {"Action" "DescribeLoadBalancers"
+   (get-request {"Action" "DescribeLoadBalancers"
                  "LoadBalancerNames.member.1" name})
    (catch [:code "LoadBalancerNotFound"] _
        nil)))
@@ -96,7 +118,7 @@
     config))
 
 (defn- update-elb [elb-name action prefix fields]
-  (elb-request (merge {"Action" (name action)
+  (get-request (merge {"Action" (name action)
                        "LoadBalancerName" elb-name}
                       (apply hash-map (flatten (list-to-member (name prefix) fields)))))
   (log/info "I had to" (name action) fields "on" elb-name))
@@ -153,5 +175,5 @@
 
 (defn delete-elb [{:keys [LoadBalancer]}]
   (when LoadBalancer
-    (elb-request {"Action" "DeleteLoadBalancer"
+    (get-request {"Action" "DeleteLoadBalancer"
                   "LoadBalancerName" (:LoadBalancerName LoadBalancer)})))

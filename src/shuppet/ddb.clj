@@ -10,7 +10,7 @@
    [slingshot.slingshot :refer [try+ throw+]])
   (:refer-clojure :exclude [replace]))
 
-(def ^:const ddb-version (replace (env :service-aws-ddb-version) #"-" ""))
+(def ^:const ddb-version (replace (env :service-aws-ddb-api-version) #"-" ""))
 (def ^:const action-prefix (str  "DynamoDB_" ddb-version "."))
 (def ^:const ddb-url (env :service-aws-ddb-url))
 
@@ -40,27 +40,6 @@
       (:body response)
       (let [body (read-str (:body response) :key-fn keyword)]
         (when-not (nil-returnable-exception? status body action)
-          (throw-aws-exception "DynamoDB" action ddb-url status body :json))))))
-
-(defn- post-request1
-  [action body]
-  (let [body (write-str body)
-        headers {:x-amz-target (str action-prefix (name action))
-                 :content-type "application/x-amz-json-1.0"}
-        auth-headers (v4-auth-headers {:url ddb-url
-                                       :method :post
-                                       :body body
-                                       :headers headers})
-        response  (client/post ddb-url {:headers auth-headers
-                                        :body body
-                                        :as :json
-                                        :throw-exceptions false})
-        status (:status response)]
-    (if (= status 200)
-      (:body response)
-      (if (and (= status 400) (or (= action :DescribeTable) (= action :DeleteTable)))
-        nil
-        (let [body (read-str  body :key-fn keyword)]
           (throw-aws-exception "DynamoDB" action ddb-url status body :json))))))
 
 (defn- create-attr-defns

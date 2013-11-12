@@ -67,12 +67,12 @@
         :service-aws-ec2-url "https://ec2.eu-west-1.amazonaws.com"
         :service-aws-ec2-api-version "2013-10-01"
         :service-aws-elb-url "https://elasticloadbalancing.eu-west-1.amazonaws.com"
-        :service-aws-elb-version "2012-06-01"
+        :service-aws-elb-api-version "2012-06-01"
         :service-aws-iam-url "https://iam.amazonaws.com"
         :service-aws-iam-api-version "2010-05-08"
         :service-aws-s3-url "https://s3-eu-west-1.amazonaws.com"
         :service-aws-ddb-url "https://dynamodb.eu-west-1.amazonaws.com"
-        :service-aws-ddb-version "2012-08-10"
+        :service-aws-ddb-api-version "2012-08-10"
 
         ;;git-config
         :service-base-git-repository-url "ssh://snc@source.nokia.com/shuppet/git/"
