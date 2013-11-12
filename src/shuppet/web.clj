@@ -28,12 +28,12 @@
 
 (defroutes applications-routes
 
-  (GET "/:env/app/:name/apply"
+  (GET "/:env/apps/:name/apply"
        [env name]
        (core/apply-config env name)
        {:status 200})
 
-  (GET "/:env/app/:name/clean"
+  (GET "/:env/apps/:name/clean"
        [env name]
        (core/clean-config env name)
        {:status 200})
@@ -48,12 +48,12 @@
        (core/apply-config env)
        {:status 200})
 
-  (GET "/:env/app/:app-name"
+  (GET "/:env/apps/:app-name"
        [env app-name]
        (->  (ring-response/response (-> (core/get-config env app-name) (write-str)))
             (ring-response/content-type "application/json")))
 
-  (GET "/:env/app/apply"
+  (GET "/:env/apps/apply"
        [env]
        (core/update-configs env)
        {:status 200}))
@@ -77,7 +77,7 @@
          :body (-> (clojure.java.io/resource "shuppet.jpg")
                    (clojure.java.io/input-stream))})
 
-   (context "/env"
+   (context "/envs"
             [] applications-routes))
 
   (GET "/healthcheck"

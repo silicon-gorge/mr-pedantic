@@ -18,9 +18,9 @@
   [status {:keys [__type]} action]
   (and
    (= status 400)
-   (or
-    (= action :DescribeTable)
-    (and (= action :DeleteTable) (.endsWith __type "ResourceNotFoundException")))))
+   (and (.endsWith __type "ResourceNotFoundException")
+         (or (= action :DescribeTable)
+             (= action :DeleteTable)))))
 
 (defn- post-request
   [action body]
@@ -36,6 +36,7 @@
                                         :as :json
                                         :throw-exceptions false})
         status (:status response)]
+    (prn response)
     (if (= status 200)
       (:body response)
       (let [body (read-str (:body response) :key-fn keyword)]
@@ -44,14 +45,14 @@
 
 (defn- create-attr-defns
   [attrs]
-  {:AttributeDefinitions (set (vec (map (fn [[k v]]
+  {:AttributeDefinitions (set (map (fn [[k v]]
                                           {:AttributeName (name k)
-                                           :AttributeType (name v)}) attrs)))})
+                                           :AttributeType (name v)}) attrs))})
 (defn- create-key-schema
   [attrs]
-  {:KeySchema (set (vec (map (fn [[k v]]
+  {:KeySchema (set (map (fn [[k v]]
                                {:AttributeName (name k)
-                                :KeyType (name v)}) attrs)))})
+                                :KeyType (name v)}) attrs))})
 (defn- formatted-projection
   [{:keys [NonKeyAttributes ProjectionType]}]
   (without-nils
@@ -66,7 +67,7 @@
 
 (defn- create-sec-indexes
   [attrs]
-  {:LocalSecondaryIndexes (set (vec (map create-sec-index attrs)))})
+  {:LocalSecondaryIndexes (set (map create-sec-index attrs))})
 
 (defn- create-table-body
   [opts]
@@ -100,7 +101,7 @@
 
 (defn- formatted-indexes
   [{:keys [LocalSecondaryIndexes]}]
-  (vec (map formatted-index LocalSecondaryIndexes)))
+  (map formatted-index LocalSecondaryIndexes))
 
 (defn- to-local-format
   [opts]
@@ -137,7 +138,8 @@
   (let [body {:TableName TableName}]
     (if-let [response (post-request :DescribeTable body)]
       (compare-table opts (:Table response))
-      (create-table opts))))
+      (create-table opts)
+      )))
 
 (defn ensure-ddbs
   [{:keys [DynamoDB]}]
