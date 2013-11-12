@@ -10,17 +10,17 @@
    [slingshot.slingshot :refer [try+ throw+]])
   (:refer-clojure :exclude [replace]))
 
-(def ^:const ddb-version (replace (env :service-aws-ddb-api-version) #"-" ""))
-(def ^:const action-prefix (str  "DynamoDB_" ddb-version "."))
-(def ^:const ddb-url (env :service-aws-ddb-url))
+(def ^:const ^:private ddb-version (replace (env :service-aws-ddb-api-version) #"-" ""))
+(def ^:const ^:private action-prefix (str  "DynamoDB_" ddb-version "."))
+(def ^:const ^:private ddb-url (env :service-aws-ddb-url))
 
 (defn- nil-returnable-exception?
   [status {:keys [__type]} action]
   (and
    (= status 400)
    (and (.endsWith __type "ResourceNotFoundException")
-         (or (= action :DescribeTable)
-             (= action :DeleteTable)))))
+        (or (= action :DescribeTable)
+            (= action :DeleteTable)))))
 
 (defn- post-request
   [action body]
@@ -46,13 +46,13 @@
 (defn- create-attr-defns
   [attrs]
   {:AttributeDefinitions (set (map (fn [[k v]]
-                                          {:AttributeName (name k)
-                                           :AttributeType (name v)}) attrs))})
+                                     {:AttributeName (name k)
+                                      :AttributeType (name v)}) attrs))})
 (defn- create-key-schema
   [attrs]
   {:KeySchema (set (map (fn [[k v]]
-                               {:AttributeName (name k)
-                                :KeyType (name v)}) attrs))})
+                          {:AttributeName (name k)
+                           :KeyType (name v)}) attrs))})
 (defn- formatted-projection
   [{:keys [NonKeyAttributes ProjectionType]}]
   (without-nils

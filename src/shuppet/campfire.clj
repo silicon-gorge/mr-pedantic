@@ -3,8 +3,8 @@
    [environ.core :refer [env]]
    [clj-campfire.core :as cf]))
 
-(def ^:const api-token (or (env :service-campfire-api-token) "acec839becb8d253b2973f1614d46ce34e640da4"))
-(def ^:const sub-domain (or (env :service-campfire-sub-domain) "nokia-entertainment"))
+(def ^:const ^:private api-token (or (env :service-campfire-api-token) "acec839becb8d253b2973f1614d46ce34e640da4"))
+(def ^:const ^:private sub-domain (or (env :service-campfire-sub-domain) "nokia-entertainment"))
 
 (def ^:private cf-settings
   {:api-token api-token,
@@ -20,5 +20,3 @@
   "Sends the message to the specified rooms"
   [message rooms]
   (map #(cf/message (room %1) message) rooms))
-
-;(send-message "I win...again" #{"Shuppet-test"})

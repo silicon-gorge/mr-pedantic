@@ -15,18 +15,18 @@
              (java.util.concurrent TimeUnit))
     (:gen-class))
 
-(defn read-file-to-properties [file-name]
+(defn- read-file-to-properties [file-name]
   (with-open [^java.io.Reader reader (io/reader file-name)]
     (let [props (java.util.Properties.)]
       (.load props reader)
       (into {} (for [[k v] props] [k v])))))
 
-(defn configure-logging []
+(defn- configure-logging []
   (.reset (LogManager/getLogManager))
   ;Route all java.util.logging log statements to slf4j
   (SLF4JBridgeHandler/install))
 
-(defn start-graphite-reporting []
+(defn- start-graphite-reporting []
   (let [graphite-prefix (new GraphiteName
                              (into-array Object
                                          [(env :environment-name)
@@ -40,7 +40,7 @@
      (TimeUnit/valueOf (env :service-graphite-post-unit))
      (ReporterState/valueOf (env :service-graphite-enabled)))))
 
-(def version
+(def ^:private version
   (delay (if-let [path (.getResource (ClassLoader/getSystemClassLoader) "META-INF/maven/shuppet/shuppet/pom.properties")]
            ((read-file-to-properties path) "version")
            "localhost")))
@@ -50,9 +50,9 @@
   (configure-logging)
   (start-graphite-reporting))
 
-(def server (atom nil))
+(def ^:private server (atom nil))
 
-(defn start-server []
+(defn- start-server []
   (run-jetty #'web/app {:port (Integer. (env :service-port))
                         :join? false
                         :stacktraces? (not (Boolean/valueOf (env :service-production)))

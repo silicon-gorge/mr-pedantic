@@ -10,8 +10,8 @@
    [clojure.zip :as zip]
    [slingshot.slingshot :refer [try+ throw+]]))
 
-(def ^:const ec2-url (env :service-aws-ec2-url))
-(def ^:const ec2-version (env :service-aws-ec2-api-version))
+(def ^:const ^:private ec2-url (env :service-aws-ec2-url))
+(def ^:const ^:private ec2-version (env :service-aws-ec2-api-version))
 
 (defn- get-request
   [params]
@@ -45,6 +45,7 @@
     (get-request (merge params {"Action" (name action)}))))
 
 (defn sg-id
+  "Gets the sg-id for the for the given sg-name"
   [name]
   (xml1-> (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
                                             "Filter.1.Value" name})
@@ -106,20 +107,20 @@
 (defn- ensure-ingress
   [sg-id [revoke-config add-config]]
   (when-not (empty? add-config)
-      (network-action sg-id add-config :AuthorizeSecurityGroupIngress)
-      (log/info "Added new ingress rule for security group: " sg-id))
+    (network-action sg-id add-config :AuthorizeSecurityGroupIngress)
+    (log/info "Added new ingress rule for security group: " sg-id))
   (when-not (empty? revoke-config)
-      (network-action sg-id revoke-config :RevokeSecurityGroupIngress)
-      (log/info "Revoked ingress rule for security group: " sg-id)))
+    (network-action sg-id revoke-config :RevokeSecurityGroupIngress)
+    (log/info "Revoked ingress rule for security group: " sg-id)))
 
 (defn- ensure-egress
   [sg-id [revoke-config add-config]]
   (when-not (empty? add-config)
-      (network-action sg-id add-config :AuthorizeSecurityGroupEgress)
-      (log/info "Added new egress rule for security group: " sg-id))
+    (network-action sg-id add-config :AuthorizeSecurityGroupEgress)
+    (log/info "Added new egress rule for security group: " sg-id))
   (when-not (empty? revoke-config)
-      (network-action sg-id revoke-config :RevokeSecurityGroupEgress)
-      (log/info "Revoked egress rule for security group: " sg-id)))
+    (network-action sg-id revoke-config :RevokeSecurityGroupEgress)
+    (log/info "Revoked egress rule for security group: " sg-id)))
 
 (defn- compare-sg
   [sg-id aws local]
@@ -201,4 +202,4 @@
 (defn delete-sgs
   [{:keys [SecurityGroups]}]
   (doseq [group SecurityGroups]
-         (delete-sg (:GroupName group))))
+    (delete-sg (:GroupName group))))

@@ -43,7 +43,8 @@
 
   :plugins [[lein-ring "0.8.6"]
             [lein-environ "0.4.0"]
-            [lein-release "1.0.73"]]
+            [lein-release "1.0.73"]
+            [codox "0.6.6"]]
 
   ;; development token values
   :env {:environment-name "poke"

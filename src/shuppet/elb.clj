@@ -12,14 +12,13 @@
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
-(def ^:const elb-url (env :service-aws-elb-url))
-(def ^:const elb-version (env :service-aws-elb-api-version))
+(def ^:const ^:private elb-url (env :service-aws-elb-url))
+(def ^:const ^:private elb-version (env :service-aws-elb-api-version))
 
-
-(defn get-request
+(defn- get-request
   [params]
   (let [url (str elb-url  "/?" (map-to-query-string
-                                                  (merge {"Version" elb-version} params)))
+                                (merge {"Version" elb-version} params)))
         auth-headers (v4-auth-headers {:url url} )
         response (client/get url
                              {:headers auth-headers
@@ -73,22 +72,22 @@
 (defn- elb-config [config]
   (dissoc config :HealthCheck))
 
-(defn create-healthcheck [config]
+(defn- create-healthcheck [config]
   (get-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
   (log/info "I've created a new health check config for" (elb-name config))
   config)
 
-(defn create-elb [config]
+(defn- create-elb [config]
   (get-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format  (elb-config config))))
   (log/info "I've created a new ELB called" (elb-name config))
   config)
 
-(defn find-elb [name]
+(defn- find-elb [name]
   (try+
    (get-request {"Action" "DescribeLoadBalancers"
                  "LoadBalancerNames.member.1" name})
    (catch [:code "LoadBalancerNotFound"] _
-       nil)))
+     nil)))
 
 (defn- check-string-value [remote k v]
   (let [remote-value (xml1->
@@ -97,8 +96,8 @@
     (cond
      (nil? remote-value) (throw+ {:type ::missing-value :key k })
      (not (= remote-value (str v))) (throw+ {:type ::wrong-value :key k
-                                           :local-value v
-                                           :remote-value remote-value}))))
+                                             :local-value v
+                                             :remote-value remote-value}))))
 
 (defn- check-fixed-values [{:keys [local remote] :as config}]
   (dorun (map (fn [[k v]]
@@ -151,7 +150,7 @@
 
 (defn- ensure-security-groups [{:keys [local remote] :as config}]
   (let [remote (-> remote
-                    (get-elements [:SecurityGroups :member children]))
+                   (get-elements [:SecurityGroups :member children]))
         name (elb-name local)
         local (:SecurityGroups local)]
     (when-not (= (set local) (set remote))

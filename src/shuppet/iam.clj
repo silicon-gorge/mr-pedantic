@@ -10,18 +10,18 @@
    [clojure.xml :as xml]
    [clojure.zip :as zip]))
 
-(def ^:const iam-url (env :service-aws-iam-url))
-(def ^:const iam-version (env :service-aws-iam-api-version))
+(def ^:const ^:private iam-url (env :service-aws-iam-url))
+(def ^:const ^:private iam-version (env :service-aws-iam-api-version))
 
-(def default-role-policy (write-str (create-policy {:Principal {:Service "ec2.amazonaws.com"}
-                                                    :Action "sts:AssumeRole"})))
+(def ^:private default-role-policy (write-str (create-policy {:Principal {:Service "ec2.amazonaws.com"}
+                                                              :Action "sts:AssumeRole"})))
 
 (defn- post-request
   [params]
   (let [url (str iam-url "/?" (map-to-query-string
                                (merge {"Version" iam-version} params)))
         auth-headers (v4-auth-headers {:url url
-                                            :method :post} )
+                                       :method :post} )
         response (client/post url {:headers auth-headers
                                    :as :stream
                                    :throw-exceptions false})
@@ -67,7 +67,7 @@
                         "AssumeRolePolicyDocument" default-role-policy})
   (log/info "Succesfully created the iam role : " name))
 
-(defn ensure-role
+(defn- ensure-role
   [{:keys [RoleName] :as opts}]
   (when-not (role-exists? RoleName)
     (create-role RoleName))
@@ -135,8 +135,8 @@
 (defn- put-role-policy
   [r-name {:keys [PolicyName PolicyDocument]}]
   (process :PutRolePolicy {"RoleName" r-name
-                                 "PolicyName" PolicyName
-                                 "PolicyDocument" PolicyDocument})
+                           "PolicyName" PolicyName
+                           "PolicyDocument" PolicyDocument})
   (log/info "Succesfully created/updated policy " PolicyName " for role " r-name " with statement " PolicyDocument))
 
 (defn- ensure-policies
@@ -147,8 +147,8 @@
         [r l] (compare-config local remote)]
     (when-not (empty? r)
       (doseq [policy r]
-        ;delete the policy iff the policyname is not present in the local config
-        ;otherwise put role policy will update the changes on the existing policy.
+                                        ;delete the policy iff the policyname is not present in the local config
+                                        ;otherwise put role policy will update the changes on the existing policy.
         (when-not (contains? lp-names (:PolicyName policy))
           (delete-role-policy RoleName policy))))
     (when-not (empty? l)

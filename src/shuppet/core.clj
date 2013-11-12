@@ -21,21 +21,21 @@
     [apps]
     "Gets a list of the application names"))
 
-(defrecord NamesFromService [^String url]
-  ApplicationNames
-  (list-names
-    [this]
-    (let [response (client/get (str url "/applications") {:as :json
-                                                          :throw-exceptions false})]
-      (if (= 200 (:status response))
-        (get-in response [:body :applications])
-        (prn "Cant get a proper response from onix application " response)))))
+(defrecord ^:private NamesFromService [^String url]
+           ApplicationNames
+           (list-names
+             [this]
+             (let [response (client/get (str url "/applications") {:as :json
+                                                                   :throw-exceptions false})]
+               (if (= 200 (:status response))
+                 (get-in response [:body :applications])
+                 (prn "Cant get a proper response from onix application " response)))))
 
-(defrecord NamesFromFile [^String path]
-  ApplicationNames
-  (list-names
-    [this]
-    (prn "Get service names from local file system here")))
+(defrecord ^:private NamesFromFile [^String path]
+           ApplicationNames
+           (list-names
+             [this]
+             (prn "Get service names from local file system here")))
 
 
 (defprotocol Configuration
@@ -43,23 +43,23 @@
     [this]
     "Gets the configuration file contents for evaluation"))
 
-(defrecord FromGit [^String env ^String filename]
-  Configuration
-  (contents
-    [this]
-    (git/get-data (lower-case env) (lower-case filename))))
+(defrecord ^:private FromGit [^String env ^String filename]
+           Configuration
+           (contents
+             [this]
+             (git/get-data (lower-case env) (lower-case filename))))
 
-(defrecord FromFile [^String env ^String name]
-  Configuration
-  (contents
-    [this]
-    (let [f-name (if (= env name)
-                   (str (lower-case env) ".clj")
-                   (str (lower-case name) ".clj"))
-          resource (str  "test/shuppet/resources/" f-name)]
-      (-> resource
-          (clojure.java.io/as-file)
-          (slurp)))))
+(defrecord ^:private FromFile [^String env ^String name]
+           Configuration
+           (contents
+             [this]
+             (let [f-name (if (= env name)
+                            (str (lower-case env) ".clj")
+                            (str (lower-case name) ".clj"))
+                   resource (str  "test/shuppet/resources/" f-name)]
+               (-> resource
+                   (clojure.java.io/as-file)
+                   (slurp)))))
 
 (defn- with-vars [vars clojure-string]
   (str (join (map (fn [[k v]]
@@ -82,7 +82,7 @@
     (FromFile. env name)
     (FromGit. env name)))
 
-(defn load-config
+(defn- load-config
   [env app-name]
   (let [environment (contents (get-configuration env env))]
     (if app-name

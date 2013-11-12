@@ -14,11 +14,11 @@
    [org.apache.commons.codec.binary Base64]
    [org.apache.commons.codec.binary Hex]))
 
-(def ^:const aws-access-key-id (env :service-aws-access-key-id))
-(def ^:const aws-access-key-secret (env :service-aws-secret-access-key))
+(def ^:const ^:private aws-access-key-id (env :service-aws-access-key-id))
+(def ^:const ^:private aws-access-key-secret (env :service-aws-secret-access-key))
 
-(def ^:const v4-algorithm "AWS4-HMAC-SHA256")
-(def ^:const default-region "us-east-1")
+(def ^:const ^:private v4-algorithm "AWS4-HMAC-SHA256")
+(def ^:const ^:private default-region "us-east-1")
 
 (defn- aws-key
   []
@@ -88,7 +88,7 @@
   [params]
   (join "&"
         (map (fn [[k v]] (str (url-encode (name k)) "="
-                             (url-encode (str v))))
+                              (url-encode (str v))))
              params)))
 
 (defn- v2-url-to-sign
@@ -201,6 +201,7 @@
      (calculate-hmac (nth parts 3)))))
 
 (defn v4-auth-headers
+  "Returns the version 4 signature authorisation headers"
   ([method uri headers body]
      (let [opts (parse-url uri)
            host (:host opts)

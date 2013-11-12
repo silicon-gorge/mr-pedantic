@@ -16,17 +16,17 @@
   (:import
    [java.net URL]))
 
-;Need to supply this when we use temporary creadentials via IAM roles
+                                        ;Need to supply this when we use temporary creadentials via IAM roles
 (def ^:dynamic *session-token* nil)
 
-(defn xml-to-map [xml-string]
+(defn- xml-to-map [xml-string]
   (zip/xml-zip (xml/parse (java.io.ByteArrayInputStream. (.getBytes xml-string)))))
 
-(def ^:const s3-url (env :service-aws-s3-url))
-(def ^:const s3-valid-locations #{:eu :eu-west-1 :eu-west-2 :ap-southeast-1
-                                  :ap-southeast-2 :ap-northeast-1 :sa-east-1})
+(def ^:const ^:private s3-url (env :service-aws-s3-url))
+(def ^:const ^:private s3-valid-locations #{:eu :eu-west-1 :eu-west-2 :ap-southeast-1
+                                            :ap-southeast-2 :ap-northeast-1 :sa-east-1})
 
-(def location
+(def ^:private location
   (let [host (-> s3-url
                  URL.
                  .getHost)
@@ -36,14 +36,14 @@
       s3-location
       "")))
 
-(def s3-sub-resources #{:versioning :location :acl :torrent
-                        :lifecycle :versionId :logging :notification
-                        :partNumber :policy :requestPayment :uploadId
-                        :uploads :versions :website})
+(def ^:private s3-sub-resources #{:versioning :location :acl :torrent
+                                  :lifecycle :versionId :logging :notification
+                                  :partNumber :policy :requestPayment :uploadId
+                                  :uploads :versions :website})
 
 (defn- create-bucket-body []
   (emit-str (element :CreateBucketConfiguration {}
-             (element :LocationConstraint {} location))))
+                     (element :LocationConstraint {} location))))
 
 (defn- s3-path
   [host path]
@@ -234,9 +234,9 @@
   [{:keys [BucketName AccessControlPolicy]}]
   (Thread/sleep 1000);Bucket creation can be slow
   (let [url (str s3-url "/" BucketName "/?acl")
-       ; get-response (process :GetBucketAcl url)
+                                        ; get-response (process :GetBucketAcl url)
         local-config (local-acls AccessControlPolicy)]
-    ;Not doing the comparison here as is not a requirement now.
+                                        ;Not doing the comparison here as is not a requirement now.
     (put-acl AccessControlPolicy local-config url)))
 
 (defn- ensure-policy

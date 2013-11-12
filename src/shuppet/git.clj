@@ -19,7 +19,7 @@
            [java.io FileNotFoundException ByteArrayInputStream]))
 
 ;; The private key of the shuppet-bot installed in SNC. Shouldn't change.
-(def shuppet-private-key
+(def ^:private  shuppet-private-key
   "-----BEGIN RSA PRIVATE KEY-----
 MIIEoQIBAAKCAQEAnDnHv9qj0lqZAUC1K5JnxfIDG5NOzsIgeJE52FCs8v3rrM7k
 D729LwXoG1b3JsGGMRd9eyz2rApCG5nKAFIQjhGmiisDyzGX5a0U/xPYCZnZhn9i
@@ -50,17 +50,17 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 ")
 
 ;; The known-hosts, i.e. source.nokia.com
-(def known-hosts
+(def ^:private known-hosts
   "|1|UoVqPabY168wScQJfyEUyDX35Xk=|DTUa0H6lR05jNuvHIMl4ReJLqXM= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
 |1|xtbIYF+FIx2dSIOML++8N0Ohwuw=|f11MX7uxFmdYTaPNxh961FunJI0= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
 ")
 
-(def ^:const base-git-url (env :service-base-git-repository-url))
-(def ^:const base-git-path (env :service-base-git-repository-path))
-(def ^:const base-git-branch (env :service-base-git-repository-branch))
+(def ^:const ^:private base-git-url (env :service-base-git-repository-url))
+(def ^:const ^:private base-git-path (env :service-base-git-repository-path))
+(def ^:const ^:private base-git-branch (env :service-base-git-repository-branch))
 
 
-(def my-jcs-factory
+(def ^:private my-jcs-factory
   (proxy [JschConfigSessionFactory] []
     (configure [host session]
       (info "Configuring JschConfigSessionFactory.")
@@ -91,7 +91,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
     "master"
     base-git-branch))
 
-(defn clone-repo
+(defn- clone-repo
   "Clones the latest version of the specified repo from GIT."
   [branch repo-name]
   (info "First ensuring that repository directory does not exist")
@@ -146,20 +146,17 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
     (slurp (.openStream loader))))
 
 (defn get-data
-   "Fetches the data corresponding to the given application from GIT"
-   [env application]
-   (try
-      (ensure-repo-up-to-date (repo-branch env application) application)
-      (get-head application)
-      (catch InvalidRemoteException e
-        (info (str "Can't communicate with remote repo '" application  "': " e))
-        nil)
-      (catch NullPointerException e
-        (info (str "HEAD revision not found in remote repo '" application "': " e))
-        nil)
-      (catch MissingObjectException e
-        (info (str "Missing object for revision HEAD in repo '" application "': " e))
-        nil)))
-
-
-;(prn (get-data "dev"))
+  "Fetches the data corresponding to the given application from GIT"
+  [env application]
+  (try
+    (ensure-repo-up-to-date (repo-branch env application) application)
+    (get-head application)
+    (catch InvalidRemoteException e
+      (info (str "Can't communicate with remote repo '" application  "': " e))
+      nil)
+    (catch NullPointerException e
+      (info (str "HEAD revision not found in remote repo '" application "': " e))
+      nil)
+    (catch MissingObjectException e
+      (info (str "Missing object for revision HEAD in repo '" application "': " e))
+      nil)))
