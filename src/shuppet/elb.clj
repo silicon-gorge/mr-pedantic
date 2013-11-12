@@ -15,7 +15,7 @@
 (def ^:const ^:private elb-url (env :service-aws-elb-url))
 (def ^:const ^:private elb-version (env :service-aws-elb-api-version))
 
-(defn- get-request
+(defn get-request
   [params]
   (let [url (str elb-url  "/?" (map-to-query-string
                                 (merge {"Version" elb-version} params)))
@@ -72,12 +72,12 @@
 (defn- elb-config [config]
   (dissoc config :HealthCheck))
 
-(defn- create-healthcheck [config]
+(defn create-healthcheck [config]
   (get-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
   (log/info "I've created a new health check config for" (elb-name config))
   config)
 
-(defn- create-elb [config]
+(defn create-elb [config]
   (get-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format  (elb-config config))))
   (log/info "I've created a new ELB called" (elb-name config))
   config)
