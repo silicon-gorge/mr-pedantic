@@ -30,7 +30,6 @@
 (def ^:const hmac-sha256-algorithm  "HmacSHA256")
 (def ^:const hmac-sha1-algorithm  "HmacSHA1")
 
-
 (defn url-encode
   "The java.net.URLEncoder class encodes for application/x-www-form-urlencoded. (RFC 3986 encoding)"
   [s]
