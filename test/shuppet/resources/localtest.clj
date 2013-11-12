@@ -84,4 +84,5 @@
 
              :ForceDelete false}]
 
-  :Campfire [$cf-shuppet]}
+ :Campfire {:Info [$cf-shuppet]
+            :Error [$cf-shuppet]}}

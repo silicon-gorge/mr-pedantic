@@ -1,6 +1,7 @@
 (ns shuppet.web
   (:require
    [shuppet.core :as core]
+     [slingshot.slingshot :refer [try+ throw+]]
    [clojure.data.json :refer [write-str]]
    [compojure.core :refer [defroutes context GET PUT POST DELETE]]
    [compojure.route :as route]
@@ -14,7 +15,7 @@
    [clojure.string :refer [split]]
    [clojure.tools.logging :refer [info warn error]]
    [environ.core :refer [env]]
-   [shuppet.errorhandler :refer [wrap-error-handling error-response]]
+   [nokia.ring-utils.error :refer [wrap-error-handling error-response]]
    [nokia.ring-utils.metrics :refer [wrap-per-resource-metrics replace-outside-app
                                      replace-guid replace-mongoid replace-number]]
    [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]

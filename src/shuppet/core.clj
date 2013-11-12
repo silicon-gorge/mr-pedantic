@@ -10,7 +10,7 @@
              [iam :refer [ensure-iam delete-role]]
              [s3 :refer [ensure-s3s delete-s3s]]
              [ddb :refer [ensure-ddbs delete-ddbs]]
-             [campfire :refer [*rooms*]]]
+             [campfire :as cf]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -94,7 +94,8 @@
 (defn apply-config
   ([env & [app-name]]
      (let [config (load-config env app-name)]
-       (binding [*rooms* (:Campfire config)]
+       (binding [cf/*info-rooms* (get-in config [:Campfire :Info])
+                 cf/*error-rooms* (get-in config [:Campfire :Error])]
          (try+
           (doto config
             ensure-sgs
@@ -102,10 +103,9 @@
             ensure-iam
             ensure-s3s
             ensure-ddbs)
-          (catch map? error
-            (throw+ (merge error {:name app-name
-                                  :env env
-                                  :cf-rooms (:Campfire config)}))))))))
+          (catch [:type :shuppet.util/aws] e
+            (cf/error env app-name e)
+            (throw+ e)))))))
 
 (defn get-config
   ([env & [app-name]]
