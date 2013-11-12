@@ -9,7 +9,8 @@
              [elb :refer [ensure-elb delete-elb]]
              [iam :refer [ensure-iam delete-role]]
              [s3 :refer [ensure-s3s delete-s3s]]
-             [ddb :refer [ensure-ddbs delete-ddbs]]]
+             [ddb :refer [ensure-ddbs delete-ddbs]]
+             [campfire :refer [*rooms*]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -93,17 +94,18 @@
 (defn apply-config
   ([env & [app-name]]
      (let [config (load-config env app-name)]
-       (try+
-        (doto config
-          ensure-sgs
-          ensure-elb
-          ensure-iam
-          ensure-s3s
-          ensure-ddbs)
-        (catch map? error
-          (throw+ (merge error {:name app-name
-                                :env env
-                                :cf-rooms (:Campfire config)})))))))
+       (binding [*rooms* (:Campfire config)]
+         (try+
+          (doto config
+            ensure-sgs
+            ensure-elb
+            ensure-iam
+            ensure-s3s
+            ensure-ddbs)
+          (catch map? error
+            (throw+ (merge error {:name app-name
+                                  :env env
+                                  :cf-rooms (:Campfire config)}))))))))
 
 (defn get-config
   ([env & [app-name]]

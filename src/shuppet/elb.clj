@@ -1,6 +1,7 @@
 (ns shuppet.elb
   (:require
    [shuppet
+    [campfire :as cf :refer [send-message]]
     [securitygroups :refer [sg-id]]
     [signature :refer [v4-auth-headers]]
     [util :refer :all]]
@@ -73,13 +74,13 @@
   (dissoc config :HealthCheck))
 
 (defn create-healthcheck [config]
-  (get-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
-  (log/info "I've created a new health check config for" (elb-name config))
+(get-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
+  (send-message (str "I've created a new health check config for elb " (elb-name config)))
   config)
 
 (defn create-elb [config]
   (get-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format  (elb-config config))))
-  (log/info "I've created a new ELB called" (elb-name config))
+   (send-message (str "I've created a new ELB called " (elb-name config)))
   config)
 
 (defn- find-elb [name]
@@ -113,14 +114,14 @@
         local-health-check (values-tostring (:HealthCheck local))]
     (when-not (= remote-health-check local-health-check)
       (create-healthcheck local)
-      (log/info "I've replaced healthcheck config for" (elb-name local)))
+      (send-message (str "I've replaced healthcheck config for elb " (elb-name local))))
     config))
 
 (defn- update-elb [elb-name action prefix fields]
   (get-request (merge {"Action" (name action)
                        "LoadBalancerName" elb-name}
                       (apply hash-map (flatten (list-to-member (name prefix) fields)))))
-  (log/info "I had to" (name action) fields "on" elb-name))
+  (send-message (str "I had to " (name action) " " (vec fields) " on " elb-name)))
 
 (defn- ensure-listeners [{:keys [local remote] :as config}]
   (let [remote (-> remote
