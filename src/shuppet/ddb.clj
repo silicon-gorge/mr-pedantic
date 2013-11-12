@@ -120,12 +120,12 @@
   [{:keys [ForceDelete TableName]} local remote]
   (when-not (= (dissoc local :ProvisionedThroughput) (dissoc remote :ProvisionedThroughput))
     (if ForceDelete
-      (dorun
-       (post-request :DeleteTable {:TableName TableName})
-       (cf/info (str "I've succesfully deleted the dynamodb table '" TableName "'"))
-       (Thread/sleep 45000)
-       (post-request :CreateTable local)
-       (cf/info (str "I've created a new dynamodb table called '" TableName "'")))
+      (future (dorun
+               (post-request :DeleteTable {:TableName TableName})
+               (cf/info (str "I've succesfully deleted the dynamodb table '" TableName "'"))
+               (Thread/sleep 45000)
+               (post-request :CreateTable local)
+               (cf/info (str "I've created a new dynamodb table called '" TableName "'"))))
       (throw-aws-exception "DynamoDB" "POST" ddb-url "400" {:__type "Table Configuration Mismatch" :message "Mismatch in table configuration. If you want to apply the current local configuration, please add :ForceDelete true confirming that its ok to delete the current table and create a new table with the new configuration.Note: All data in the current table will be lost after this operation"} :json))))
 
 (defn- compare-table
