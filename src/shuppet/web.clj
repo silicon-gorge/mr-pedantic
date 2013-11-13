@@ -56,7 +56,7 @@
 
 (defn- list-apps
   [env]
-  (response {:applications (core/get-app-names env)}))
+  (response {:applications (core/app-names env)}))
 
 (defn- show-app-config
   [env name]

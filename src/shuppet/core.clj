@@ -16,60 +16,62 @@
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
 
-(def ^:const ^:private onix-url (env :environment-entertainment-onix-url))
 (def ^:private default-info-room (env :service-campfire-default-info-room))
 (def ^:private default-error-rooms
   (conj [default-info-room] (env :service-campfire-default-error-room)))
 
 (defprotocol ApplicationNames
   (list-names
-    [apps]
+    [this]
     "Gets a list of the application names"))
 
-(defrecord ^:private FromService [^String url]
+(deftype ^:private OnixAppNames [^String url]
            ApplicationNames
            (list-names
-             [this]
+             [_]
              (let [url (str url "/applications")
                    response (client/get url {:as :json
                                              :throw-exceptions false})
                    status (:status response)]
                (if (= 200 status)
                  (get-in response [:body :applications])
-                 (cf/error {:title "Failed to get application list from onix."
+                 (cf/error {:title "Failed to get application list from Onix."
                             :url url
                             :status status
                             :message (:body response)} default-error-rooms)))))
 
-(defrecord ^:private LocalName [^String path]
+(deftype ^:private LocalAppNames []
            ApplicationNames
            (list-names
-             [this]
+             [_]
              ["localtest"]))
 
 
 (defprotocol Configuration
-  (contents
-    [this]
+  (as-string
+    [this env filename]
     "Gets the configuration file contents for evaluation"))
 
-(defrecord ^:private FromGit [^String env ^String filename]
+(deftype ^:private GitConfig []
            Configuration
-           (contents
-             [this]
+           (as-string
+             [_ env filename]
              (git/get-data (lower-case env) (lower-case filename))))
 
-(defrecord ^:private FromFile [^String env ^String name]
+(deftype ^:private LocalConfig []
            Configuration
-           (contents
-             [this]
-             (let [f-name (if (= env name)
+           (as-string
+             [_ env filename]
+             (let [filename (if (= env filename)
                             (str (lower-case env) ".clj")
-                            (str (lower-case name) ".clj"))
-                   resource (str  "test/shuppet/resources/" f-name)]
+                            (str (lower-case filename) ".clj"))
+                   resource (str  "test/shuppet/resources/" filename)]
                (-> resource
                    (clojure.java.io/as-file)
                    (slurp)))))
+
+(def ^:dynamic *application-names* (OnixAppNames. (env :environment-entertainment-onix-url)))
+(def ^:dynamic *configuration* (GitConfig.))
 
 (defn- with-vars [vars clojure-string]
   (str (join (map (fn [[k v]]
@@ -87,26 +89,24 @@
         (remove-ns (symbol (ns-name ns)))
         config))))
 
-(defn- app-name-provider
+(defn app-names
   [env]
-  (if (= "local" env)
-    (LocalName. "irrelevant-path")
-    (FromService. onix-url)))
+  (list-names
+   (if (= "local" env)
+     (LocalAppNames.)
+     *application-names*)))
 
-(defn get-app-names
-  [env]
-  (list-names (app-name-provider env)))
-
-(defn- get-configuration [env name]
-  (if (= "local" env)
-    (FromFile. env name)
-    (FromGit. env name)))
+(defn- configuration [env name]
+  (as-string
+   (if (= "local" env)
+     (LocalConfig.)
+     *configuration*) env name))
 
 (defn- load-config
   [env app-name]
-  (let [environment (contents (get-configuration env env))]
+  (let [environment (configuration env env)]
     (if app-name
-      (let [application (contents (get-configuration env app-name))]
+      (let [application (configuration env app-name)]
         (execute-string (str environment "\n" application) app-name))
       (execute-string environment))))
 
@@ -144,7 +144,7 @@
 
 
 (defn clean-config [environment app-name]
-  (when-not (= "poke" (lower-case (env :environment-name)))
+  (when-not (env :service-delete-allowed)
     (throw+ {:type ::wrong-environment}))
   (let [config (load-config environment app-name)]
     (delete-elb config)
@@ -157,5 +157,5 @@
 
 (defn update-configs
   [env]
-  (let [names (list-names (FromService. onix-url))]
+  (let [names (app-names env)]
     (map #(apply-config env %) names)))

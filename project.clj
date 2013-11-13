@@ -84,6 +84,8 @@
         :service-campfire-sub-domain "nokia-entertainment"
         :service-campfire-default-info-room "Shuppet Info"
         :service-campfire-default-error-room "Shuppet Error"
+
+        :service-delete-allowed true
         }
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
