@@ -18,11 +18,9 @@
             [slingshot.slingshot :refer [try+ throw+]]))
 
 (def ^:const ^:private onix-url (env :environment-entertainment-onix-url))
-(def ^:private default-info-room (to-vec (env :service-campfire-default-info-room)))
+(def ^:private default-info-room (env :service-campfire-default-info-room))
 (def ^:private default-error-rooms
-  (reduce conj
-          default-info-room
-          (to-vec (env :service-campfire-default-info-room))))
+  (conj [default-info-room] (env :service-campfire-default-error-room)))
 
 (defprotocol ApplicationNames
   (list-names
@@ -112,9 +110,8 @@
 (defn apply-config
   ([env & [app-name]]
      (let [config (load-config env app-name)]
-       (binding [cf/*info-rooms* (reduce conj
-                                         (to-vec (get-in config [:Campfire :Info]))
-                                         default-info-room)
+       (binding [cf/*info-rooms* (conj (to-vec (get-in config [:Campfire :Info]))
+                                       default-info-room)
                  cf/*error-rooms* (reduce conj
                                           (to-vec (get-in config [:Campfire :Error]))
                                           default-error-rooms)]

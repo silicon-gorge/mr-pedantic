@@ -58,7 +58,7 @@
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
         :service-production "false"
-        :service-environments "local,dev,poke"
+        :service-environments "local,dev,poke,prod"
         :environment-entertainment-onix-url "http://onix.brislabs.com:8080/1.x"
 
         ;;aws-config
