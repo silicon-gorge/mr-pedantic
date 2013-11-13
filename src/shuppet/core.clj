@@ -13,7 +13,6 @@
              [campfire :as cf]
              [util :refer [to-vec]]]
             [clj-http.client :as client]
-            [clojure.tools.logging :refer [error]]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
 
@@ -31,11 +30,16 @@
            ApplicationNames
            (list-names
              [this]
-             (let [response (client/get (str url "/applications") {:as :json
-                                                                   :throw-exceptions false})]
-               (if (= 200 (:status response))
+             (let [url (str url "/applications")
+                   response (client/get url {:as :json
+                                             :throw-exceptions false})
+                   status (:status response)]
+               (if (= 200 status)
                  (get-in response [:body :applications])
-                 (error (str  "Onix responded with error response : " response))))))
+                 (cf/error {:title "Failed to get application list from onix."
+                            :url url
+                            :status status
+                            :message (:body response)} default-error-rooms)))))
 
 (defrecord ^:private LocalName [^String path]
            ApplicationNames

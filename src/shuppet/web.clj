@@ -13,7 +13,6 @@
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [clojure.data.xml :refer [element emit-str]]
    [clojure.string :refer [split]]
-   [clojure.tools.logging :refer [info warn error]]
    [environ.core :refer [env]]
    [nokia.ring-utils.error :refer [wrap-error-handling error-response]]
    [nokia.ring-utils.metrics :refer [wrap-per-resource-metrics replace-outside-app
@@ -23,12 +22,16 @@
    [metrics.ring.instrument :refer [instrument]]))
 
 (def ^:dynamic *version* "none")
+(def ^:private cf-info-room (env :service-campfire-default-info-room))
+(def ^:private cf-error-room (env :service-campfire-default-error-room))
+(def ^:private environments (env :service-environments))
 
 (defn set-version!
   [version]
   (alter-var-root #'*version* (fn [_] version)))
 
-(defn- response [body]
+(defn- response
+  [body]
   (merge
    {:status 200
     :headers {"Content-Type" "application/json"}}
@@ -36,52 +39,80 @@
      {}
      {:body body})))
 
-(def ^:private cf-info-room (env :service-campfire-default-info-room))
-(def ^:private cf-error-room (env :service-campfire-default-error-room))
-(def ^:private environments (env :service-environments))
+(defn- list-envs
+  []
+  (response {:environments (split environments #",")}))
+
+(defn- show-env-config
+  [env]
+  (->  (ring-response/response (-> (core/get-config env) (write-str)))
+       (ring-response/content-type "application/json")))
+
+(defn- apply-env-config
+  [env]
+  (core/apply-config env)
+  (response  {:message (str "Succesfully applied the configuration for environment " env "."
+                            "Please check the campfire room '" cf-info-room "' for a detailed report.")}))
+
+(defn- list-apps
+  [env]
+  (response {:applications (core/get-app-names env)}))
+
+(defn- show-app-config
+  [env name]
+  (->  (ring-response/response (-> (core/get-config env name) (write-str)))
+       (ring-response/content-type "application/json")))
+
+(defn- apply-app-config
+  [env name]
+  (core/apply-config env name)
+  (response {:message (str "Succesfully applied the configuration for application " name "."
+                           "Please check the campfire room '" cf-info-room "' for a detailed report.")}))
+
+(defn- clean-app-config
+  [env name]
+  (core/clean-config env name)
+  (response {:message (str "Succesfully cleaned the configuration for application " name)}))
+
+(defn- apply-apps-config
+  [env]
+  (core/update-configs env)
+  (response  {:message (str "Started applying the configuration for all applications in environment " env "."
+                            "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
 
 (defroutes applications-routes
 
-  (GET "/" []
-       (response {:environments (split environments #",")}))
+  (GET "/"
+       []
+       (list-envs))
 
   (GET "/:env"
        [env]
-       (->  (ring-response/response (-> (core/get-config env) (write-str)))
-            (ring-response/content-type "application/json")))
+       (show-env-config env))
 
   (GET "/:env/apply"
        [env]
-       (core/apply-config env)
-       (response  {:message (str "Succesfully applied the configuration for environment " env "."
-                                 "Please check the campfire room '" cf-info-room "' for a detailed report.")}))
+       (apply-env-config env))
 
   (GET "/:env/apps"
        [env]
-       (response {:applications (core/get-app-names env)}))
+       (list-apps env))
 
-  (GET "/:env/apps/apply"
-       [env]
-       (core/update-configs env)
-       (response  {:message (str "Started applying the configuration for all applications in environment " env "."
-                                 "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
-
-  (GET "/:env/apps/:app-name"
-       [env app-name]
-       (->  (ring-response/response (-> (core/get-config env app-name) (write-str)))
-            (ring-response/content-type "application/json")))
-
+  (GET "/:env/apps/:name"
+       [env name]
+       (show-app-config env name))
 
   (GET "/:env/apps/:name/apply"
        [env name]
-       (core/apply-config env name)
-       (response {:message (str "Succesfully applied the configuration for application " name "."
-                                "Please check the campfire room '" cf-info-room "' for a detailed report.")}))
+       (apply-app-config env name))
 
   (GET "/:env/apps/:name/clean"
        [env name]
-       (core/clean-config env name)
-       (response {:message (str "Succesfully cleaned the configuration for application " name)})))
+       (clean-app-config env name))
+
+  (GET "/:env/apps/apply"
+       [env]
+       (apply-apps-config env)))
 
 (defroutes routes
   (context
