@@ -1,5 +1,5 @@
 (ns shuppet.integration
-  (:require [shuppet.web :as web]
+  (:require [shuppet.test-util :refer :all]
             [clj-http.client :as client]
             [midje.sweet :refer :all]
             [cheshire.core :as json]
@@ -32,7 +32,7 @@
 (defmethod read-body :none [http-response]
   (throw (Exception. (str "No content-type in response: " http-response))))
 
-(fact-group :integration
+(lazy-fact-group :integration
    (fact "Ping resource returns 200 HTTP response"
          (let [response (client/get (url+ "/ping")  {:throw-exceptions false})]
            response => (contains {:status 200})))

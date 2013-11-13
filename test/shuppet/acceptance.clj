@@ -1,5 +1,5 @@
 (ns shuppet.acceptance
-  (:require [shuppet.web :as web]
+  (:require [shuppet.test-util :refer :all]
             [clj-http.client :as client]
             [midje.sweet :refer :all]
             [cheshire.core :as json]
@@ -30,7 +30,7 @@
   (json/parse-string (:body http-response) true))
 
 
-(fact-group :acceptance
+(lazy-fact-group :acceptance
    (fact "Ping resource returns 200 HTTP response"
          (let [response (client/get (url+ "/ping")  {:throw-exceptions false})]
            response => (contains {:status 200})))
