@@ -10,19 +10,26 @@
              [iam :refer [ensure-iam delete-role]]
              [s3 :refer [ensure-s3s delete-s3s]]
              [ddb :refer [ensure-ddbs delete-ddbs]]
-             [campfire :as cf]]
+             [campfire :as cf]
+             [util :refer [to-vec]]]
             [clj-http.client :as client]
+            [clojure.tools.logging :refer [error]]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
 
-(def ^:const onix-url (env :environment-onix-url) ) ;todo check
+(def ^:const ^:private onix-url (env :environment-entertainment-onix-url))
+(def ^:private default-info-room (to-vec (env :service-campfire-default-info-room)))
+(def ^:private default-error-rooms
+  (reduce conj
+          default-info-room
+          (to-vec (env :service-campfire-default-info-room))))
 
 (defprotocol ApplicationNames
   (list-names
     [apps]
     "Gets a list of the application names"))
 
-(defrecord ^:private NamesFromService [^String url]
+(defrecord ^:private FromService [^String url]
            ApplicationNames
            (list-names
              [this]
@@ -30,13 +37,13 @@
                                                                    :throw-exceptions false})]
                (if (= 200 (:status response))
                  (get-in response [:body :applications])
-                 (prn "Cant get a proper response from onix application " response)))))
+                 (error (str  "Onix responded with error response : " response))))))
 
-(defrecord ^:private NamesFromFile [^String path]
+(defrecord ^:private LocalName [^String path]
            ApplicationNames
            (list-names
              [this]
-             (prn "Get service names from local file system here")))
+             ["localtest"]))
 
 
 (defprotocol Configuration
@@ -78,6 +85,16 @@
         (remove-ns (symbol (ns-name ns)))
         config))))
 
+(defn- app-name-provider
+  [env]
+  (if (= "local" env)
+    (LocalName. "irrelevant-path")
+    (FromService. onix-url)))
+
+(defn get-app-names
+  [env]
+  (list-names (app-name-provider env)))
+
 (defn- get-configuration [env name]
   (if (= "local" env)
     (FromFile. env name)
@@ -91,11 +108,16 @@
         (execute-string (str environment "\n" application) app-name))
       (execute-string environment))))
 
+
 (defn apply-config
   ([env & [app-name]]
      (let [config (load-config env app-name)]
-       (binding [cf/*info-rooms* (get-in config [:Campfire :Info])
-                 cf/*error-rooms* (get-in config [:Campfire :Error])]
+       (binding [cf/*info-rooms* (reduce conj
+                                         (to-vec (get-in config [:Campfire :Info]))
+                                         default-info-room)
+                 cf/*error-rooms* (reduce conj
+                                          (to-vec (get-in config [:Campfire :Error]))
+                                          default-error-rooms)]
          (try+
           (doto config
             ensure-sgs
@@ -126,5 +148,5 @@
 
 (defn update-configs
   [env]
-  (let [names (list-names (NamesFromService. onix-url))]
+  (let [names (list-names (FromService. onix-url))]
     (map #(apply-config env %) names)))

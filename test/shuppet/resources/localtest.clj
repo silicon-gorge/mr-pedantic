@@ -82,6 +82,4 @@
                                       :Projection {:ProjectionType "KEYS_ONLY"}}]
 
              :ForceDelete false}]
-
- :Campfire {:Info [$cf-shuppet-info $cf-shuppet-error]
-            :Error [$cf-shuppet-error]}}
+ }

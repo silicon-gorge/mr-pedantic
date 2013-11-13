@@ -58,8 +58,7 @@
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
         :service-production "false"
-
-        ;;to-check
+        :service-environments "local,dev,poke"
         :environment-entertainment-onix-url "http://onix.brislabs.com:8080/1.x"
 
         ;;aws-config
@@ -83,6 +82,8 @@
         ;;campfire
         :service-campfire-api-token "acec839becb8d253b2973f1614d46ce34e640da4"
         :service-campfire-sub-domain "nokia-entertainment"
+        :service-campfire-default-info-room "Shuppet Info"
+        :service-campfire-default-error-room "Shuppet Error"
         }
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]

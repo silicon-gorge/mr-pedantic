@@ -155,7 +155,7 @@
   [policy-docs]
   {:Statement (vec (map #(first (:Statement %)) policy-docs))})
 
-(defn- to-vec
+(defn to-vec
   [item]
   (if (string? item) [item] (vec item)))
 

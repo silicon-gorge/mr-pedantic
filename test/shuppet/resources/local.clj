@@ -1,6 +1,4 @@
 (def $vpc-id "vpc-7bc88713")
-(def $cf-shuppet-info "Shuppet Info")
-(def $cf-shuppet-error "Shuppet Error")
 (def $sg-ingress [{:IpRanges "10.216.221.0/24"
                    :IpProtocol "tcp"
                    :FromPort 80
