@@ -110,10 +110,18 @@
         (execute-string (str environment "\n" application) app-name))
       (execute-string environment))))
 
+(defn- load-config-with-error-handling
+  [env app-name]
+  (try+
+   (load-config env app-name)
+   (catch clojure.lang.Compiler$CompilerException e
+     (cf/error {:env env :app-name app-name :title "I cannot read this config" :message (.getMessage e)}
+               default-error-rooms)
+     (throw+ e))))
 
 (defn apply-config
   ([env & [app-name]]
-     (let [config (load-config env app-name)]
+     (let [config (load-config-with-error-handling env app-name)]
        (binding [cf/*info-rooms* (conj (to-vec (get-in config [:Campfire :Info]))
                                        default-info-room)
                  cf/*error-rooms* (reduce conj
@@ -127,7 +135,7 @@
             ensure-s3s
             ensure-ddbs)
           (catch [:type :shuppet.util/aws] e
-            (cf/error env app-name e)
+            (cf/error (merge {:env env :app-name app-name} e))
             (throw+ e)))))))
 
 (defn get-config
