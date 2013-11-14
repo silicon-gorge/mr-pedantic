@@ -42,4 +42,4 @@
                               (error-messages m))))
                     error-rooms))))
   ([m]
-     (error *error-rooms*)))
+     (error m *error-rooms*)))
