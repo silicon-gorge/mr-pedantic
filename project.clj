@@ -85,6 +85,8 @@
         :service-campfire-default-info-room "Shuppet Info"
         :service-campfire-default-error-room "Shuppet Error"
 
+        :service-local-config-path "test/shuppet/resources"
+        :service-local-app-names "localtest"
         :service-delete-allowed true
         }
 
