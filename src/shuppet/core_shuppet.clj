@@ -3,6 +3,7 @@
             [clojure.data.json :refer [json-str]]
             [shuppet.util :refer :all]
             [clojure.string :refer [join split]]
+            [clojure.java.io :refer [as-file file resource]]
             [shuppet
              [git :as git]
              [securitygroups :refer [ensure-sgs delete-sgs]]
@@ -30,7 +31,10 @@
 (defprotocol Configuration
   (as-string
     [this env filename]
-    "Gets the configuration file as string"))
+    "Gets the configuration file as string")
+  (configure
+    [this app-name]
+    "Sets up the configuration file for the application"))
 
 (deftype LocalConfig []
            Configuration
@@ -39,8 +43,13 @@
              (let [filename (str (lower-case name) ".clj")
                    path (str (env :service-local-config-path) "/" environment "/" filename)]
                (-> path
-                   (clojure.java.io/as-file)
-                   (slurp)))))
+                   (as-file)
+                   (slurp))))
+           (configure
+             [_ name]
+             (let [dest-path (str (env :service-local-config-path) "/local/" name ".clj")]
+               (spit dest-path (slurp (resource "default.clj")))
+               {:message (str "Created new configuration file " dest-path)})))
 
 (def ^:dynamic *application-names* (LocalAppNames.))
 (def ^:dynamic *configuration* (LocalConfig.))
@@ -64,6 +73,10 @@
 (defn app-names
   []
   (list-names *application-names*))
+
+(defn create-config
+  [app-name]
+  (configure *configuration* app-name))
 
 (defn- configuration [env name]
   (as-string *configuration* env name))

@@ -58,7 +58,15 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 (def ^:const ^:private base-git-url (env :service-base-git-repository-url))
 (def ^:const ^:private base-git-path (env :service-base-git-repository-path))
 (def ^:const ^:private base-git-branch (env :service-base-git-repository-branch))
+(def ^:private valid-environments
+  (disj (set (split (env :service-environments) #",")) "local"))
 
+(def snc-url
+  (str (env :service-snc-api-base-url)
+       "projects/shuppet/repositories?api_username="
+       (env :service-snc-api-username)
+       "&api_secret="
+       (env :service-snc-api-secret)))
 
 (def ^:private my-jcs-factory
   (proxy [JschConfigSessionFactory] []
@@ -93,19 +101,21 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- clone-repo
   "Clones the latest version of the specified repo from GIT."
-  [branch repo-name]
-  (info "First ensuring that repository directory does not exist")
-  (rm "-rf" (repo-path repo-name))
-  (info "Cloning repository to" (repo-path repo-name))
-  (->
-   (Git/cloneRepository)
-   (.setURI (repo-url repo-name))
-   (.setDirectory (as-file (repo-path repo-name)))
-   (.setRemote "origin")
-   (.setBranch branch)
-   (.setBare false)
-   (.call))
-  (info "Cloning completed."))
+  ([branch repo-name]
+     (info "First ensuring that repository directory does not exist")
+     (rm "-rf" (repo-path repo-name))
+     (info "Cloning repository to" (repo-path repo-name))
+     (->
+      (Git/cloneRepository)
+      (.setURI (repo-url repo-name))
+      (.setDirectory (as-file (repo-path repo-name)))
+      (.setRemote "origin")
+      (.setBranch branch)
+      (.setBare false)
+      (.call))
+     (info "Cloning completed."))
+  ([repo-name]
+     (clone-repo "master" repo-name)))
 
 (defn- pull-repo
   "Pull a repository by fetching."
@@ -160,3 +170,77 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
     (catch MissingObjectException e
       (info (str "Missing object for revision HEAD in repo '" application "': " e))
       nil)))
+
+(defn- repo-create-body
+  [name]
+  (str "repository[name]=" name "&repository[kind]=Git"))
+
+(defn- create-repository
+  [name]
+  (let [response (client/post snc-url {:body (repo-create-body name)
+                                       :content-type "application/x-www-form-urlencoded"
+                                       :throw-exceptions false})
+        status (:status response)]
+    (when (not= status 200)
+      (throw+ {:type ::git
+               :status status
+               :message (str "Error while trying to create repository. " (:message (parse-string (:body response) true)))}))))
+
+(defn- copy-config-file
+  [resource-name dest-path]
+  (spit dest-path (slurp (resource resource-name))))
+
+(defn- write-default-config
+  [name]
+  (copy-config-file "default.clj" (str (repo-path name) "/" name ".clj")))
+
+(defn- commit-and-push
+  [repo-name]
+  (let [git (Git/open (as-file (repo-path repo-name)))
+        add (.add git)
+        commit (.commit git)
+        push (.push git)]
+    (->
+     add
+     (.addFilepattern ".")
+     (.call))
+    (->
+     commit
+     (.setAuthor "shuppet" "noreply@nokia.com")
+     (.setMessage "Initial conifguration file.")
+     (.call))
+    (->
+     push
+     (.call))))
+
+(defn- setup-repository
+  [name]
+  (doto name
+    create-repository
+    clone-repo
+    write-default-config
+    commit-and-push))
+
+(defn- create-branch
+  [repo-name branch-name]
+  (let [git (Git/open (as-file (repo-path repo-name)))]
+    (->
+     (.checkout git)
+     (.setCreateBranch true)
+     (.setName branch-name)
+     (.call))))
+
+(defn- setup-branch
+  [repo-name branch-name]
+  (clone-repo repo-name)
+  (create-branch repo-name branch-name)
+  (commit-and-push repo-name))
+
+(defn create-application
+  [name]
+  (setup-repository name)
+  (doseq [branch valid-environments]
+    (setup-branch name branch))
+  {:name name
+   :path (str base-git-url name)
+   :branches valid-environments})

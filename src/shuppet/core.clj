@@ -29,7 +29,10 @@
            shuppet/Configuration
            (as-string
              [_ env filename]
-             (git/get-data (lower-case env) (lower-case filename))))
+             (git/get-data (lower-case env) (lower-case filename)))
+           (configure
+             [_ appname]
+             (git/create-application appname)))
 
 (defmacro with-ent-bindings
   "Specific Entertainment bindings"
@@ -52,6 +55,11 @@
   [env & [app-name]]
   (with-ent-bindings env
     (shuppet/load-config env app-name)))
+
+(defn create-config
+  [env & [app-name]]
+  (with-ent-bindings env
+    (shuppet/create-config app-name)))
 
 (defn clean-config
   [environment app-name]

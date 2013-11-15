@@ -80,6 +80,11 @@
   (response  {:message (str "Started applying the configuration for all applications in environment " env "."
                             "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
 
+(defn- create-app-config
+  [name local]
+  (let [env (if local "local" "")]
+    (response (core/create-config env name))))
+
 (defroutes applications-routes
 
   (GET "/"
@@ -132,6 +137,10 @@
          :headers {"Content-Type" "image/jpeg"}
          :body (-> (clojure.java.io/resource "shuppet.jpg")
                    (clojure.java.io/input-stream))})
+
+   (POST "/apps/:name/configure"
+         [name local]
+         (create-app-config name local))
 
    (context "/envs"
             [] applications-routes))

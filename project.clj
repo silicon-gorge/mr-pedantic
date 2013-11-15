@@ -2,7 +2,8 @@
   :description "Shuppet service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Shuppet"
 
-  :dependencies [[compojure "1.1.5" :exclusions [javax.servlet/servlet-api]]
+  :dependencies [[bouncer "0.3.0-alpha1"]
+                 [compojure "1.1.5" :exclusions [javax.servlet/servlet-api]]
                  [ring-json-params "0.1.3"]
                  [ring-middleware-format "0.3.1"]
                  [ring/ring-jetty-adapter "1.2.0"]
@@ -58,7 +59,7 @@
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
         :service-production "false"
-        :service-environments "local,dev,poke,prod"
+        :service-environments "local,poke,prod"
         :environment-entertainment-onix-url "http://onix.brislabs.com:8080/1.x"
 
         ;;aws-config
@@ -78,6 +79,9 @@
         :service-base-git-repository-url "ssh://snc@source.nokia.com/shuppet/git/"
         :service-base-git-repository-path "/tmp/repos/"
         :service-base-git-repository-branch "dev"
+        :service-snc-api-base-url "https://source.nokia.com/api/v2/"
+        :service-snc-api-username "shpaul"
+        :service-snc-api-secret "de6ad71e0eace6e3a4cae9955c2f67d7"
 
         ;;campfire
         :service-campfire-api-token "acec839becb8d253b2973f1614d46ce34e640da4"
