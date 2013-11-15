@@ -16,10 +16,6 @@
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
 
-(def default-info-room (env :service-campfire-default-info-room))
-(def default-error-rooms
-  (conj [default-info-room] (env :service-campfire-default-error-room)))
-
 (defprotocol ApplicationNames
   (list-names
     [this]
@@ -80,30 +76,12 @@
         (execute-string (str environment "\n" application) app-name))
       (execute-string environment))))
 
-(defmacro with-cf-message
-  [{:keys [env app-name config]} & body]
-  `(binding [cf/*info-rooms* (conj (to-vec (get-in ~config [:Campfire :Info]))
-                                   default-info-room)
-             cf/*error-rooms* (reduce conj
-                                      (to-vec (get-in ~config [:Campfire :Error]))
-                                      default-error-rooms)]
-     (try+
-      ~@body
-      (catch [:type :shuppet.util/aws] e#
-        (cf/error (merge {:env ~env :app-name ~app-name} e#))
-        (throw+ e#))
-      (catch clojure.lang.Compiler$CompilerException e#
-        (cf/error {:env ~env
-                   :app-name ~app-name
-                   :title "I cannot read this config"
-                   :message (.getMessage e#)})
-        (throw+ e#)))))
 
 (defn apply-config
   ([env app-name]
-     (let [config (with-cf-message {:env env :app-name app-name}
+     (let [config (cf/with-messages {:env env :app-name app-name}
                     (load-config env app-name))]
-       (with-cf-message {:env env :app-name app-name :config config}
+       (cf/with-messages {:env env :app-name app-name :config config}
          (doto config
            ensure-sgs
            ensure-elb

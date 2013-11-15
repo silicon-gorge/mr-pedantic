@@ -23,7 +23,7 @@
                  (cf/error {:title "Failed to get application list from Onix."
                             :url url
                             :status status
-                            :message (:body response)} shuppet/default-error-rooms)))))
+                            :message (:body response)})))))
 
 (deftype GitConfig []
            shuppet/Configuration
