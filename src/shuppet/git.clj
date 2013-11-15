@@ -120,7 +120,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
      (clone-repo "master" repo-name)))
 
 (defn- pull-repo
-  "Pull a repository by fetching."
+  "Pull a repository by pulling."
   [repo-name]
   (let [git (Git/open (as-file (repo-path repo-name)))]
     (info "Fetching repository to" (repo-path repo-name))
@@ -128,19 +128,6 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
      (.pull git)
      (.call))
     (info "Pull completed.")))
-
-(defn- repo-exists?
-  [repo-name]
-  (.exists (as-file (repo-path repo-name))))
-
-(defn- ensure-repo-up-to-date
-  "Gets or updates the specified repo from GIT"
-  [branch repo-name]
-  (if (repo-exists? repo-name)
-    (pull-repo repo-name)
-    (do
-      (info (str "Repo '" repo-name "' not found - attempting to clone"))
-      (clone-repo branch repo-name))))
 
 (defn- get-head
   "Get the contents of the application config file for head revision"
@@ -161,7 +148,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   "Fetches the data corresponding to the given application from GIT"
   [env application readonly]
   (try
-    (ensure-repo-up-to-date (repo-branch env application readonly) application)
+    (clone-repo (repo-branch env application readonly) application)
     (get-head application)
     (catch InvalidRemoteException e
       (info (str "Can't communicate with remote repo '" application  "': " e))

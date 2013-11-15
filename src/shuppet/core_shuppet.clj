@@ -23,10 +23,10 @@
     "Gets a list of the application names"))
 
 (deftype LocalAppNames []
-           ApplicationNames
-           (list-names
-             [_]
-             (split (env :service-local-app-names) #",")))
+  ApplicationNames
+  (list-names
+    [_]
+    (split (env :service-local-app-names) #",")))
 
 (defprotocol Configuration
   (as-string
@@ -37,19 +37,19 @@
     "Sets up the configuration file for the application"))
 
 (deftype LocalConfig []
-           Configuration
-           (as-string
-             [_ environment name readonly]
-             (let [filename (str (lower-case name) ".clj")
-                   path (str (env :service-local-config-path) "/" environment "/" filename)]
-               (-> path
-                   (as-file)
-                   (slurp))))
-           (configure
-             [_ name]
-             (let [dest-path (str (env :service-local-config-path) "/local/" name ".clj")]
-               (spit dest-path (slurp (resource "default.clj")))
-               {:message (str "Created new configuration file " dest-path)})))
+  Configuration
+  (as-string
+    [_ environment name readonly]
+    (let [filename (str (lower-case name) ".clj")
+          path (str (env :service-local-config-path) "/" environment "/" filename)]
+      (-> path
+          (as-file)
+          (slurp))))
+  (configure
+    [_ name]
+    (let [dest-path (str (env :service-local-config-path) "/local/" name ".clj")]
+      (spit dest-path (slurp (resource "default.clj")))
+      {:message (str "Created new configuration file " dest-path)})))
 
 (def ^:dynamic *application-names* (LocalAppNames.))
 (def ^:dynamic *configuration* (LocalConfig.))
@@ -78,12 +78,12 @@
   [app-name]
   (configure *configuration* app-name))
 
-(defn- configuration [env name & [readonly]]
+(defn- configuration [env name readonly]
   (as-string *configuration* env name readonly))
 
 (defn load-config
   [env & [app-name readonly]]
-  (let [environment (configuration env env)]
+  (let [environment (configuration env env false)]
     (if app-name
       (let [application (configuration env app-name readonly)]
         (execute-string (str environment "\n" application) app-name))

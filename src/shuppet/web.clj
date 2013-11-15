@@ -59,9 +59,12 @@
   (response {:applications (core/app-names env)}))
 
 (defn- show-app-config
-  [env name]
-  (->  (ring-response/response (-> (core/get-config env name) (write-str)))
-       (ring-response/content-type "application/json")))
+  ([env name]
+      (->  (ring-response/response (-> (core/get-config env name) (write-str)))
+           (ring-response/content-type "application/json")))
+  ([name]
+     (->  (ring-response/response (-> (core/get-config name) (write-str)))
+          (ring-response/content-type "application/json"))))
 
 (defn- apply-app-config
   [env name]
@@ -141,6 +144,10 @@
    (POST "/apps/:name/configure"
          [name local]
          (create-app-config name local))
+
+   (GET "/apps/:name"
+         [name]
+         (show-app-config name))
 
    (context "/envs"
             [] applications-routes))

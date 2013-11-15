@@ -52,9 +52,12 @@
        (shuppet/apply-config env app-name))))
 
 (defn get-config
-  [env & [app-name]]
-  (with-ent-bindings env
-    (shuppet/load-config env app-name true)))
+  ([env & [app-name]]
+      (with-ent-bindings env
+        (shuppet/load-config env app-name false)))
+  ([app-name]
+     (with-ent-bindings "poke"
+       (shuppet/load-config "poke" app-name true)) ))
 
 (defn create-config
   [env & [app-name]]
