@@ -28,8 +28,8 @@
 (deftype GitConfig []
            shuppet/Configuration
            (as-string
-             [_ env filename]
-             (git/get-data (lower-case env) (lower-case filename)))
+             [_ env filename readonly]
+             (git/get-data (lower-case env) (lower-case filename) readonly))
            (configure
              [_ appname]
              (git/create-application appname)))
@@ -54,7 +54,7 @@
 (defn get-config
   [env & [app-name]]
   (with-ent-bindings env
-    (shuppet/load-config env app-name)))
+    (shuppet/load-config env app-name true)))
 
 (defn create-config
   [env & [app-name]]

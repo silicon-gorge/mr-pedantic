@@ -94,8 +94,10 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- repo-branch
   "Always look for the master branch for the environment default configuration file"
-  [env name]
-  (if (= env name)
+  [env name readonly]
+  (if (or
+       readonly
+       (= env name))
     "master"
     base-git-branch))
 
@@ -157,9 +159,9 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn get-data
   "Fetches the data corresponding to the given application from GIT"
-  [env application]
+  [env application readonly]
   (try
-    (ensure-repo-up-to-date (repo-branch env application) application)
+    (ensure-repo-up-to-date (repo-branch env application readonly) application)
     (get-head application)
     (catch InvalidRemoteException e
       (info (str "Can't communicate with remote repo '" application  "': " e))

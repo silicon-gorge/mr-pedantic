@@ -9,21 +9,32 @@
                            :Timeout 5})
 (def elb-sg-name (str $app-name "-lb"))
 
-{:SecurityGroups [{:GroupName $app-name
-                   :GroupDescription (str "Security group for application " $app-name)
-                   :VpcId $vpc-id
-                   :Ingress $sg-ingress
-                   :Egress $sg-egress}
-                  {:GroupName elb-sg-name
+{:SecurityGroups [{:GroupName elb-sg-name
                    :GroupDescription (str "Security group for load balancer " $app-name)
                    :VpcId $vpc-id
-                   :Ingress $sg-ingress
-                   :Egress $sg-egress}]
+                   :Ingress [{:IpRanges $private-ips
+                              :IpProtocol "tcp"
+                              :FromPort 8080
+                              :ToPort 8080}]
+                   :Egress $sg-egress-all}
+                  {:GroupName $app-name
+                   :GroupDescription (str "Security group for application " $app-name)
+                   :VpcId $vpc-id
+                   :Ingress [{:IpRanges elb-sg-name
+                              :IpProtocol "tcp"
+                              :FromPort 8080
+                              :ToPort 8080}]
+                   :Egress $sg-egress-all}]
 
  :LoadBalancer {:LoadBalancerName $app-name
                 :Listeners [elb-8080->8080]
-                :SecurityGroups [elb-sg-name "Brislabs-HTTPS" "Brislabs-SSH" "Brislabs-8080" "Brislabs-HTTP"]
-                :Subnets $elb-subnets
+                :SecurityGroups [elb-sg-name $sg-ssh]
+                :Subnets $elb-subnets-be
                 :Scheme "internal"
                 :HealthCheck elb-healthcheck-ping}
-}
+
+ :Role {:RoleName $app-name
+        :Policies  [{:PolicyName "full-access"
+                     :PolicyDocument [{:Action "*",
+                                       :Resource "*"}]}]}
+ }
