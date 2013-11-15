@@ -43,7 +43,7 @@
            response => (contains {:status 200})))
 
    (fact "Test config is applied without errors"
-         (client/get (url+ "/envs/dev/apps/test/clean"))
-         (client/get (url+ "/envs/dev/apps/test/apply")) => (contains {:status 200})
-         (client/get (url+ "/envs/dev/apps/test/apply")) => (contains {:status 200})
-         (client/get (url+ "/envs/dev/apps/test/clean"))))
+         (client/get (url+ "/envs/poke/apps/test/clean"))
+         (client/get (url+ "/envs/poke/apps/test/apply")) => (contains {:status 200})
+         (client/get (url+ "/envs/poke/apps/test/apply")) => (contains {:status 200})
+         (client/get (url+ "/envs/poke/apps/test/clean"))))
