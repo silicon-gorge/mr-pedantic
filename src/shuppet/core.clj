@@ -31,7 +31,8 @@
              [_ env filename]
              (git/get-data (lower-case env) (lower-case filename))))
 
-(defmacro with-shuppet-bindings
+(defmacro with-ent-bindings
+  "Specific Entertainment bindings"
   [env & body]
   `(let [local?# (= "local" ~env)]
      (binding [shuppet/*application-names* (if local?#
@@ -44,26 +45,26 @@
 
 (defn apply-config
   ([env & [app-name]]
-     (with-shuppet-bindings env
+     (with-ent-bindings env
        (shuppet/apply-config env app-name))))
 
 (defn get-config
   [env & [app-name]]
-  (with-shuppet-bindings env
+  (with-ent-bindings env
     (shuppet/load-config env app-name)))
 
 (defn clean-config
   [environment app-name]
   (when-not (env :service-delete-allowed)
     (throw+ {:type ::wrong-environment}))
-  (with-shuppet-bindings environment
+  (with-ent-bindings environment
     (shuppet/clean-config environment app-name)))
 
 (defn app-names [env]
-  (with-shuppet-bindings env
+  (with-ent-bindings env
     (shuppet/app-names)))
 
 (defn update-configs
   [env]
-  (with-shuppet-bindings env
+  (with-ent-bindings env
     (shuppet/update-configs)))
