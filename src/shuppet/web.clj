@@ -159,9 +159,27 @@
 
   (route/not-found (error-response "Resource not found" 404)))
 
+(defn format-shuppet-exceptions
+  [handler]
+  (fn [req]
+    (try+
+     (handler req)
+     (catch [:type :shuppet.util/aws] e
+       (->  (ring-response/response (write-str e))
+            (ring-response/content-type "application/json")
+            (ring-response/status 409)))
+     (catch  clojure.lang.Compiler$CompilerException e
+       (->  (ring-response/response (write-str {:message (.getMessage e)}))
+            (ring-response/content-type "application/json")
+            (ring-response/status 400)))
+      (catch java.io.FileNotFoundException e
+       (->  (ring-response/response (write-str {:message "Cannot find this one"}))
+            (ring-response/content-type "application/json")
+            (ring-response/status 404))))))
 
 (def app
   (-> routes
+      (format-shuppet-exceptions)
       (instrument)
       (wrap-error-handling)
       (wrap-ignore-trailing-slash)
