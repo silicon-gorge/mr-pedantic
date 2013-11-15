@@ -26,9 +26,9 @@
                      (env :service-campfire-off) => nil
                      (env :service-campfire-default-info-room) => "default info"
                      (env :service-campfire-default-error-room) => "default error"
-                     (room "default info") => ..default-info..
-                     (room "default error") => ..default-error..
-                     (error-messages {}) => ["error"]
+                     (#'shuppet.campfire/room "default info") => ..default-info..
+                     (#'shuppet.campfire/room "default error") => ..default-error..
+                     (#'shuppet.campfire/error-messages {}) => ["error"]
                      (cf/message ..default-info.. "info") => ..response..
                      (cf/message ..default-info.. "error") => ..response..
                      (cf/message ..default-error.. "error") => ..response..))
@@ -44,11 +44,11 @@
                      (env :service-campfire-off) => nil
                      (env :service-campfire-default-info-room) => "default info"
                      (env :service-campfire-default-error-room) => "default error"
-                     (room "default info") => ..default-info..
-                     (room "default error") => ..default-error..
-                     (room "info") => ..info..
-                     (room "error") => ..error..
-                     (error-messages {}) => ["error"]
+                     (#'shuppet.campfire/room "default info") => ..default-info..
+                     (#'shuppet.campfire/room "default error") => ..default-error..
+                     (#'shuppet.campfire/room "info") => ..info..
+                     (#'shuppet.campfire/room "error") => ..error..
+                     (#'shuppet.campfire/error-messages {}) => ["error"]
                      (cf/message ..default-info.. "info") => ..response..
                      (cf/message ..info.. "info") => ..response..
 

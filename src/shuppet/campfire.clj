@@ -18,7 +18,7 @@
    :ssl true,
    :sub-domain sub-domain})
 
-(defn room
+(defn- room
   "Sets up the room for sending messages"
   [room-name]
   (cf/room-by-name cf-settings room-name))
@@ -29,7 +29,7 @@
   (when-not (env :service-campfire-off)
     (dorun (map #(cf/message (room %) message) *info-rooms*))))
 
-(defn error-messages [{:keys [env app-name title url message status]}]
+(defn- error-messages [{:keys [env app-name title url message status]}]
   (remove nil? [(when title (str title))
                     (when app-name (str "Application: " app-name))
                     (when env (str "Environment: " env))
