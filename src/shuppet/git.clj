@@ -5,7 +5,7 @@
             [clj-http.client :as client]
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
-            [clojure.string :refer [upper-case split]]
+            [clojure.string :refer [upper-case lower-case split]]
             [cheshire.core :refer [parse-string]]
             [slingshot.slingshot :refer [try+ throw+]]
             [me.raynes.conch :as conch])
@@ -89,8 +89,8 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   (str base-git-url repo-name))
 
 (defn- repo-path
-  [name]
-  (str base-git-path name))
+  [repo-name branch-name]
+  (str base-git-path "/" repo-name "/" branch-name))
 
 (defn- repo-branch
   "Always look for the master branch for the environment default configuration file"
@@ -103,14 +103,14 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- clone-repo
   "Clones the latest version of the specified repo from GIT."
-  ([branch repo-name]
+  ([repo-name branch]
      (info "First ensuring that repository directory does not exist")
-     (rm "-rf" (repo-path repo-name))
-     (info "Cloning repository to" (repo-path repo-name))
+     (rm "-rf" (repo-path repo-name branch))
+     (info "Cloning repository to" (repo-path repo-name branch))
      (->
       (Git/cloneRepository)
       (.setURI (repo-url repo-name))
-      (.setDirectory (as-file (repo-path repo-name)))
+      (.setDirectory (as-file (repo-path repo-name branch)))
       (.setRemote "origin")
       (.setBranch branch)
       (.setBare false)
@@ -121,9 +121,9 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- pull-repo
   "Pull a repository by pulling."
-  [repo-name]
-  (let [git (Git/open (as-file (repo-path repo-name)))]
-    (info "Fetching repository to" (repo-path repo-name))
+  [repo-name branch]
+  (let [git (Git/open (as-file (repo-path repo-name branch)))]
+    (info "Fetching repository to" (repo-path repo-name branch))
     (->
      (.pull git)
      (.call))
@@ -131,10 +131,10 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- get-head
   "Get the contents of the application config file for head revision"
-  [application]
+  [application branch]
   (info "Attempting to get head for the application " application)
   (let [file-name (str application  ".clj")
-        git (Git/open (as-file (repo-path application)))
+        git (Git/open (as-file (repo-path application branch)))
         repo (.getRepository git)
         commit-id (.resolve repo "HEAD")
         rwalk (RevWalk. repo)
@@ -144,12 +144,26 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
         loader (.open repo (.getObjectId twalk 0))]
     (slurp (.openStream loader))))
 
+(defn- repo-exists?
+  [repo-name branch]
+  (.exists (as-file (repo-path repo-name branch))))
+
+(defn- ensure-repo-up-to-date
+  "Gets or updates the specified repo from GIT"
+  [repo-name branch]
+  (if (repo-exists? repo-name branch)
+    (pull-repo repo-name branch)
+    (do
+      (info (str "Repo '" repo-name "' not found - attempting to clone"))
+      (clone-repo repo-name branch))))
+
 (defn get-data
   "Fetches the data corresponding to the given application from GIT"
   [env application readonly]
   (try
-    (clone-repo (repo-branch env application readonly) application)
-    (get-head application)
+    (let [branch (repo-branch env application readonly)]
+      (ensure-repo-up-to-date application branch)
+      (get-head application branch))
     (catch InvalidRemoteException e
       (info (str "Can't communicate with remote repo '" application  "': " e))
       nil)
@@ -227,9 +241,10 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn create-application
   [name]
-  (setup-repository name)
-  (doseq [branch valid-environments]
-    (setup-branch name branch))
-  {:name name
-   :path (str base-git-url name)
-   :branches valid-environments})
+  (let [name (lower-case name)]
+    (setup-repository name)
+    (doseq [branch valid-environments]
+      (setup-branch name branch))
+    {:name name
+     :path (str base-git-url name)
+     :branches valid-environments}))
