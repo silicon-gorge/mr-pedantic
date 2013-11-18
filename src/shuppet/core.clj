@@ -36,8 +36,8 @@
 
 (defmacro with-ent-bindings
   "Specific Entertainment bindings"
-  [env & body]
-  `(let [local?# (= "local" ~env)]
+  [environment & body]
+  `(let [local?# (= "local" ~environment)]
      (binding [shuppet/*application-names* (if local?#
                                              (shuppet/LocalAppNames.)
                                              (OnixAppNames. (env :environment-entertainment-onix-url)))
