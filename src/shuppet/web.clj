@@ -59,11 +59,10 @@
   (response {:applications (core/app-names env)}))
 
 (defn- show-app-config
-  ([env name]
-      (->  (ring-response/response (-> (core/get-config env name) (write-str)))
-           (ring-response/content-type "application/json")))
   ([name]
-     (->  (ring-response/response (-> (core/get-config name) (write-str)))
+     (show-app-config nil name))
+  ([env name]
+     (->  (ring-response/response (-> (core/get-config env name) (write-str)))
           (ring-response/content-type "application/json"))))
 
 (defn- apply-app-config

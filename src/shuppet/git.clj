@@ -5,7 +5,7 @@
             [clj-http.client :as client]
             [clj-time.coerce :refer [from-long]]
             [clj-time.format :refer [unparse formatters]]
-            [clojure.string :refer [upper-case lower-case split]]
+            [clojure.string :refer [upper-case split lower-case]]
             [cheshire.core :refer [parse-string]]
             [slingshot.slingshot :refer [try+ throw+]]
             [me.raynes.conch :as conch])
@@ -91,11 +91,12 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   [repo-name branch-name]
   (str base-git-path "/" repo-name "/" branch-name))
 
+
 (defn- repo-branch
   "Always look for the master branch for the environment default configuration file"
-  [env name readonly]
+  [env name]
   (if (or
-       readonly
+       (nil? env)
        (= env name))
     "master"
     env))
@@ -132,7 +133,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   "Get the contents of the application config file for head revision"
   [application branch]
   (info "Attempting to get head for the application " application)
-  (let [file-name (str application  ".clj")
+  (let [file-name (str application ".clj")
         git (Git/open (as-file (repo-path application branch)))
         repo (.getRepository git)
         commit-id (.resolve repo "HEAD")
@@ -158,20 +159,22 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn get-data
   "Fetches the data corresponding to the given application from GIT"
-  [env application readonly]
+  [env name]
   (try
-    (let [branch (repo-branch env application readonly)]
-      (ensure-repo-up-to-date application branch)
-      (get-head application branch))
+    (let [name (or name "poke")
+          branch (repo-branch env name)]
+      (ensure-repo-up-to-date name branch)
+      (get-head name branch))
     (catch InvalidRemoteException e
-      (info (str "Can't communicate with remote repo '" application  "': " e))
+      (info (str "Can't communicate with remote repo '" name  "': " e))
       nil)
     (catch NullPointerException e
-      (info (str "HEAD revision not found in remote repo '" application "': " e))
+      (info (str "HEAD revision not found in remote repo '" name "': " e))
       nil)
     (catch MissingObjectException e
-      (info (str "Missing object for revision HEAD in repo '" application "': " e))
+      (info (str "Missing object for revision HEAD in repo '" name "': " e))
       nil)))
+
 
 (defn- repo-create-body
   [name]

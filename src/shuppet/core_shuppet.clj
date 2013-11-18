@@ -30,7 +30,7 @@
 
 (defprotocol Configuration
   (as-string
-    [this env filename readonly]
+    [this env filename]
     "Gets the configuration file as string")
   (configure
     [this app-name]
@@ -39,7 +39,7 @@
 (deftype LocalConfig []
   Configuration
   (as-string
-    [_ environment name readonly]
+    [_ environment name]
     (let [filename (str (lower-case name) ".clj")
           path (str (env :service-local-config-path) "/" environment "/" filename)]
       (-> path
@@ -78,14 +78,14 @@
   [app-name]
   (configure *configuration* app-name))
 
-(defn- configuration [env name readonly]
-  (as-string *configuration* env name readonly))
+(defn- configuration [env name]
+  (as-string *configuration* env name))
 
 (defn load-config
-  [env & [app-name readonly]]
-  (let [environment (configuration env env false)]
+  [env & [app-name]]
+  (let [environment (configuration env env)]
     (if app-name
-      (let [application (configuration env app-name readonly)]
+      (let [application (configuration env app-name)]
         (execute-string (str environment "\n" application) app-name))
       (execute-string environment))))
 
@@ -93,7 +93,7 @@
 (defn apply-config
   ([env app-name]
      (let [config (cf/with-messages {:env env :app-name app-name}
-                    (load-config env app-name false))]
+                    (load-config env app-name))]
        (cf/with-messages {:env env :app-name app-name :config config}
          (doto config
            ensure-sgs
