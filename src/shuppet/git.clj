@@ -57,7 +57,6 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (def ^:const ^:private base-git-url (env :service-base-git-repository-url))
 (def ^:const ^:private base-git-path (env :service-base-git-repository-path))
-(def ^:const ^:private base-git-branch (env :service-base-git-repository-branch))
 (def ^:private valid-environments
   (disj (set (split (env :service-environments) #",")) "local"))
 
@@ -99,7 +98,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
        readonly
        (= env name))
     "master"
-    base-git-branch))
+    env))
 
 (defn- clone-repo
   "Clones the latest version of the specified repo from GIT."
