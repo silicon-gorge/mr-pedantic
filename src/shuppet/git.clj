@@ -58,7 +58,8 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 (def ^:const ^:private base-git-url (env :service-base-git-repository-url))
 (def ^:const ^:private base-git-path (env :service-base-git-repository-path))
 (def ^:private valid-environments
-  (disj (set (split (env :service-environments) #",")) "local"))
+  (conj  (disj
+          (set (split (env :service-environments) #",")) "local" "poke") "prod"))
 
 (def snc-url
   (str (env :service-snc-api-base-url)
