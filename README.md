@@ -8,16 +8,16 @@ An application deployed in AWS needs at least:
 
   * an elastic load balancer
   * a security group for the elastic load balancer
-  * another security for the application
+  * another security group for the application
   * an IAM role to be able to access other AWS APIs
 
-Shuppet creates all this configuration for you and ensures that it stays as you defined it by checking it and updating it when required.
+Shuppet creates all this configuration for you and ensures that it stays as you defined by checking it and updating it when required.
 On top of this Shuppet also supports:
 
   * S3
   * DynamoDb
 
-Shuppet also creates a configuration per environment and ensures that it stays as defined.
+Shuppet also has a configuration per environment and ensures that it stays as defined.
 
 All the configuration is stored in GIT repositories in source.nokia.com in the _shuppet_ project.
 
@@ -25,16 +25,19 @@ Shuppet uses Campfire to communicate configuration changes.
 
 ## Resources
 
-`GET /1.x/healthcheck`
+Shuppet is available here <http://shuppet.brislabs.com:8080/1.x/status> and the resources are:
 
 `GET /1.x/ping`
-`pong`.
+Pong
+
+`GET /1.x/healthcheck`
+Pong
 
 `GET /1.x/status`
 Status information in JSON form.
 
 `GET /1.x/icon`
-The JPEG representation of Exploud.
+The JPEG representation of Shuppet.
 
 `GET /1.x/envs`
 All available environments
@@ -72,5 +75,6 @@ Shuppet configuration files are in Clojure, the only requirement is to return a 
 The configuration uses same naming as in Amazon's APIs, so you can refer to <http://aws.amazon.com/documentation> for help.
 
 Examples:
-* environment configuration <https://source.nokia.com/projects/6302-shuppet/repositories/29637/entry/master/poke.clj>
-* application configuration <https://source.nokia.com/projects/6302-shuppet/repositories/29679/entry/master/test.clj>
+
+  * environment configuration <https://source.nokia.com/projects/6302-shuppet/repositories/29637/entry/master/poke.clj>
+  * application configuration <https://source.nokia.com/projects/6302-shuppet/repositories/29679/entry/master/test.clj>
