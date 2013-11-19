@@ -56,8 +56,13 @@
   (with-ent-bindings env
     (shuppet/load-config env app-name)))
 
+(defn validate-config
+  [body & [app-name]]
+  (with-ent-bindings nil
+    (shuppet/validate-config body app-name)))
+
 (defn create-config
-  [env & [app-name]]
+  [env app-name]
   (with-ent-bindings env
     (shuppet/create-config app-name)))
 

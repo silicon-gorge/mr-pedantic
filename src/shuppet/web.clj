@@ -12,7 +12,7 @@
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [clojure.data.xml :refer [element emit-str]]
-   [clojure.string :refer [split]]
+   [clojure.string :refer [split lower-case]]
    [environ.core :refer [env]]
    [nokia.ring-utils.error :refer [wrap-error-handling error-response]]
    [nokia.ring-utils.metrics :refer [wrap-per-resource-metrics replace-outside-app
@@ -25,6 +25,7 @@
 (def ^:private cf-info-room (env :service-campfire-default-info-room))
 (def ^:private cf-error-room (env :service-campfire-default-error-room))
 (def ^:private environments (env :service-environments))
+(def ^:private can-post? (not (Boolean/valueOf (env :service-production))))
 
 (defn set-version!
   [version]
@@ -59,11 +60,14 @@
   (response {:applications (core/app-names env)}))
 
 (defn- show-app-config
-  ([name]
-     (show-app-config nil name))
-  ([env name]
-     (->  (ring-response/response (-> (core/get-config env name) (write-str)))
-          (ring-response/content-type "application/json"))))
+  [env name]
+  (->  (ring-response/response (-> (core/get-config env name) (write-str)))
+       (ring-response/content-type "application/json")))
+
+(defn- validate-config
+  [body & [app-name]]
+  (->  (ring-response/response (-> (core/validate-config body app-name) (write-str)))
+       (ring-response/content-type "application/json")))
 
 (defn- apply-app-config
   [env name]
@@ -86,6 +90,12 @@
   [name local]
   (let [env (if local "local" "")]
     (response (core/create-config env name))))
+
+(defn- send-error
+  [code message]
+  (throw+ {:type :_
+           :status code
+           :message message}))
 
 (defroutes applications-routes
 
@@ -142,11 +152,21 @@
 
    (POST "/apps/:name"
          [name local]
-         (create-app-config name local))
+         (if can-post?
+           (create-app-config (lower-case name) local)
+           (send-error 405 "POST requests on resources are not allowed in production environment.")))
 
-   (GET "/apps/:name"
-         [name]
-         (show-app-config name))
+   (POST "/apps/:name/validate"
+         [:as {body :body} name]
+         (if can-post?
+           (validate-config (slurp body) name)
+           (send-error 405 "POST requests on resources are not allowed in production environment.")))
+
+   (POST "/envs/validate"
+         [:as {body :body}]
+         (if can-post?
+           (validate-config (slurp body))
+           (send-error 405 "POST requests on resources are not allowed in production environment.")))
 
    (context "/envs"
             [] applications-routes))
@@ -163,10 +183,18 @@
   (fn [req]
     (try+
      (handler req)
+     (catch [:type :shuppet.git/git] e
+       (->  (ring-response/response (write-str {:message (e :message)}))
+            (ring-response/content-type "application/json")
+            (ring-response/status (e :status))))
      (catch [:type :shuppet.util/aws] e
        (->  (ring-response/response (write-str e))
             (ring-response/content-type "application/json")
             (ring-response/status 409)))
+     (catch [:type :_] e
+       (->  (ring-response/response (write-str {:message (e :message)}))
+            (ring-response/content-type "application/json")
+            (ring-response/status (e :status))))
      (catch  clojure.lang.Compiler$CompilerException e
        (->  (ring-response/response (write-str {:message (.getMessage e)}))
             (ring-response/content-type "application/json")

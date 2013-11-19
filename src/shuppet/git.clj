@@ -1,5 +1,6 @@
 (ns shuppet.git
   (:require [environ.core :refer [env]]
+            [shuppet.campfire :as cf]
             [clojure.java.io :refer [as-file make-reader copy file resource]]
             [clojure.tools.logging :refer [info warn error]]
             [clj-http.client :as client]
@@ -57,9 +58,21 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (def ^:const ^:private base-git-url (env :service-base-git-repository-url))
 (def ^:const ^:private base-git-path (env :service-base-git-repository-path))
+
 (def ^:private valid-environments
-  (conj  (disj
-          (set (split (env :service-environments) #",")) "local" "poke") "prod"))
+  (->
+   (split (env :service-environments) #",")
+   (set)
+   (disj "local" "poke")
+   (conj "prod")))
+
+(defn- send-error
+  ([status message]
+     (throw+ {:type ::git
+              :status status
+              :message message}))
+  ([message]
+     (send-error 407 message)))
 
 (def snc-url
   (str (env :service-snc-api-base-url)
@@ -75,8 +88,8 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       (.setConfig session "StrictHostChecking" "yes"))
     (createDefaultJSch [fs]
       (let [jsch (JSch.)]
-        (info "Creating default JSch using tyranitar private key and known-hosts.")
-        (.addIdentity jsch "tyranitar" (.getBytes shuppet-private-key) nil nil)
+        (info "Creating default JSch using shuppet private key and known-hosts.")
+        (.addIdentity jsch "shuppet" (.getBytes shuppet-private-key) nil nil)
         (.setKnownHosts jsch (ByteArrayInputStream. (.getBytes known-hosts)))
         jsch))))
 
@@ -89,18 +102,19 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   (str base-git-url repo-name))
 
 (defn- repo-path
-  [repo-name branch-name]
-  (str base-git-path "/" repo-name "/" branch-name))
-
+  ([repo-name branch-name]
+     (str base-git-path "/" repo-name "/" branch-name))
+  ([repo-name]
+     (repo-path repo-name "master")))
 
 (defn- repo-branch
-  "Always look for the master branch for the environment default configuration file"
+  "Only look for the prod branch when env = prod"
   [env name]
-  (if (or
-       (nil? env)
-       (= env name))
-    "master"
-    env))
+  (if (and
+       (not= env name)
+       (= env "prod"))
+    "prod"
+    "master"))
 
 (defn- clone-repo
   "Clones the latest version of the specified repo from GIT."
@@ -118,17 +132,25 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       (.call))
      (info "Cloning completed."))
   ([repo-name]
-     (clone-repo "master" repo-name)))
+     (clone-repo repo-name "master")))
 
 (defn- pull-repo
-  "Pull a repository by pulling."
+  "Pull a repository by fetching and then merging."
   [repo-name branch]
   (let [git (Git/open (as-file (repo-path repo-name branch)))]
     (info "Fetching repository to" (repo-path repo-name branch))
     (->
-     (.pull git)
+     (.fetch git)
      (.call))
-    (info "Pull completed.")))
+    (info "Fetching completed.")
+    (let [repo (.getRepository git)
+          origin-master (.resolve repo  (str "origin/" branch))]
+      (info "Merging " origin-master)
+      (->
+       (.merge git)
+       (.include origin-master)
+       (.call))
+      (info "Merge completed."))))
 
 (defn- get-head
   "Get the contents of the application config file for head revision"
@@ -161,21 +183,19 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 (defn get-data
   "Fetches the data corresponding to the given application from GIT"
   [env name]
-  (try
-    (let [name (or name "poke")
-          branch (repo-branch env name)]
+  (let [branch (repo-branch env name)]
+    (try
       (ensure-repo-up-to-date name branch)
-      (get-head name branch))
-    (catch InvalidRemoteException e
-      (info (str "Can't communicate with remote repo '" name  "': " e))
-      nil)
-    (catch NullPointerException e
-      (info (str "HEAD revision not found in remote repo '" name "': " e))
-      nil)
-    (catch MissingObjectException e
-      (info (str "Missing object for revision HEAD in repo '" name "': " e))
-      nil)))
-
+      (get-head name branch)
+      (catch InvalidRemoteException e
+        (rm "-rf" (repo-path name branch))
+        (send-error 404 (str "Can't communicate with remote repo '" name  "': " e)))
+      (catch NullPointerException e
+        (rm "-rf" (repo-path name branch))
+        (send-error (str "HEAD revision not found in remote repo '" name "': " e)))
+      (catch MissingObjectException e
+        (rm "-rf" (repo-path name branch))
+        (send-error (str "Missing object for revision HEAD in repo '" name "': " e))))))
 
 (defn- repo-create-body
   [name]
@@ -188,9 +208,8 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
                                        :throw-exceptions false})
         status (:status response)]
     (when (not= status 200)
-      (throw+ {:type ::git
-               :status status
-               :message (str "Error while trying to create repository. " (:message (parse-string (:body response) true)))}))))
+      (send-error status (str "Error while trying to create repository. "
+                              (:message (parse-string (:body response) true)))))))
 
 (defn- copy-config-file
   [resource-name dest-path]
@@ -238,16 +257,21 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- setup-branch
   [repo-name branch-name]
-  (clone-repo repo-name)
-  (create-branch repo-name branch-name)
-  (commit-and-push repo-name))
+  (try+
+   (clone-repo repo-name)
+   (create-branch repo-name branch-name)
+   (commit-and-push repo-name)
+   (catch Exception e
+     (send-error (str "Error while trying to create repository branch for: " name " . Deatils : " e)))))
 
 (defn create-application
   [name]
-  (let [name (lower-case name)]
-    (setup-repository name)
-    (doseq [branch valid-environments]
-      (setup-branch name branch))
-    {:name name
-     :path (str base-git-url name)
-     :branches valid-environments}))
+  (setup-repository name)
+  (cf/info (str "I've succesfully created a new git repository for application '" name "'"))
+  (doseq [branch valid-environments]
+    (setup-branch name branch))
+  (cf/info (str "I've succesfully created the branches "
+                (conj valid-environments "master") " for application '" name "'"))
+  {:name name
+   :path (str base-git-url name)
+   :branches valid-environments})
