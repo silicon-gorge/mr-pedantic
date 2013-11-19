@@ -41,19 +41,28 @@ All available environments
 * Read and evaluate the environment configuration _{:env-name}.clj_ from GIT repository _{:env-name}_, return the configuration in JSON.
 
 `GET /1.x/envs/:env-name/apply`
-Applies the environment configuration
+Apply the environment configuration
 
 `GET /1.x/envs/:env-name/apps`
 All available applications
+
+`GET /1.x/envs/:env-name/apps`
+Apply configuration for all applications listed in Onix
 
 `GET /1.x/envs/:env-name/apps/app-name`
 * Read the application configuration _{:app-name}.clj_ from GIT repository _{:app-name}_ and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead.
 
 `GET /1.x/envs/:env-name/apps/app-name/apply`
-Applies the application configuration to the sepcified environment
+Apply the application configuration to the sepcified environment
 
 `POST /1.x/apps/:app-name`
-Creates a basic configuration
+Create a basic configuration
+
+`POST /apps/:name/validate`
+Validate the supplied application configuration
+
+`POST /envs/validate`
+Validate the supplied environment configuration
 
 ## Configuration file
 
