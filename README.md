@@ -1,19 +1,21 @@
-# SHuppet - Puppet for AWS configuration
+# Shuppet - Puppet for AWS configuration
 
 ## Intro
 
 Shuppet keeps AWS configuration in a consistent state.
 
 An application deployed in AWS needs at least:
- * an elastic load balancer
- * a security group for the elastic load balancer
- * another security for the application
- * an IAM role to be able to access other AWS APIs
+
+  * an elastic load balancer
+  * a security group for the elastic load balancer
+  * another security for the application
+  * an IAM role to be able to access other AWS APIs
 
 Shuppet creates all this configuration for you and ensures that it stays as you defined it by checking it and updating it when required.
 On top of this Shuppet also supports:
- * S3
- * DynamoDb
+
+  * S3
+  * DynamoDb
 
 Shuppet also creates a configuration per environment and ensures that it stays as defined.
 
@@ -38,7 +40,7 @@ The JPEG representation of Exploud.
 All available environments
 
 `GET /1.x/envs/:env-name`
-* Read and evaluate the environment configuration _{:env-name}.clj_ from GIT repository _{:env-name}_, return the configuration in JSON.
+Read and evaluate the environment configuration _{:env-name}.clj_ from GIT repository _{:env-name}_, return the configuration in JSON.
 
 `GET /1.x/envs/:env-name/apply`
 Apply the environment configuration
@@ -50,7 +52,7 @@ All available applications
 Apply configuration for all applications listed in Onix
 
 `GET /1.x/envs/:env-name/apps/app-name`
-* Read the application configuration _{:app-name}.clj_ from GIT repository _{:app-name}_ and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead.
+Read the application configuration _{:app-name}.clj_ from GIT repository _{:app-name}_ and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead.
 
 `GET /1.x/envs/:env-name/apps/app-name/apply`
 Apply the application configuration to the sepcified environment
@@ -67,8 +69,8 @@ Validate the supplied environment configuration
 ## Configuration file
 
 Shuppet configuration files are in Clojure, the only requirement is to return a Clojure map.
-The configuration uses same naming as in Amazon's APIs, so you can refer to http://aws.amazon.com/documentation/ for help.
+The configuration uses same naming as in Amazon's APIs, so you can refer to <http://aws.amazon.com/documentation> for help.
 
 Examples:
-* environment configuration https://source.nokia.com/projects/6302-shuppet/repositories/29637/entry/master/poke.clj
-* application configuration https://source.nokia.com/projects/6302-shuppet/repositories/29679/entry/master/test.clj
+* environment configuration <https://source.nokia.com/projects/6302-shuppet/repositories/29637/entry/master/poke.clj>
+* application configuration <https://source.nokia.com/projects/6302-shuppet/repositories/29679/entry/master/test.clj>
