@@ -144,11 +144,11 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
      (.call))
     (info "Fetching completed.")
     (let [repo (.getRepository git)
-          origin-master (.resolve repo  (str "origin/" branch))]
-      (info "Merging " origin-master)
+          origin-branch (.resolve repo  (str "origin/" branch))]
+      (info "Merging " origin-branch)
       (->
        (.merge git)
-       (.include origin-master)
+       (.include origin-branch)
        (.call))
       (info "Merge completed."))))
 
