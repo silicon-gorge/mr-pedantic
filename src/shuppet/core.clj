@@ -68,7 +68,7 @@
 
 (defn clean-config
   [environment app-name]
-  (when-not (env :service-delete-allowed)
+  (when (Boolean/valueOf (env :service-production))
     (throw+ {:type ::wrong-environment}))
   (with-ent-bindings environment
     (shuppet/clean-config environment app-name)))
