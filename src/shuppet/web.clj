@@ -141,7 +141,7 @@
          :body (-> (clojure.java.io/resource "shuppet.jpg")
                    (clojure.java.io/input-stream))})
 
-   (POST "/apps/:name/configure"
+   (POST "/apps/:name"
          [name local]
          (create-app-config name local))
 
