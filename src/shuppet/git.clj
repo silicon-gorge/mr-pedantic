@@ -208,8 +208,9 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
                                        :throw-exceptions false})
         status (:status response)]
     (when (not= status 200)
-      (send-error status (str "Error while trying to create repository. "
-                              (:message (parse-string (:body response) true)))))))
+      (let [status (if (= status 422) 409 status)]
+        (send-error status (str "Unable to create new git repository for application '" name "'. "
+                             (:message (parse-string (:body response) true))))))))
 
 (defn- copy-config-file
   [resource-name dest-path]
