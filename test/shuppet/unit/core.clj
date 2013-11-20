@@ -6,9 +6,9 @@
    (:import [shuppet.core_shuppet LocalConfig]
             [shuppet.core_shuppet LocalAppNames]
             [shuppet.core OnixAppNames]
-            [shuppet.core GitConfig])
-  )
+            [shuppet.core GitConfig]))
 
+(def env-config?  @#'shuppet.core/env-config?)
 
 (fact-group :unit
             (fact "onix is used to get app names"
@@ -26,4 +26,8 @@
 
             (fact "local config is used"
                   (with-ent-bindings "local"
-                    shuppet/*configuration*) => (fn [result] (instance? LocalConfig result))))
+                    shuppet/*configuration*) => (fn [result] (instance? LocalConfig result)))
+
+            (fact "can tell when environment config"
+                  (env-config? "(def $var \"value\")") => truthy
+                  (env-config? "(def var \"value\")") => falsey))

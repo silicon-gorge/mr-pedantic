@@ -65,8 +65,8 @@
        (ring-response/content-type "application/json")))
 
 (defn- validate-config
-  [body & [app-name]]
-  (->  (ring-response/response (-> (core/validate-config body app-name) (write-str)))
+  [body name]
+  (->  (ring-response/response (-> (core/validate-config body name) (write-str)))
        (ring-response/content-type "application/json")))
 
 (defn- apply-app-config
@@ -174,16 +174,10 @@
            (create-app-config (lower-case name) local)
            (send-error 405 "POST requests on resources are not allowed in production environment.")))
 
-   (POST "/apps/:name/validate"
+   (POST "/validate/:name"
          [:as {body :body} name]
          (if can-post?
            (validate-config (slurp body) name)
-           (send-error 405 "POST requests on resources are not allowed in production environment.")))
-
-   (POST "/envs/validate"
-         [:as {body :body}]
-         (if can-post?
-           (validate-config (slurp body))
            (send-error 405 "POST requests on resources are not allowed in production environment.")))
 
    (context "/envs"

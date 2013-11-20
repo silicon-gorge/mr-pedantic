@@ -89,12 +89,14 @@
         (execute-string (str environment "\n" application) app-name))
       (execute-string environment))))
 
-(defn validate-config
-  [config-body & [app-name]]
-  (if app-name
-    (let [environment (configuration "poke" "poke")]
-      (execute-string (str environment "\n" config-body) app-name))
-    (execute-string config-body)))
+(defn try-app-config
+  [env app-name config]
+  (let [environment (configuration env env)]
+      (execute-string (str environment "\n" config) app-name)))
+
+(defn try-env-config
+  [config]
+  (execute-string config))
 
 (defn apply-config
   ([env app-name]

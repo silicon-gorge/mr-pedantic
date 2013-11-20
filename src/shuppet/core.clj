@@ -34,6 +34,7 @@
              [_ appname]
              (git/create-application appname)))
 
+;change env arg to flag
 (defmacro with-ent-bindings
   "Specific Entertainment bindings"
   [environment & body]
@@ -56,10 +57,15 @@
   (with-ent-bindings env
     (shuppet/load-config env app-name)))
 
+(defn- env-config? [config]
+  (re-find #"\(def +\$" config))
+
 (defn validate-config
-  [body & [app-name]]
+  [config name]
   (with-ent-bindings nil
-    (shuppet/validate-config body app-name)))
+    (if (env-config? config)
+      (shuppet/try-env-config config)
+      (shuppet/try-app-config "poke" name config))))
 
 (defn create-config
   [env app-name]
