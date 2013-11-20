@@ -72,7 +72,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
               :status status
               :message message}))
   ([message]
-     (send-error 407 message)))
+     (send-error 409 message)))
 
 (def snc-url
   (str (env :service-snc-api-base-url)
