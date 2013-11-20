@@ -27,10 +27,10 @@ Shuppet uses Campfire to communicate configuration changes.
 
 Shuppet is available here <http://shuppet.brislabs.com:8080/1.x/status> and the resources are:
 
-`GET /1.x/ping`
+`GET /healthcheck`
 Pong
 
-`GET /1.x/healthcheck`
+`GET /1.x/ping`
 Pong
 
 `GET /1.x/status`
@@ -63,11 +63,8 @@ Apply the application configuration to the sepcified environment
 `POST /1.x/apps/:app-name`
 Create a basic configuration
 
-`POST /apps/:name/validate`
-Validate the supplied application configuration
-
-`POST /envs/validate`
-Validate the supplied environment configuration
+`POST /validate/:name`
+Validate the supplied configuration
 
 ## Configuration file
 
