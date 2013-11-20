@@ -9,15 +9,7 @@
                            :Timeout 5})
 (def elb-sg-name (str $app-name "-lb"))
 
-{:SecurityGroups [{:GroupName $app-name
-                   :GroupDescription (str "Security group for application " $app-name)
-                   :VpcId $vpc-id
-                   :Ingress [{:IpRanges ["sg-14fe1a7b" "Brislabs-SSH"]
-                              :IpProtocol "tcp"
-                              :FromPort 80
-                              :ToPort 8080}]
-                   :Egress $sg-egress}
-                  {:GroupName elb-sg-name
+{:SecurityGroups [{:GroupName elb-sg-name
                    :GroupDescription (str "Security group for load balancer " $app-name)
                    :VpcId $vpc-id
                    :Ingress $sg-ingress
@@ -29,7 +21,15 @@
                              :IpProtocol "udp"
                              :FromPort 80
                              :ToPort 8080}
-                            ]}]
+                            ]}
+                  {:GroupName $app-name
+                   :GroupDescription (str "Security group for application " $app-name)
+                   :VpcId $vpc-id
+                   :Ingress [{:IpRanges ["sg-14fe1a7b" "Brislabs-SSH"]
+                              :IpProtocol "tcp"
+                              :FromPort 80
+                              :ToPort 8080}]
+                   :Egress $sg-egress}]
 
  :LoadBalancer {:LoadBalancerName $app-name
                 :Listeners [elb-8080->8080]
