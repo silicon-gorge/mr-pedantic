@@ -38,9 +38,6 @@
                 :HealthCheck elb-healthcheck-ping}
 ;IAM role doc http://docs.aws.amazon.com/IAM/latest/APIReference/Welcome.html
  :Role {:RoleName $app-name
-        :Policies  [{:PolicyName "ec2-describe"
-                     :PolicyDocument [{:Effect "Allow"
-                                       :Action "EC2:Describe*"
-                                       :Resource "*"}]
-; This tool http://awspolicygen.s3.amazonaws.com/policygen.html helps to create policy documents
-                     }]}
+        ; This tool http://awspolicygen.s3.amazonaws.com/policygen.html helps to create policy documents
+        }
+ }
