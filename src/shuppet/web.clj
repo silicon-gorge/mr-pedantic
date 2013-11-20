@@ -32,13 +32,15 @@
   (alter-var-root #'*version* (fn [_] version)))
 
 (defn- response
-  [body]
-  (merge
-   {:status 200
-    :headers {"Content-Type" "application/json"}}
-   (if (nil? body)
-     {}
-     {:body body})))
+  ([body status]
+      (merge
+       {:status status
+        :headers {"Content-Type" "application/json"}}
+       (if (nil? body)
+         {}
+         {:body body})))
+  ([body]
+     (response body 200)))
 
 (defn- list-envs
   []
@@ -89,7 +91,7 @@
 (defn- create-app-config
   [name local]
   (let [env (if local "local" "")]
-    (response (core/create-config env name))))
+    (response (core/create-config env name) 201)))
 
 (defn- send-error
   [code message]
