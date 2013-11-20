@@ -25,46 +25,7 @@ Shuppet uses Campfire to communicate configuration changes.
 
 ## Resources
 
-Shuppet is available here <http://shuppet.brislabs.com:8080/1.x/status> and the resources are:
-
-`GET /healthcheck`
-Pong
-
-`GET /1.x/ping`
-Pong
-
-`GET /1.x/status`
-Status information in JSON form.
-
-`GET /1.x/icon`
-The JPEG representation of Shuppet.
-
-`GET /1.x/envs`
-All available environments
-
-`GET /1.x/envs/:env-name`
-Read and evaluate the environment configuration _{:env-name}.clj_ from GIT repository _{:env-name}_, return the configuration in JSON.
-
-`GET /1.x/envs/:env-name/apply`
-Apply the environment configuration
-
-`GET /1.x/envs/:env-name/apps`
-All available applications
-
-`GET /1.x/envs/:env-name/apps`
-Apply configuration for all applications listed in Onix
-
-`GET /1.x/envs/:env-name/apps/app-name`
-Read the application configuration _{:app-name}.clj_ from GIT repository _{:app-name}_ and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead.
-
-`GET /1.x/envs/:env-name/apps/app-name/apply`
-Apply the application configuration to the sepcified environment
-
-`POST /1.x/apps/:app-name`
-Create a basic configuration
-
-`POST /validate/:name`
-Validate the supplied configuration
+All the resources are listed here <http://shuppet.brislabs.com:8080/resources>
 
 ## Configuration file
 

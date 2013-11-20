@@ -104,16 +104,17 @@
     "/1.x./ping" "Pong"
     "/1.x/status" "Status"
     "/healthcheck" "Healthcheck"
-    "/1.x/envs" "Available environments"
-    "/1.x/envs/:env-name" "Displays the environment configuration"
+    "/1.x/envs" "All available environments"
+    "/1.x/envs/:env-name" "Read and evaluate the environment configuration :env-name.clj from GIT repository :env-name, return the configuration in JSON"
     "/1.x/envs/:env-name/apply" "Apply the environment configuration"
     "/1.x/envs/:env-name/apps" "All available applications for the given environment"
-    "/1.x/envs/:env-name/apps/:app-name" "Displays configuration for the given application"
-    "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration in the environment")
+    "/1.x/envs/:env-name/apps/apply" "Apply configuration for all applications listed in Onix"
+    "/1.x/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from GIT repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
+    "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment")
    :POST
    (array-map
-    "/1.x/apps/:app-name" "Creates an application configuration"
-    "/1.x/validate/:name" "Validates the configuration passed in the body")})
+    "/1.x/apps/:app-name" "Create an application configuration"
+    "/1.x/validate/:name" "Validate the configuration passed in the body")})
 
 (defroutes applications-routes
 
