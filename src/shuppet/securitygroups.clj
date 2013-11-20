@@ -206,5 +206,5 @@
 
 (defn delete-sgs
   [{:keys [SecurityGroups]}]
-  (doseq [group SecurityGroups]
+  (doseq [group (reverse SecurityGroups)]
     (delete-sg (:GroupName group))))
