@@ -97,6 +97,22 @@
            :status code
            :message message}))
 
+(def ^:private resources
+  {:GET
+   (array-map "/healthcheck" "Healthcheck"
+              "/1.x/status" "Status"
+              "/1.x./ping" "Pong"
+              "/1.x/icon" "Icon"
+              "/1.x/envs" "Available environments"
+              "/1.x/envs/:env-name" "Read and evaluates the environment configuration"
+              "/1.x/envs/:env-name/apply" "Apply the environment configuration"
+              "/1.x/envs/:env-name/apps" "All available applications"
+              "/1.x/envs/:env-name/apps/:app-name" "Read and evaluate application configuration with env configuration"
+              "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration in the environment")
+   :POST
+   (array-map "/1.x/apps/:app-name" "Creates an application configuration"
+              "/1.x/validate/:name" "Validates the configuration passed in the body")})
+
 (defroutes applications-routes
 
   (GET "/"
@@ -175,6 +191,11 @@
        []
        (->  (ring-response/response "I am healthy. Thank you for asking.")
             (ring-response/content-type  "text/plain;charset=utf-8")))
+
+  (GET "/resources"
+       []
+       (->  (ring-response/response (-> resources (write-str)))
+            (ring-response/content-type  "application/json")))
 
   (route/not-found (error-response "Resource not found" 404)))
 
