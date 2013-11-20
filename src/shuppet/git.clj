@@ -275,4 +275,4 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
                 (conj valid-environments "master") " for application '" name "'"))
   {:name name
    :path (str base-git-url name)
-   :branches valid-environments})
+   :branches (conj valid-environments "master")})
