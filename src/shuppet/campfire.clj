@@ -10,9 +10,6 @@
 (def ^:dynamic *info-rooms* nil)
 (def ^:dynamic *error-rooms* nil)
 
-(defn default-error-rooms []
-  [(env :service-campfire-default-info-room) (env :service-campfire-default-error-room)])
-
 (def ^:private cf-settings
   {:api-token api-token,
    :ssl true,
@@ -53,7 +50,7 @@
                            (env :service-campfire-default-info-room))
          error-rooms# (flatten (conj
                                 (to-vec (get-in ~config [:Campfire :Error]))
-                                (default-error-rooms)
+                                (env :service-campfire-default-error-room)
                                 info-rooms#))]
      (binding [*info-rooms* info-rooms#
                *error-rooms* error-rooms#]

@@ -80,7 +80,7 @@
         ;;git-config
         :service-base-git-repository-url "ssh://snc@source.nokia.com/shuppet/git/"
         :service-base-git-repository-path "/tmp/repos/"
-                :service-snc-api-base-url "https://source.nokia.com/api/v2/"
+        :service-snc-api-base-url "https://source.nokia.com/api/v2/"
         :service-snc-api-username "shpaul"
         :service-snc-api-secret "de6ad71e0eace6e3a4cae9955c2f67d7"
 
