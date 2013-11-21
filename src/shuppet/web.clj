@@ -1,6 +1,8 @@
 (ns shuppet.web
   (:require
-   [shuppet.core :as core]
+   [shuppet
+    [core :as core]
+    [middleware :as middleware]]
    [slingshot.slingshot :refer [try+ throw+]]
    [clojure.data.json :refer [write-str]]
    [compojure.core :refer [defroutes context GET PUT POST DELETE]]
@@ -200,35 +202,9 @@
 
   (route/not-found (error-response "Resource not found" 404)))
 
-(defn format-shuppet-exceptions
-  [handler]
-  (fn [req]
-    (try+
-     (handler req)
-     (catch [:type :shuppet.git/git] e
-       (->  (ring-response/response (write-str {:message (e :message)}))
-            (ring-response/content-type "application/json")
-            (ring-response/status (e :status))))
-     (catch [:type :shuppet.util/aws] e
-       (->  (ring-response/response (write-str e))
-            (ring-response/content-type "application/json")
-            (ring-response/status 409)))
-     (catch [:type :_] e
-       (->  (ring-response/response (write-str {:message (e :message)}))
-            (ring-response/content-type "application/json")
-            (ring-response/status (e :status))))
-     (catch  clojure.lang.Compiler$CompilerException e
-       (->  (ring-response/response (write-str {:message (.getMessage e)}))
-            (ring-response/content-type "application/json")
-            (ring-response/status 400)))
-      (catch java.io.FileNotFoundException e
-       (->  (ring-response/response (write-str {:message "Cannot find this one"}))
-            (ring-response/content-type "application/json")
-            (ring-response/status 404))))))
-
 (def app
   (-> routes
-      (format-shuppet-exceptions)
+      (middleware/wrap-shuppet-error)
       (instrument)
       (wrap-error-handling)
       (wrap-ignore-trailing-slash)
