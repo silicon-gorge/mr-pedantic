@@ -84,6 +84,7 @@
 
 (defn- apply-apps-config
   [env]
+  (core/apply-config env)
   (core/update-configs env)
   (response  {:message (str "Started applying the configuration for all applications in environment " env "."
                             "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
@@ -136,6 +137,10 @@
        [env]
        (list-apps env))
 
+  (GET "/:env/apps/apply"
+       [env]
+       (apply-apps-config env))
+
   (GET "/:env/apps/:name"
        [env name]
        (show-app-config env name))
@@ -147,10 +152,7 @@
   (GET "/:env/apps/:name/clean"
        [env name]
        (clean-app-config env name))
-
-  (GET "/:env/apps/apply"
-       [env]
-       (apply-apps-config env)))
+)
 
 (defroutes routes
   (context

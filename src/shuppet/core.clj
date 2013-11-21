@@ -86,4 +86,4 @@
 (defn update-configs
   [env]
   (with-ent-bindings env
-    (shuppet/update-configs)))
+    (shuppet/update-configs env)))

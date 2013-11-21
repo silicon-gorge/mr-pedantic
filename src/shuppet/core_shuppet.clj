@@ -122,5 +122,5 @@
 
 (defn update-configs
   [env]
-  (let [names (app-names env)]
-    (map #(apply-config env %) names)))
+  (let [names (app-names)]
+    (pmap #(apply-config env %) names)))
