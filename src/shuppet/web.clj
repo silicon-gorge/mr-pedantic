@@ -21,9 +21,8 @@
                                      replace-guid replace-mongoid replace-number]]
    [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
    [metrics.ring.expose :refer [expose-metrics-as-json]]
-   [metrics.ring.instrument :refer [instrument]]))
-
-(use 'overtone.at-at)
+   [metrics.ring.instrument :refer [instrument]]
+   [overtone.at-at :as at-at]))
 
 (def ^:dynamic *version* "none")
 (def ^:private cf-info-room (env :service-campfire-default-info-room))
@@ -32,7 +31,7 @@
 (def ^:private can-post? (not (Boolean/valueOf (env :service-production))))
 (def ^:private default-interval (Integer/parseInt (env :service-default-update-interval)))
 
-(def shuppet-pool (mk-pool))
+(def shuppet-pool (at-at/mk-pool))
 
 (defn set-version!
   [version]
@@ -114,12 +113,12 @@
 
 (defn- schedule
   [env action interval]
-  (stop-and-reset-pool! shuppet-pool :strategy :kill)
+  (at-at/stop-and-reset-pool! shuppet-pool :strategy :kill)
   (if (= action "stop")
     (response {:message "Succefully stopped the shuppet scheduler"})
     (do
       (let [interval (if interval (Integer/parseInt interval) default-interval)]
-        (future (every (* interval 60 1000) (apps-apply env) shuppet-pool))
+         (at-at/every (* interval 60 1000) #(apps-apply env) shuppet-pool)
         (response {:message (str "Succesfully started the shuppet scheduler. The scheduler will run in every " interval " minutes.") })))))
 
 (def ^:private resources
