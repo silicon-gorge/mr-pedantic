@@ -189,7 +189,9 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       (get-head name branch)
       (catch InvalidRemoteException e
         (rm "-rf" (repo-path name branch))
-        (send-error 404 (str "Can't communicate with remote repo '" name  "': " e)))
+        (let [message (str "Missing shuppet configuration for application '" name  "'")]
+          (cf/error {:message message})
+          (send-error 404 message)))
       (catch NullPointerException e
         (rm "-rf" (repo-path name branch))
         (send-error (str "HEAD revision not found in remote repo '" name "': " e)))

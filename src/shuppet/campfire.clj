@@ -31,11 +31,11 @@
 
 (defn- error-messages [{:keys [env app-name title url message status]}]
   (remove nil? [(when title (str title))
-                    (when app-name (str "Application: " app-name))
-                    (when env (str "Environment: " env))
-                    (when url (str "Requested-URL: " url))
-                    (when status (str "Status: " status))
-                    (when message (str "Message: " message))]))
+                (when app-name (str "Application: " app-name))
+                (when env (str "Environment: " env))
+                (when url (str "Requested-URL: " url))
+                (when status (str "Status: " status))
+                (when message (str "Message: " message))]))
 
 (defn error
   "Sends error to the error rooms"
@@ -50,11 +50,11 @@
 (defmacro with-messages
   [{:keys [env app-name config]} & body]
   `(let [info-rooms# (conj (to-vec (get-in ~config [:Campfire :Info]))
-                          (env :service-campfire-default-info-room))
+                           (env :service-campfire-default-info-room))
          error-rooms# (flatten (conj
-                               (to-vec (get-in ~config [:Campfire :Error]))
-                               (default-error-rooms)
-                               info-rooms#))]
+                                (to-vec (get-in ~config [:Campfire :Error]))
+                                (default-error-rooms)
+                                info-rooms#))]
      (binding [*info-rooms* info-rooms#
                *error-rooms* error-rooms#]
        (try+
