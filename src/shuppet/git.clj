@@ -10,7 +10,7 @@
             [cheshire.core :refer [parse-string]]
             [slingshot.slingshot :refer [try+ throw+]]
             [me.raynes.conch :as conch])
-  (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode]
+  (:import [org.eclipse.jgit.api Git MergeCommand MergeCommand$FastForwardMode ListBranchCommand$ListMode]
            [org.eclipse.jgit.api.errors InvalidRemoteException]
            [org.eclipse.jgit.errors MissingObjectException NoRemoteRepositoryException]
            [org.eclipse.jgit.revwalk RevWalk]
@@ -199,6 +199,14 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
         (rm "-rf" (repo-path name branch))
         (send-error (str "Missing object for revision HEAD in repo '" name "': " e))))))
 
+(defn- remote-branches
+  [name]
+  (let [git (Git/open (as-file (repo-path name)))]
+    (->
+     (.branchList git)
+     (.setListMode ListBranchCommand$ListMode/REMOTE)
+     (.call))))
+
 (defn- repo-create-body
   [name]
   (str "repository[name]=" name "&repository[kind]=Git"))
@@ -210,8 +218,9 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
                                        :throw-exceptions false})
         status (:status response)]
     (when (not= status 200)
-      (let [status (if (= status 422) 409 status)]
-        (send-error status (str "Unable to create new git repository for application '" name "'. "
+      (if (= status 422) ;We think the repository is alrady there
+        (get-data "poke" name)
+        (send-error 409 (str "Unable to create new git repository for application '" name "'. "
                              (:message (parse-string (:body response) true))))))))
 
 (defn- copy-config-file
@@ -243,11 +252,11 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- setup-repository
   [name]
-  (doto name
-    create-repository
-    clone-repo
-    write-default-config
-    commit-and-push))
+  (when-not (create-repository name)
+    (doto name
+      clone-repo
+      write-default-config
+      commit-and-push)))
 
 (defn- create-branch
   [repo-name branch-name]
@@ -267,14 +276,24 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
    (catch Exception e
      (send-error (str "Error while trying to create repository branch for: " name " . Deatils : " e)))))
 
+(defn- configure-app
+  [name]
+  (let [response (setup-repository name)]
+    (if (= name response)
+      (do
+        (cf/info (str "I've succesfully created a new git repository for application '" name "'"))
+        (doseq [branch valid-environments]
+          (setup-branch name branch))
+        (cf/info (str "I've succesfully created the branches "
+                      (conj valid-environments "master") " for application '" name "'"))
+        {:status 201
+         :branches (conj valid-environments "master")})
+      {:status 200
+       :branches (map #(last (split (.getName %) #"/")) (remote-branches name))})))
+
 (defn create-application
   [name]
-  (setup-repository name)
-  (cf/info (str "I've succesfully created a new git repository for application '" name "'"))
-  (doseq [branch valid-environments]
-    (setup-branch name branch))
-  (cf/info (str "I've succesfully created the branches "
-                (conj valid-environments "master") " for application '" name "'"))
-  {:name name
-   :path (str base-git-url name)
-   :branches (conj valid-environments "master")})
+  (merge
+   (configure-app name)
+   {:path (str base-git-url name)
+    :name name}))

@@ -28,7 +28,8 @@
                  [commons-collections "3.2.1"]
                  [org.eclipse.jgit "3.0.0.201306101825-r"]
                  [me.raynes/conch "0.5.0"]
-                 [clj-campfire "2.1.0"]]
+                 [clj-campfire "2.1.0"]
+                 [overtone/at-at "1.2.0"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
                                    :exclusions [org.slf4j/slf4j-nop
@@ -88,6 +89,8 @@
         :service-campfire-sub-domain "nokia-entertainment"
         :service-campfire-default-info-room "Shuppet Info"
         :service-campfire-default-error-room "Shuppet Error"
+
+        :service-default-update-interval "10"
 
         :service-local-config-path "test/shuppet/resources"
         :service-local-app-names "localtest"

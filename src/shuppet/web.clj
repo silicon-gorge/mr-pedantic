@@ -23,11 +23,16 @@
    [metrics.ring.expose :refer [expose-metrics-as-json]]
    [metrics.ring.instrument :refer [instrument]]))
 
+(use 'overtone.at-at)
+
 (def ^:dynamic *version* "none")
 (def ^:private cf-info-room (env :service-campfire-default-info-room))
 (def ^:private cf-error-room (env :service-campfire-default-error-room))
 (def ^:private environments (env :service-environments))
 (def ^:private can-post? (not (Boolean/valueOf (env :service-production))))
+(def ^:private default-interval (Integer/parseInt (env :service-default-update-interval)))
+
+(def shuppet-pool (mk-pool))
 
 (defn set-version!
   [version]
@@ -35,12 +40,12 @@
 
 (defn- response
   ([body status]
-      (merge
-       {:status status
-        :headers {"Content-Type" "application/json"}}
-       (if (nil? body)
-         {}
-         {:body body})))
+     (merge
+      {:status status
+       :headers {"Content-Type" "application/json"}}
+      (if (nil? body)
+        {}
+        {:body body})))
   ([body]
      (response body 200)))
 
@@ -84,23 +89,38 @@
   (core/clean-config env name)
   (response {:message (str "Succesfully cleaned the configuration for application " name)}))
 
-(defn- apply-apps-config
+(defn- apps-apply
   [env]
   (core/apply-config env)
-  (core/update-configs env)
+  (core/update-configs env))
+
+(defn- apply-apps-config
+  [env]
+  (apps-apply env)
   (response  {:message (str "Started applying the configuration for all applications in environment " env "."
                             "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
 
 (defn- create-app-config
   [name local]
-  (let [env (if local "local" "")]
-    (response (core/create-config env name) 201)))
+  (let [env (if local "local" "")
+        resp (core/create-config env name)]
+    (response (dissoc resp :status) (:status resp))))
 
 (defn- send-error
   [code message]
   (throw+ {:type :_
            :status code
            :message message}))
+
+(defn- schedule
+  [env action interval]
+  (stop-and-reset-pool! shuppet-pool :strategy :kill)
+  (if (= action "stop")
+    (response {:message "Succefully stopped the shuppet scheduler"})
+    (do
+      (let [interval (if interval (Integer/parseInt interval) default-interval)]
+        (future (every (* interval 60 1000) (apps-apply env) shuppet-pool))
+        (response {:message (str "Succesfully started the shuppet scheduler. The scheduler will run in every " interval " minutes.") })))))
 
 (def ^:private resources
   {:GET
@@ -119,7 +139,8 @@
    :POST
    (array-map
     "/1.x/apps/:app-name" "Create an application configuration"
-    "/1.x/validate/:name" "Validate the configuration passed in the body")})
+    "/1.x/validate/:name" "Validate the configuration passed in the body"
+    "/1.x/envs/env/schedule" "Schedules shuppet, default=10mins. QS Parameters interval=time in minutes, action=stop to stop scheduling" )})
 
 (defroutes applications-routes
 
@@ -138,6 +159,10 @@
   (GET "/:env/apps"
        [env]
        (list-apps env))
+
+  (POST "/:env/schedule"
+        [env action interval]
+        (schedule env action interval))
 
   (GET "/:env/apps/apply"
        [env]
