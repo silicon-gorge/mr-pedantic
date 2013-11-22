@@ -241,6 +241,7 @@
 
 (def app
   (-> routes
+      (middleware/wrap-check-env)
       (middleware/wrap-shuppet-error)
       (instrument)
       (wrap-error-handling)

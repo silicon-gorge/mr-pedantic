@@ -1,5 +1,7 @@
 (ns shuppet.middleware
   (:require
+   [environ.core :refer [env]]
+   [clojure.string :refer [split]]
    [slingshot.slingshot :refer [try+ throw+]]
    [clojure.data.json :refer [write-str]]
    [ring.util.response :as ring-response]))
@@ -29,3 +31,19 @@
        (->  (ring-response/response (write-str {:message "Cannot find this one"}))
             (ring-response/content-type "application/json")
             (ring-response/status 404))))))
+
+(defn- valid-env? [uri envs]
+  (not-empty (filter identity (map
+                               #(re-matches (re-pattern (str "/1.x/envs/" % ".*")) uri)
+                               envs))))
+
+(defn wrap-check-env
+  [handler]
+  (fn [{:keys [uri] :as req}]
+    (if (re-matches #"/1.x/envs/.*" uri)
+      (if (valid-env? uri (split (env :service-environments) #","))
+        (handler req)
+        (-> (ring-response/response (write-str {:message "Environment not allowed"}))
+            (ring-response/content-type "application/json")
+            (ring-response/status 403)))
+      (handler req))))
