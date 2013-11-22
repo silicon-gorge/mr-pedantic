@@ -120,7 +120,16 @@
       delete-s3s
       delete-ddbs)))
 
+(defn- filter-tooling-services
+  [names]
+  (clojure.set/difference
+   names
+   (set (split (env :service-tooling-applications) #","))))
+
 (defn update-configs
   [env]
-  (let [names (app-names)]
+  (let [names (set (app-names))
+        names (if (= env "prod")
+                (filter-tooling-services names)
+                names)]
     (pmap #(apply-config env %) names)))
