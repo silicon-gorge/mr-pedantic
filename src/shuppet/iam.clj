@@ -4,13 +4,15 @@
     [signature :refer [v4-auth-headers]]
     [util :refer :all]
     [campfire :as cf]]
+   [clojure.string :refer [replace]]
    [environ.core :refer [env]]
    [clj-http.client :as client]
    [clojure.data.json :refer [write-str]]
    [clojure.tools.logging :as log]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]
    [clojure.xml :as xml]
-   [clojure.zip :as zip]))
+   [clojure.zip :as zip])
+  (:refer-clojure :exclude [replace]))
 
 (def ^:const ^:private iam-url (env :service-aws-iam-url))
 (def ^:const ^:private iam-version (env :service-aws-iam-api-version))
@@ -107,12 +109,23 @@
   (ensure-profile-with-role RoleName RoleName))
 
 (defn- create-policy-stmt
-  [opts]
-  (write-str (join-policies (map create-policy opts))))
+  [version opts]
+  (replace (write-str (without-nils (merge
+                                     {:Version version}
+                                     (join-policies (map create-policy opts)))))
+           #"\\"
+           "")) ;write-str encodes / as \\/ which aws dont like and hence the replace
+
+(defn- create-iam-policy
+  [policy]
+  {:PolicyName (policy :PolicyName)
+   :PolicyDocument (create-policy-stmt
+                    (policy :Version)
+                    (policy :PolicyDocument))})
 
 (defn- create-policy-doc
   [opts]
-  (map #(update-in % [:PolicyDocument] create-policy-stmt) opts))
+  (map create-iam-policy opts))
 
 (defn- get-policy-document
   [r-name p-name]
