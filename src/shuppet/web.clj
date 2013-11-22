@@ -2,7 +2,8 @@
   (:require
    [shuppet
     [core :as core]
-    [middleware :as middleware]]
+    [middleware :as middleware]
+    [util :refer [rfc2616-time]]]
    [slingshot.slingshot :refer [try+ throw+]]
    [clojure.data.json :refer [write-str]]
    [compojure.core :refer [defroutes context GET PUT POST DELETE]]
@@ -88,14 +89,14 @@
   (core/clean-config env name)
   (response {:message (str "Succesfully cleaned the configuration for application " name)}))
 
-(defn- apps-apply
+(defn- configure-apps
   [env]
   (core/apply-config env)
   (core/update-configs env))
 
 (defn- apply-apps-config
   [env]
-  (apps-apply env)
+  (configure-apps env)
   (response  {:message (str "Started applying the configuration for all applications in environment " env "."
                             "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
 
@@ -118,8 +119,15 @@
     (response {:message "Succefully stopped the shuppet scheduler"})
     (do
       (let [interval (if interval (Integer/parseInt interval) default-interval)]
-         (at-at/every (* interval 60 1000) #(apps-apply env) shuppet-pool)
-        (response {:message (str "Succesfully started the shuppet scheduler. The scheduler will run in every " interval " minutes.") })))))
+         (at-at/every (* interval 60 1000) #(configure-apps env) shuppet-pool :desc (rfc2616-time))
+         (response {:message (str "Succesfully started the shuppet scheduler. The scheduler will run in every " interval " minutes.") })))))
+
+(defn- get-schedule
+  [env]
+  (if-let [job (first (at-at/scheduled-jobs shuppet-pool))]
+    (response {:created (:desc job)
+               :interval (str (/ (:ms-period job) (* 60 1000)) " minutes")})
+    (response {:message "No jobs are currently scheduled"} 404)))
 
 (def ^:private resources
   {:GET
@@ -132,6 +140,7 @@
     "/1.x/envs/:env-name" "Read and evaluate the environment configuration :env-name.clj from GIT repository :env-name, return the configuration in JSON"
     "/1.x/envs/:env-name/apply" "Apply the environment configuration"
     "/1.x/envs/:env-name/apps" "All available applications for the given environment"
+    "/1.x/envs/:env-name/schedule" "Shows the current shuppet schedule, if any"
     "/1.x/envs/:env-name/apps/apply" "Apply configuration for all applications listed in Onix"
     "/1.x/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from GIT repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
     "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment")
@@ -159,13 +168,17 @@
        [env]
        (list-apps env))
 
-  (POST "/:env/schedule"
-        [env action interval]
-        (schedule env action interval))
-
   (GET "/:env/apps/apply"
        [env]
        (apply-apps-config env))
+
+  (GET "/:env/schedule"
+        [env]
+        (get-schedule env))
+
+  (POST "/:env/schedule"
+        [env action interval]
+        (schedule env action interval))
 
   (GET "/:env/apps/:name"
        [env name]
