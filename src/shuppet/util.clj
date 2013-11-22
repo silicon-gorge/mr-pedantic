@@ -160,9 +160,10 @@
   (if (string? item) [item] (vec item)))
 
 (defn- create-policy-statement
-  ([sid effect principal action resource conditions]
+  ([version sid effect principal action resource conditions]
      (let [effect (if (empty? effect) "Allow" effect)]
-       (without-nils {:Effect effect
+       (without-nils {:Version version
+                      :Effect effect
                       :Sid sid
                       :Principal principal
                       :Action (to-vec action)
@@ -188,14 +189,14 @@
 
 (defn create-policy
   "http://docs.aws.amazon.com/IAM/latest/UserGuide/PoliciesOverview.html"
-  ([sid effect principal action resource conditions]
-     {:Statement [(create-policy-statement sid effect principal action resource conditions)]})
+  ([version sid effect principal action resource conditions]
+     {:Statement [(create-policy-statement version sid effect principal action resource conditions)]})
   ([sid action resource]
-     (create-policy sid nil nil action resource nil))
+     (create-policy nil sid nil nil action resource nil))
   ([action resource]
      (create-policy nil action resource))
-  ([{:keys [Sid Effect Principal Action Resource Conditions]}]
-     (create-policy Sid Effect Principal Action Resource Conditions)))
+  ([{:keys [Version Sid Effect Principal Action Resource Conditions]}]
+     (create-policy Version Sid Effect Principal Action Resource Conditions)))
 
 (defn- create-grant
   [display-name permission keyword value]
