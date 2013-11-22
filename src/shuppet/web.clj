@@ -132,10 +132,10 @@
 (def ^:private resources
   {:GET
    (array-map
-    "/1.x/icon" "Icon"
-    "/1.x./ping" "Pong"
-    "/1.x/status" "Status"
     "/healthcheck" "Healthcheck"
+    "/1.x/icon" "Icon"
+    "/1.x/ping" "Pong"
+    "/1.x/status" "Status"
     "/1.x/envs" "All available environments"
     "/1.x/envs/:env-name" "Read and evaluate the environment configuration :env-name.clj from GIT repository :env-name, return the configuration in JSON"
     "/1.x/envs/:env-name/apply" "Apply the environment configuration"
