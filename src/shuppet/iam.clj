@@ -79,8 +79,8 @@
 
 (defn- profile-with-role-exists?
   [name]
-  (not (empty? (process :ListInstanceProfilesForRole {"RoleName" name
-                                                      "MaxItems" 1}))))
+  (not-empty (xml1-> (process :ListInstanceProfilesForRole {"RoleName" name "MaxItems" 1})
+                     :ListInstanceProfilesForRoleResult :InstanceProfiles zip/children)))
 
 (defn- add-role-to-profile
   [r-name p-name]
