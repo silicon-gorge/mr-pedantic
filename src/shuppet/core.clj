@@ -3,7 +3,7 @@
              [core-shuppet :as shuppet]
              [git :as git]
              [campfire :as cf]]
-            [clojure.string :refer [lower-case]]
+            [clojure.string :refer [lower-case split]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]])
@@ -83,7 +83,17 @@
   (with-ent-bindings env
     (shuppet/app-names)))
 
+(defn- filter-tooling-services
+  [names]
+  (clojure.set/difference
+   names
+   (set (split (env :service-tooling-applications) #","))))
+
 (defn update-configs
   [env]
-  (with-ent-bindings env
-    (shuppet/update-configs env)))
+  (let [names (app-names env)
+        names (if (= env "prod")
+                (filter-tooling-services names)
+                names)]
+    (pmap #(with-ent-bindings env
+             (shuppet/apply-config env %)) names) ))

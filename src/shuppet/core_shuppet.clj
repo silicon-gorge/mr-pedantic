@@ -99,16 +99,16 @@
   (execute-string config))
 
 (defn apply-config
-  ([env app-name]
-     (let [config (cf/with-messages {:env env :app-name app-name}
-                    (load-config env app-name))]
-       (cf/with-messages {:env env :app-name app-name :config config}
-         (doto config
-           ensure-sgs
-           ensure-elb
-           ensure-iam
-           ensure-s3s
-           ensure-ddbs)))))
+  [env app-name]
+  (let [config (cf/with-messages {:env env :app-name app-name}
+                   (load-config env app-name))]
+    (cf/with-messages {:env env :app-name app-name :config config}
+        (doto config
+          ensure-sgs
+          ensure-elb
+          ensure-iam
+          ensure-s3s
+          ensure-ddbs))))
 
 (defn clean-config [environment app-name]
   (let [config (load-config environment app-name)]
@@ -119,17 +119,3 @@
       delete-role
       delete-s3s
       delete-ddbs)))
-
-(defn- filter-tooling-services
-  [names]
-  (clojure.set/difference
-   names
-   (set (split (env :service-tooling-applications) #","))))
-
-(defn update-configs
-  [env]
-  (let [names (set (app-names))
-        names (if (= env "prod")
-                (filter-tooling-services names)
-                names)]
-    (pmap #(apply-config env %) names)))
