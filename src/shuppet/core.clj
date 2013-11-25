@@ -31,8 +31,8 @@
              [_ env filename]
              (git/get-data env filename))
            (configure
-             [_ appname]
-             (git/create-application appname)))
+             [_ appname master-only]
+             (git/create-application appname master-only)))
 
 ;change env arg to flag
 (defmacro with-ent-bindings
@@ -68,9 +68,9 @@
       (shuppet/try-app-config "poke" name config))))
 
 (defn create-config
-  [env app-name]
+  [env app-name master-only]
   (with-ent-bindings env
-    (shuppet/create-config app-name)))
+    (shuppet/create-config app-name master-only)))
 
 (defn clean-config
   [environment app-name]

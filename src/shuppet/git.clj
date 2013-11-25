@@ -277,23 +277,28 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
      (send-error (str "Error while trying to create repository branch for: " name " . Deatils : " e)))))
 
 (defn- configure-app
-  [name]
-  (let [response (setup-repository name)]
+  [name master-only]
+  (let [master-only (Boolean/parseBoolean master-only)
+        response (setup-repository name)]
     (if (= name response)
       (do
         (cf/info (str "I've succesfully created a new git repository for application '" name "'"))
-        (doseq [branch valid-environments]
-          (setup-branch name branch))
-        (cf/info (str "I've succesfully created the branches "
-                      (conj valid-environments "master") " for application '" name "'"))
+        
+        (when-not master-only
+          (doseq [branch valid-environments]
+            (setup-branch name branch))
+          (cf/info (str "I've succesfully created the branches "
+                        (conj valid-environments "master") " for application '" name "'")))
+        
         {:status 201
-         :branches (conj valid-environments "master")})
+         :branches (if master-only ["master"]  (conj valid-environments "master"))})
+      
       {:status 200
        :branches (map #(last (split (.getName %) #"/")) (remote-branches name))})))
 
 (defn create-application
-  [name]
+  [name master-only]
   (merge
-   (configure-app name)
+   (configure-app name master-only)
    {:path (str base-git-url name)
     :name name}))

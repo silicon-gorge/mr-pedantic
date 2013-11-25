@@ -33,7 +33,7 @@
     [this env filename]
     "Gets the configuration file as string")
   (configure
-    [this app-name]
+    [this app-name master-only]
     "Sets up the configuration file for the application"))
 
 (deftype LocalConfig []
@@ -46,7 +46,7 @@
           (as-file)
           (slurp))))
   (configure
-    [_ name]
+    [_ name master-only]
     (let [dest-path (str (env :service-local-config-path) "/local/" name ".clj")]
       (spit dest-path (slurp (resource "default.clj")))
       {:message (str "Created new configuration file " dest-path)})))
@@ -75,8 +75,8 @@
   (list-names *application-names*))
 
 (defn create-config
-  [app-name]
-  (configure *configuration* app-name))
+  [app-name master-only]
+  (configure *configuration* app-name master-only))
 
 (defn- configuration [env name]
   (as-string *configuration* env name))

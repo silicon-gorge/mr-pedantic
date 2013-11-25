@@ -101,9 +101,9 @@
                             "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
 
 (defn- create-app-config
-  [name local]
+  [name local master-only]
   (let [env (if local "local" "")
-        resp (core/create-config env name)]
+        resp (core/create-config env name master-only)]
     (response (dissoc resp :status) (:status resp))))
 
 (defn- send-error
@@ -146,7 +146,7 @@
     "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment")
    :POST
    (array-map
-    "/1.x/apps/:app-name" "Create an application configuration"
+    "/1.x/apps/:app-name" "Create an application configuration, QS Parameter masteronly=true, just creates the master branch"
     "/1.x/validate/:name" "Validate the configuration passed in the body"
     "/1.x/envs/env/schedule" "Schedules shuppet, default=10mins. QS Parameters interval=time in minutes, action=stop to stop scheduling" )})
 
@@ -213,9 +213,9 @@
                    (clojure.java.io/input-stream))})
 
    (POST "/apps/:name"
-         [name local]
+         [name local masteronly]
          (if can-post?
-           (create-app-config (lower-case name) local)
+           (create-app-config (lower-case name) local masteronly)
            (send-error 405 "POST requests on resources are not allowed in production environment.")))
 
    (POST "/validate/:name"
