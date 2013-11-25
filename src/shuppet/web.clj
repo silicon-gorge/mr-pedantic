@@ -148,7 +148,7 @@
    (array-map
     "/1.x/apps/:app-name" "Create an application configuration, QS Parameter masteronly=true, just creates the master branch"
     "/1.x/validate/:name" "Validate the configuration passed in the body"
-    "/1.x/envs/env/schedule" "Schedules shuppet, default=10mins. QS Parameters interval=time in minutes, action=stop to stop scheduling" )})
+    )})
 
 (defroutes applications-routes
 
