@@ -184,4 +184,5 @@
     (doseq [p-name p-names]
       (process :DeleteRolePolicy {"RoleName" r-name
                                   "PolicyName" p-name}))
+    (process :RemoveRoleFromInstanceProfile {"InstanceProfileName" r-name "RoleName" r-name})
     (process :DeleteRole {"RoleName" r-name})))
