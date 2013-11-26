@@ -20,7 +20,7 @@
             [slingshot.slingshot :refer [try+ throw+]]))
 
 (def shuppet-tester
-  (conj secure-tester-without-def (blanket "shuppet")))
+  (conj secure-tester-without-def (blanket "shuppet" "environ" "compojure")))
 
 (defn- make-sandbox []
   (sandbox shuppet-tester
