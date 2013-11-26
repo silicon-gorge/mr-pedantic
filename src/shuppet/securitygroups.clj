@@ -132,8 +132,8 @@
 (defn- compare-sg
   [sg-id aws local]
   (let [remote (build-config aws)
-        ingress (compare-config  (:Ingress local) (:Ingress remote))
-        egress  (compare-config (:Egress local) (:Egress remote))]
+        ingress (compare-config  (set (:Ingress local)) (set (:Ingress remote)))
+        egress  (compare-config (set (:Egress local)) (set (:Egress remote)))]
     (ensure-ingress (:GroupName local) sg-id ingress)
     (ensure-egress (:GroupName local) sg-id egress)))
 
