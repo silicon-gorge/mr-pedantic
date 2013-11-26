@@ -75,8 +75,6 @@
 
 (defn clean-config
   [environment app-name]
-  (when is-prod?
-    (throw+ {:type ::wrong-environment}))
   (with-ent-bindings environment
     (shuppet/clean-config environment app-name)))
 

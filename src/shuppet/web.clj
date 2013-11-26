@@ -95,8 +95,10 @@
                            "Please check the campfire room '" cf-info-room "' for a detailed report.")}))
 
 (defn- clean-app-config
-  [env name]
-  (core/clean-config env name)
+  [environment name]
+  (when-not (= (env :environment-name) "local")
+    (throw+ {:type ::wrong-environment}))
+  (core/clean-config environment name)
   (response {:message (str "Succesfully cleaned the configuration for application " name)}))
 
 (defn- configure-apps

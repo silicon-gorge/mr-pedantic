@@ -51,7 +51,7 @@
             [codox "0.6.6"]]
 
   ;; development token values
-  :env {:environment-name "poke"
+  :env {:environment-name "local"
         :service-name "shuppet"
         :service-port "8080"
         :service-url "http://localhost:%s/1.x"
