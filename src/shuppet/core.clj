@@ -2,7 +2,8 @@
   (:require [shuppet
              [core-shuppet :as shuppet]
              [git :as git]
-             [campfire :as cf]]
+             [campfire :as cf]
+             [util :refer [is-prod?]]]
             [clojure.string :refer [lower-case split]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
@@ -74,7 +75,7 @@
 
 (defn clean-config
   [environment app-name]
-  (when (Boolean/valueOf (env :service-production))
+  (when is-prod?
     (throw+ {:type ::wrong-environment}))
   (with-ent-bindings environment
     (shuppet/clean-config environment app-name)))

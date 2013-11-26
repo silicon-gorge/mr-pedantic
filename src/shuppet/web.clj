@@ -29,10 +29,18 @@
 (def ^:private cf-info-room (env :service-campfire-default-info-room))
 (def ^:private cf-error-room (env :service-campfire-default-error-room))
 (def ^:private environments (env :service-environments))
-(def ^:private can-post? (not (Boolean/valueOf (env :service-production))))
 (def ^:private default-interval (Integer/parseInt (env :service-default-update-interval)))
 
-(def shuppet-pool (at-at/mk-pool))
+(def ^:private shuppet-prod-pool (at-at/mk-pool))
+(def ^:private shuppet-poke-pool (at-at/mk-pool))
+(def ^:private shuppet-default-pool (at-at/mk-pool))
+
+(defn- get-pool
+  [env]
+  (case (lower-case env)
+    "prod" shuppet-prod-pool
+    "poke" shuppet-poke-pool
+    shuppet-default-pool))
 
 (defn set-version!
   [version]
@@ -114,17 +122,17 @@
 
 (defn- schedule
   [env action interval]
-  (at-at/stop-and-reset-pool! shuppet-pool :strategy :kill)
+  (at-at/stop-and-reset-pool! (get-pool env) :strategy :kill)
   (if (= action "stop")
     (response {:message "Succefully stopped the shuppet scheduler"})
     (do
       (let [interval (if interval (Integer/parseInt interval) default-interval)]
-         (at-at/every (* interval 60 1000) #(configure-apps env) shuppet-pool :desc (rfc2616-time))
+        (at-at/every (* interval 60 1000) #(configure-apps env) (get-pool env) :desc (rfc2616-time))
          (response {:message (str "Succesfully started the shuppet scheduler. The scheduler will run in every " interval " minutes.") })))))
 
 (defn- get-schedule
   [env]
-  (if-let [job (first (at-at/scheduled-jobs shuppet-pool))]
+  (if-let [job (first (at-at/scheduled-jobs (get-pool env)))]
     (response {:created (:desc job)
                :interval (str (/ (:ms-period job) (* 60 1000)) " minutes")})
     (response {:message "No jobs are currently scheduled"} 404)))
@@ -214,15 +222,11 @@
 
    (POST "/apps/:name"
          [name local masteronly]
-         (if can-post?
-           (create-app-config (lower-case name) local masteronly)
-           (send-error 405 "POST requests on resources are not allowed in production environment.")))
+         (create-app-config (lower-case name) local masteronly))
 
    (POST "/validate/:name"
          [:as {body :body} name]
-         (if can-post?
-           (validate-config (slurp body) name)
-           (send-error 405 "POST requests on resources are not allowed in production environment.")))
+         (validate-config (slurp body) name))
 
    (context "/envs"
             [] applications-routes))
@@ -241,7 +245,6 @@
 
 (def app
   (-> routes
-      (middleware/wrap-check-env)
       (middleware/wrap-shuppet-error)
       (instrument)
       (wrap-error-handling)

@@ -61,12 +61,15 @@
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
         :service-production "false"
-        :service-environments "local,poke"
+        :service-environments "local,poke,prod"
         :environment-entertainment-onix-url "http://onix.brislabs.com:8080/1.x"
 
         ;;aws-config
-        :service-aws-access-key-id "AKIAI7INFGUXMYXWWBYQ"
-        :service-aws-secret-access-key "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"
+        :service-aws-access-key-id-poke "AKIAI7INFGUXMYXWWBYQ"
+        :service-aws-secret-access-key-poke "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"
+        :service-aws-access-key-id-prod "AKIAI7INFGUXMYXWWBYQ"
+        :service-aws-secret-access-key-prod "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"
+
         :service-aws-ec2-url "https://ec2.eu-west-1.amazonaws.com"
         :service-aws-ec2-api-version "2013-10-01"
         :service-aws-elb-url "https://elasticloadbalancing.eu-west-1.amazonaws.com"

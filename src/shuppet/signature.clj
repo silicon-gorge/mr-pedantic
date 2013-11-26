@@ -14,23 +14,20 @@
    [org.apache.commons.codec.binary Base64]
    [org.apache.commons.codec.binary Hex]))
 
-(def ^:const ^:private aws-access-key-id (env :service-aws-access-key-id))
-(def ^:const ^:private aws-access-key-secret (env :service-aws-secret-access-key))
-
 (def ^:const ^:private v4-algorithm "AWS4-HMAC-SHA256")
 (def ^:const ^:private default-region "us-east-1")
 
 (defn- aws-key
   []
-  (if (empty? aws-access-key-id)
-    (System/getenv "AWS_ACCESS_KEY_ID")
-    aws-access-key-id))
+  (if is-prod?
+    (env :service-aws-access-key-id-prod)
+    (env :service-aws-access-key-id-poke)))
 
 (defn- aws-secret
   []
-  (if (empty? aws-access-key-secret)
-    (System/getenv "AWS_SECRET_KEY")
-    aws-access-key-secret))
+  (if is-prod?
+    (env :service-aws-secret-access-key-prod)
+    (env :service-aws-secret-access-key-poke)))
 
 (defn- v2-auth-params
   []
@@ -192,7 +189,7 @@
   [host time]
   (let [parts (split (credential-scope host time) #"/")]
     (->>
-     (calculate-hmac (nth parts 0) (get-mac-sha256 (to-bytes (str "AWS4" aws-access-key-secret))))
+     (calculate-hmac (nth parts 0) (get-mac-sha256 (to-bytes (str "AWS4" (aws-secret)))))
      (get-mac-sha256)
      (calculate-hmac (nth parts 1))
      (get-mac-sha256)

@@ -4,7 +4,8 @@
    [clj-time.format :as format]
    [clojure.string :refer [join upper-case split]]
    [slingshot.slingshot :refer [try+ throw+]]
-   [clojure.data.zip.xml :refer [xml1-> text]]))
+   [clojure.data.zip.xml :refer [xml1-> text]]
+   [environ.core :refer [env]]))
 
 (def ^:const new-line "\n")
 
@@ -216,3 +217,5 @@
   (if string
     (let [n (read-string (str string))]
       (when (number? n) n))))
+
+(def is-prod? (not (Boolean/valueOf (env :service-production))))
