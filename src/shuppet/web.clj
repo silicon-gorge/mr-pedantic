@@ -30,17 +30,19 @@
 (def ^:private cf-error-room (env :service-campfire-default-error-room))
 (def ^:private environments (env :service-environments))
 (def ^:private default-interval (Integer/parseInt (env :service-default-update-interval)))
+(def ^:private schedule-pools (atom {}))
 
-(def ^:private shuppet-prod-pool (at-at/mk-pool))
-(def ^:private shuppet-poke-pool (at-at/mk-pool))
-(def ^:private shuppet-default-pool (at-at/mk-pool))
+(defn- create-pool
+  [env]
+  {env (at-at/mk-pool)})
 
 (defn- get-pool
   [env]
-  (case (lower-case env)
-    "prod" shuppet-prod-pool
-    "poke" shuppet-poke-pool
-    shuppet-default-pool))
+  (let [env (keyword env)
+        pool (env @schedule-pools)]
+    (if pool
+      pool
+      (env (swap! schedule-pools merge (create-pool env))))))
 
 (defn set-version!
   [version]
