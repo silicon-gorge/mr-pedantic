@@ -4,6 +4,8 @@
             [shuppet.util :refer :all]
             [clojure.string :refer [join split]]
             [clojure.java.io :refer [as-file file resource]]
+            [clojail.core :refer [sandbox]]
+            [clojail.testers :refer [secure-tester-without-def blanket]]
             [shuppet
              [git :as git]
              [securitygroups :refer [ensure-sgs delete-sgs]]
@@ -16,6 +18,15 @@
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
+
+(def shuppet-tester
+  (conj secure-tester-without-def (blanket "shuppet")))
+
+(defn- make-sandbox []
+  (sandbox shuppet-tester
+           :timeout 2000
+           :init '(future (Thread/sleep 6000)
+                          (-> *ns* .getName remove-ns))))
 
 (defprotocol ApplicationNames
   (list-names
@@ -62,13 +73,10 @@
 
 (defn- execute-string
   [clojure-string & [app-name]]
-  (let [ns (-> (java.util.UUID/randomUUID) (str) (symbol) (create-ns))]
-    (binding [*ns* ns]
-      (refer 'clojure.core)
-      (let [config (load-string (with-vars {:$app-name app-name}
-                                  clojure-string))]
-        (remove-ns (symbol (ns-name ns)))
-        config))))
+  (let [clojure-string (with-vars {:$app-name app-name} clojure-string)
+        wrapped (str "(let [_ nil] \n" clojure-string "\n)")
+        form (binding [*read-eval* false] (read-string wrapped))]
+    ((make-sandbox) form)))
 
 (defn app-names
   []
