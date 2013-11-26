@@ -15,6 +15,13 @@
 (def ^:const ^:private ec2-url (env :service-aws-ec2-url))
 (def ^:const ^:private ec2-version (env :service-aws-ec2-api-version))
 
+(defn- acceptable-error?
+  [action status body];AWS sometimes doesnt return all the ip ranges!!!
+  (and
+   (or (= action "AuthorizeSecurityGroupIngress") (= action "AuthorizeSecurityGroupEgress"))
+   (= status 400)
+   (= "InvalidPermission.Duplicate" (xml1-> body :Errors :Error :Code text))))
+
 (defn- get-request
   [params]
   (let [url (v2-url ec2-url (merge {"Version" ec2-version} params))
@@ -24,7 +31,9 @@
         body (-> (:body response)
                  (xml/parse)
                  (zip/xml-zip))]
-    (if (= 200 status)
+    (if (or
+         (= 200 status)
+         (acceptable-error? (get params "Action") status body))
       body
       (throw-aws-exception "EC2" (get params "Action") url status body))))
 
@@ -132,8 +141,8 @@
 (defn- compare-sg
   [sg-id aws local]
   (let [remote (build-config aws)
-        ingress (compare-config  (set (:Ingress local)) (set (:Ingress remote)))
-        egress  (compare-config (set (:Egress local)) (set (:Egress remote)))]
+        ingress (compare-config  (:Ingress local) (:Ingress remote))
+        egress  (compare-config (:Egress local) (:Egress remote))]
     (ensure-ingress (:GroupName local) sg-id ingress)
     (ensure-egress (:GroupName local) sg-id egress)))
 
