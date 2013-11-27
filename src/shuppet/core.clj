@@ -62,11 +62,11 @@
   (re-find #"\(def +\$" config))
 
 (defn validate-config
-  [config name]
+  [env app-name config]
   (with-ent-bindings nil
     (if (env-config? config)
       (shuppet/try-env-config config)
-      (shuppet/try-app-config "poke" name config))))
+      (shuppet/try-app-config (or env "poke") (or app-name "app-name") config))))
 
 (defn create-config
   [env app-name master-only]

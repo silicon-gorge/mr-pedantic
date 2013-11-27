@@ -84,8 +84,8 @@
        (ring-response/content-type "application/json")))
 
 (defn- validate-config
-  [body name]
-  (->  (ring-response/response (-> (core/validate-config body name) (write-str)))
+  [env app-name body]
+  (->  (ring-response/response (-> (core/validate-config env app-name body) (write-str)))
        (ring-response/content-type "application/json")))
 
 (defn- apply-app-config
@@ -159,7 +159,7 @@
    :POST
    (array-map
     "/1.x/apps/:app-name" "Create an application configuration, QS Parameter masteronly=true, just creates the master branch"
-    "/1.x/validate/:name" "Validate the configuration passed in the body"
+    "/1.x/validate" "Validate the configuration passed in the body, env and app-name are optional parameters"
     )})
 
 (defroutes applications-routes
@@ -228,9 +228,9 @@
          [name local masteronly]
          (create-app-config (lower-case name) local masteronly))
 
-   (POST "/validate/:name"
-         [:as {body :body} name]
-         (validate-config (slurp body) name))
+   (POST "/validate"
+         [env app-name :as {body :body}]
+         (validate-config env app-name (slurp body)))
 
    (context "/envs"
             [] applications-routes))

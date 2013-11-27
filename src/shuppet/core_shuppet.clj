@@ -72,8 +72,9 @@
        clojure-string))
 
 (defn- execute-string
-  [clojure-string & [app-name]]
-  (let [clojure-string (with-vars {:$app-name app-name} clojure-string)
+  [clojure-string & [env app-name]]
+  (let [clojure-string (with-vars {:$app-name app-name
+                                   :$env env} clojure-string)
         wrapped (str "(let [_ nil] \n" clojure-string "\n)")
         form (safe-read wrapped)]
     ((make-sandbox) form)))
@@ -94,13 +95,13 @@
   (let [environment (configuration env env)]
     (if app-name
       (let [application (configuration env app-name)]
-        (execute-string (str environment "\n" application) app-name))
+        (execute-string (str environment "\n" application) env app-name))
       (execute-string environment))))
 
 (defn try-app-config
   [env app-name config]
   (let [environment (configuration env env)]
-      (execute-string (str environment "\n" config) app-name)))
+      (execute-string (str environment "\n" config) env app-name)))
 
 (defn try-env-config
   [config]

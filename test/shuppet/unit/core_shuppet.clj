@@ -32,4 +32,8 @@
 
             (fact "long running code times out"
                   (execute-string "(Thread/sleep 600000000)") => (throws java.util.concurrent.TimeoutException))
+            (fact "global variables are accessible"
+                  (execute-string "{:env $env :app-name $app-name}" "env" "app-name") => {:env "env"
+                                                                                          :app-name "app-name"})
+
             )
