@@ -136,6 +136,11 @@
                     :username "shuppet"
                     :groupname "shuppet"
                     :sources {:source [{:location "target/shuppet.jar"}]}}
+                   {:directory "/usr/local/shuppet"
+                    :filemode "444"
+                    :username "shuppet"
+                    :groupname "shuppet"
+                    :sources {:source [{:location ".java.policy"}]}}
                    {:directory "/usr/local/shuppet/bin"
                     :filemode "744"
                     :username "shuppet"
