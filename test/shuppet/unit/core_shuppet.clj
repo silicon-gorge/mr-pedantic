@@ -16,6 +16,7 @@
     "this is a test config"))
 
 (def configuration @#'shuppet.core-shuppet/configuration)
+(def execute-string @#'shuppet.core-shuppet/execute-string)
 
 (fact-group :unit
             (fact "app list can be customized"
@@ -24,4 +25,11 @@
 
             (fact "configuration source can be customized"
                   (binding [*configuration*  (TestConfig.)]
-                    (configuration ..env.. ..name..) => "this is a test config")))
+                    (configuration ..env.. ..name..) => "this is a test config"))
+
+            (fact "string is correctly evaluated"
+                  (execute-string "(def val \"ok\")val") => "ok")
+
+            (fact "long running code times out"
+                  (execute-string "(Thread/sleep 600000000)") => (throws java.util.concurrent.TimeoutException))
+            )
