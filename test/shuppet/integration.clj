@@ -46,4 +46,6 @@
          (client/get (url+ "/envs/poke/apps/test/clean"))
          (client/get (url+ "/envs/poke/apps/test/apply")) => (contains {:status 200})
          (client/get (url+ "/envs/poke/apps/test/apply")) => (contains {:status 200})
-         (client/get (url+ "/envs/poke/apps/test/clean"))))
+         (client/get (url+ "/envs/poke/apps/test/clean")))
+
+   (future-fact "Correct branch is read from git"))
