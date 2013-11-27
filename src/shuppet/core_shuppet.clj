@@ -4,7 +4,7 @@
             [shuppet.util :refer :all]
             [clojure.string :refer [join split]]
             [clojure.java.io :refer [as-file file resource]]
-            [clojail.core :refer [sandbox]]
+            [clojail.core :refer [sandbox safe-read]]
             [clojail.testers :refer [secure-tester-without-def blanket]]
             [shuppet
              [git :as git]
@@ -75,7 +75,7 @@
   [clojure-string & [app-name]]
   (let [clojure-string (with-vars {:$app-name app-name} clojure-string)
         wrapped (str "(let [_ nil] \n" clojure-string "\n)")
-        form (binding [*read-eval* false] (read-string wrapped))]
+        form (safe-read wrapped)]
     ((make-sandbox) form)))
 
 (defn app-names
