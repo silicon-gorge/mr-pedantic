@@ -31,15 +31,41 @@
 
 
 (lazy-fact-group :acceptance
-   (fact "Ping resource returns 200 HTTP response"
-         (let [response (client/get (url+ "/ping")  {:throw-exceptions false})]
-           response => (contains {:status 200})))
+                 (fact "Ping resource returns 200 HTTP response"
+                       (let [response (client/get (url+ "/ping")  {:throw-exceptions false})]
+                         response => (contains {:status 200})))
 
-   (fact "Status returns all required elements"
-         (let [response (client/get (url+ "/status") {:throw-exceptions false})
-               body (read-body response)]
-           response => (contains {:status 200})))
+                 (fact "Status returns all required elements"
+                       (let [response (client/get (url+ "/status") {:throw-exceptions false})
+                             body (read-body response)]
+                         response => (contains {:status 200})))
 
+                 (fact "envs can be listed"
+                       (client/get (url+ "/envs")) => (contains {:status 200}))
 
+                 (fact "env config can be read"
+                       (client/get (url+ "/envs/local")) => (contains {:status 200}))
 
-         )
+                 (fact "app config can be read"
+                       (client/get (url+ "/envs/local/apps/localtest")) => (contains {:status 200}))
+
+                 (fact "env config can be validated"
+                       (let [res (client/post (url+ "/validate") {:body "(def $some-var \"value\") {}"})]
+                         res => (contains {:status 200})
+                         res => (contains {:body "{}"})))
+
+                 (fact "app config can be validated"
+                       (let [res (client/post (url+ "/validate") {:query-params {"env" "local"}
+                                                                  :body "{}"})]
+                         res => (contains {:status 200})
+                         res => (contains {:body "{}"})))
+
+                 (future-fact "schedule can be controlled")
+
+                 (future-fact "aws error is returned when applying app config")
+
+                 (future-fact "aws error is returned when applying env config")
+
+                 (future-fact "env config is correctly expanded")
+
+                 (future-fact "app config is correctly expanded"))

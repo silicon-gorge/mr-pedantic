@@ -63,7 +63,7 @@
 
 (defn validate-config
   [env app-name config]
-  (with-ent-bindings nil
+  (with-ent-bindings env
     (if (env-config? config)
       (shuppet/try-env-config config)
       (shuppet/try-app-config (or env "poke") (or app-name "app-name") config))))
