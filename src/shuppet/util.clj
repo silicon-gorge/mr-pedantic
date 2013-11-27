@@ -218,4 +218,4 @@
     (let [n (read-string (str string))]
       (when (number? n) n))))
 
-(def is-prod? (not (Boolean/valueOf (env :service-production))))
+(def is-prod? (Boolean/valueOf (env :service-production)))
