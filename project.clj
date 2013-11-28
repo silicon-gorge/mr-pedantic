@@ -1,4 +1,4 @@
-(defproject shuppet "0.30"
+(defproject shuppet "0.31-SNAPSHOT"
   :description "Shuppet service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Shuppet"
 
