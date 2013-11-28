@@ -3,6 +3,7 @@
              [core-shuppet :as shuppet]
              [git :as git]
              [campfire :as cf]
+             [signature :as signature]
              [util :refer [is-prod?]]]
             [clojure.string :refer [lower-case split]]
             [clj-http.client :as client]
@@ -35,6 +36,11 @@
              [_ appname master-only]
              (git/create-application appname master-only)))
 
+(defn- aws-keys-map
+  [environment]
+  {:key (env (keyword (str "service-aws-access-key-id-" environment)))
+   :secret (env (keyword (str "service-aws-secret-access-key-" environment)))} )
+
 ;change env arg to flag
 (defmacro with-ent-bindings
   "Specific Entertainment bindings"
@@ -45,7 +51,10 @@
                                              (OnixAppNames. (env :environment-entertainment-onix-url)))
                shuppet/*configuration* (if local?#
                                          (shuppet/LocalConfig.)
-                                         (GitConfig.))]
+                                         (GitConfig.))
+               signature/*aws-keys* (if local?#
+                                      signature/default-keys-map
+                                      (aws-keys-map ~environment)) ]
        ~@body)))
 
 (defn apply-config

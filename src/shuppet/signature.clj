@@ -17,22 +17,16 @@
 (def ^:const ^:private v4-algorithm "AWS4-HMAC-SHA256")
 (def ^:const ^:private default-region "us-east-1")
 
-(defn- aws-key
-  []
-  (if is-prod?
-    (env :service-aws-access-key-id-prod)
-    (env :service-aws-access-key-id-poke)))
+(def default-keys-map
+  {:key (env :service-aws-access-key-id-poke)
+   :secret (env :service-aws-secret-access-key-poke)})
 
-(defn- aws-secret
-  []
-  (if is-prod?
-    (env :service-aws-secret-access-key-prod)
-    (env :service-aws-secret-access-key-poke)))
+(def ^:dynamic *aws-keys* default-keys-map)
 
 (defn- v2-auth-params
   []
   {"SignatureVersion" "2"
-   "AWSAccessKeyId" (aws-key)
+   "AWSAccessKeyId" (*aws-keys* :key)
    "Timestamp" (current-time)
    "SignatureMethod" hmac-sha256-algorithm})
 
@@ -55,11 +49,11 @@
        (.init mac signing-key)
        mac))
   ([]
-     (get-mac-sha256 (to-bytes (aws-secret)))))
+     (get-mac-sha256 (to-bytes (*aws-keys* :secret)))))
 
 (defn- get-mac-sha1
   []
-  (let [signing-key (SecretKeySpec. (to-bytes (aws-secret)) hmac-sha1-algorithm)
+  (let [signing-key (SecretKeySpec. (to-bytes (*aws-keys* :secret)) hmac-sha1-algorithm)
         mac (Mac/getInstance hmac-sha1-algorithm)]
     (.init mac signing-key)
     mac))
@@ -110,7 +104,7 @@
 (defn s3-header
   "Gets the S3 Authorisation header for the given url"
   [url]
-  {"Authorization" (str "AWS " (aws-key) ":" (base64 (calculate-hmac url @mac-sha1)))})
+  {"Authorization" (str "AWS " (*aws-keys* :key) ":" (base64 (calculate-hmac url @mac-sha1)))})
 
 (defn- sha-256
   [str]
@@ -189,7 +183,7 @@
   [host time]
   (let [parts (split (credential-scope host time) #"/")]
     (->>
-     (calculate-hmac (nth parts 0) (get-mac-sha256 (to-bytes (str "AWS4" (aws-secret)))))
+     (calculate-hmac (nth parts 0) (get-mac-sha256 (to-bytes (str "AWS4" (*aws-keys* :secret)))))
      (get-mac-sha256)
      (calculate-hmac (nth parts 1))
      (get-mac-sha256)
@@ -211,7 +205,7 @@
            signature (hex (calculate-hmac string-to-sign (get-mac-sha256 (signing-key host time))))]
        (merge (keys-as-string headers) {"Authorization" (str v4-algorithm
                                                              " Credential="
-                                                             (aws-key)
+                                                             (*aws-keys* :key)
                                                              "/"
                                                              (credential-scope host time)
                                                              ", SignedHeaders="
