@@ -36,7 +36,7 @@
              [_ appname master-only]
              (git/create-application appname master-only)))
 
-(defn- aws-keys-map
+(defn aws-keys-map
   [environment]
   {:key (env (keyword (str "service-aws-access-key-id-" environment)))
    :secret (env (keyword (str "service-aws-secret-access-key-" environment)))} )
@@ -104,4 +104,9 @@
                 (filter-tooling-services names)
                 names)]
     (pmap #(with-ent-bindings env
-             (shuppet/apply-config env %)) names) ))
+             (shuppet/apply-config env %)) names)))
+
+(defn configure-apps
+  [env]
+  (apply-config env)
+  (update-configs env))

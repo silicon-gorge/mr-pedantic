@@ -62,7 +62,7 @@
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
         :service-production "false"
-        :service-environments "local,poke,prod"
+        :service-environments "local,poke"
         :environment-entertainment-onix-url "http://onix.brislabs.com:8080/1.x"
 
         ;;aws-config
@@ -94,7 +94,7 @@
         :service-campfire-default-info-room "Shuppet Info"
         :service-campfire-default-error-room "Shuppet Error"
 
-        :service-default-update-interval "10"
+        :service-default-update-interval "120"
 
         :service-local-config-path "test/shuppet/resources"
         :service-local-app-names "localtest"

@@ -2,8 +2,8 @@
   (:require
    [shuppet
     [core :as core]
-    [middleware :as middleware]
-    [util :refer [rfc2616-time]]]
+    [scheduler :as scheduler]
+    [middleware :as middleware]]
    [slingshot.slingshot :refer [try+ throw+]]
    [clojure.data.json :refer [write-str]]
    [compojure.core :refer [defroutes context GET PUT POST DELETE]]
@@ -23,26 +23,12 @@
    [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
    [metrics.ring.expose :refer [expose-metrics-as-json]]
    [metrics.ring.instrument :refer [instrument]]
-   [overtone.at-at :as at-at]))
+   ))
 
 (def ^:dynamic *version* "none")
 (def ^:private cf-info-room (env :service-campfire-default-info-room))
 (def ^:private cf-error-room (env :service-campfire-default-error-room))
 (def ^:private environments (env :service-environments))
-(def ^:private default-interval (Integer/parseInt (env :service-default-update-interval)))
-(def ^:private schedule-pools (atom {}))
-
-(defn- create-pool
-  [env]
-  {env (at-at/mk-pool)})
-
-(defn- get-pool
-  [env]
-  (let [env (keyword env)
-        pool (env @schedule-pools)]
-    (if pool
-      pool
-      (env (swap! schedule-pools merge (create-pool env))))))
 
 (defn set-version!
   [version]
@@ -101,14 +87,9 @@
   (core/clean-config environment name)
   (response {:message (str "Succesfully cleaned the configuration for application " name)}))
 
-(defn- configure-apps
-  [env]
-  (core/apply-config env)
-  (core/update-configs env))
-
 (defn- apply-apps-config
   [env]
-  (configure-apps env)
+  (core/configure-apps env)
   (response  {:message (str "Started applying the configuration for all applications in environment " env "."
                             "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
 
@@ -123,23 +104,6 @@
   (throw+ {:type :_
            :status code
            :message message}))
-
-(defn- schedule
-  [env action interval]
-  (at-at/stop-and-reset-pool! (get-pool env) :strategy :kill)
-  (if (= action "stop")
-    (response {:message "Succefully stopped the shuppet scheduler"})
-    (do
-      (let [interval (if interval (Integer/parseInt interval) default-interval)]
-        (at-at/every (* interval 60 1000) #(configure-apps env) (get-pool env) :desc (rfc2616-time))
-         (response {:message (str "Succesfully started the shuppet scheduler. The scheduler will run in every " interval " minutes.") })))))
-
-(defn- get-schedule
-  [env]
-  (if-let [job (first (at-at/scheduled-jobs (get-pool env)))]
-    (response {:created (:desc job)
-               :interval (str (/ (:ms-period job) (* 60 1000)) " minutes")})
-    (response {:message "No jobs are currently scheduled"} 404)))
 
 (def ^:private resources
   {:GET
@@ -185,12 +149,14 @@
        (apply-apps-config env))
 
   (GET "/:env/schedule"
-        [env]
-        (get-schedule env))
+       [env]
+       (if-let [schedule (scheduler/get-schedule env)]
+         (response schedule)
+         (response {:message "No jobs are currently scheduled"} 404)))
 
   (POST "/:env/schedule"
         [env action interval]
-        (schedule env action interval))
+        (response (scheduler/schedule env action interval)))
 
   (GET "/:env/apps/:name"
        [env name]

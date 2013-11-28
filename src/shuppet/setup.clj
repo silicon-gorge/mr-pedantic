@@ -1,19 +1,21 @@
 (ns shuppet.setup
-    (:require [shuppet.web :as web]
-              [environ.core :refer [env]]
-              [clojure.string :as cs :only (split)]
-              [clojure.tools.logging :refer (info warn error)]
-              [clojure.java.io :as io]
-              [ring.adapter.jetty :refer [run-jetty]])
-    (:import (java.lang Integer Throwable)
-             (java.util.logging LogManager)
-             (com.yammer.metrics Metrics)
-             (com.yammer.metrics.core MetricName)
-             (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
-             (com.ovi.common.metrics HostnameFactory)
-             (org.slf4j.bridge SLF4JBridgeHandler)
-             (java.util.concurrent TimeUnit))
-    (:gen-class))
+  (:require
+   [shuppet.web :as web]
+   [shuppet.scheduler :as scheduler]
+   [environ.core :refer [env]]
+   [clojure.string :as cs :only (split)]
+   [clojure.tools.logging :refer (info warn error)]
+   [clojure.java.io :as io]
+   [ring.adapter.jetty :refer [run-jetty]])
+  (:import (java.lang Integer Throwable)
+           (java.util.logging LogManager)
+           (com.yammer.metrics Metrics)
+           (com.yammer.metrics.core MetricName)
+           (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
+           (com.ovi.common.metrics HostnameFactory)
+           (org.slf4j.bridge SLF4JBridgeHandler)
+           (java.util.concurrent TimeUnit))
+  (:gen-class))
 
 (defn- read-file-to-properties [file-name]
   (with-open [^java.io.Reader reader (io/reader file-name)]
@@ -48,6 +50,7 @@
 (defn setup []
   (web/set-version! @version)
   (configure-logging)
+  (scheduler/start)
   (start-graphite-reporting))
 
 (def ^:private server (atom nil))
