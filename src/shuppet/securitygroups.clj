@@ -57,12 +57,34 @@
     :CreateSecurityGroup (create params)
     (get-request (merge params {"Action" (name action)}))))
 
-(defn sg-id
-  "Gets the sg-id for the for the given sg-name"
-  [name]
+(defn- retrieve-sg-id [name vpc-id]
   (xml1-> (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
-                                            "Filter.1.Value" name})
+                                              "Filter.1.Value" name
+                                              "Filter.2.Name" "vpc-id"
+                                              "Filter.2.Value" vpc-id})
           :securityGroupInfo :item :groupId text))
+
+(defn- sg-rule
+  "Creates a Ingress/Egress config for a security group
+   http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-AuthorizeSecurityGroupEgress.html"
+  ([protocol from-port to-port ip-ranges]
+     (let [record (without-nils {:IpProtocol (str protocol)
+                                 :FromPort (str from-port)
+                                 :ToPort (str to-port)
+                                 :IpRanges ip-ranges})]
+       (if (coll? ip-ranges)
+         (map #(merge record {:IpRanges %}) ip-ranges)
+         record)))
+  ([{:keys [IpProtocol FromPort ToPort IpRanges]}]
+     (sg-rule IpProtocol FromPort ToPort IpRanges)))
+
+(defn sg-id
+  "Gets the sg-id for the for the given sg-name in the given vpc"
+  [name vpc-id]
+  (if (and (empty? (re-find #"[\d\/.]*" name))
+           (empty? (re-find #"^sg-" name)))
+    (retrieve-sg-id name vpc-id)
+    name))
 
 (defn- ip-ranges-param [index v]
   (if (empty? (re-find #"[a-z]*" v))
@@ -147,22 +169,22 @@
     (ensure-egress (:GroupName local) sg-id egress)))
 
 (defn- delete-sg
-  [name]
-  (if-let [id (sg-id name)]
+  [name vpc-id]
+  (if-let [id (sg-id name vpc-id)]
     (do
       (process :DeleteSecurityGroup {"GroupId" id})
       (cf/info  (str "I've succesfully deleted the security group '" name "' with id: " id)))))
 
 (defn- build-sg
   [opts]
-  (delete-sg (:GroupName opts))
+  (delete-sg (:GroupName opts) (:VpcId opts))
   (if-let [sg-id (create opts)]
     (try+
      (do
        (configure-network sg-id opts)
        (cf/info (str "I've succesfully created and configured the security group '" (:GroupName opts) "'")))
      (catch map? error
-       (delete-sg (:GroupName opts))
+       (delete-sg (:GroupName opts) (:VpcId opts))
        (throw+ error)))))
 
 (defn- filter-params
@@ -175,25 +197,23 @@
    "Filter.3.Value" (:GroupDescription opts)})
 
 (defn- update-sg-id
-  [name]
-  (if (and (empty? (re-find #"[\d\/.]*" name))
-           (empty? (re-find #"^sg-" name)))
-    (if-let [id (sg-id name)]
-      id
-      (throw-aws-exception "EC2"
-                           "DescribeSecurityGroups"
-                           "config-check"
-                           404
-                           {:message (str  "A security group with the name '" name "' cannot be found.")
-                            :__type "Bad Configuration"}
-                           :json)) name))
+  [name vpc-id]
+  (if-let [id (sg-id name vpc-id)]
+    id
+    (throw-aws-exception "EC2"
+                         "DescribeSecurityGroups"
+                         "config-check"
+                         404
+                         {:message (str  "A security group with the name '" name "' cannot be found.")
+                          :__type "Bad Configuration"}
+                         :json)))
 
 (defn- update-sg-ids
-  [opts]
+  [opts vpc-id]
   (->> opts
        (map sg-rule)
        (flatten)
-       (map #(update-in % [:IpRanges] update-sg-id))))
+       (map #(update-in % [:IpRanges] update-sg-id vpc-id))))
 
 (defn- ensure-sg
   "Get details of the security group, if one exists
@@ -201,8 +221,8 @@
    if present compare with the local config and apply changes if needed"
   [opts]
   (let [opts (-> opts
-                 (assoc :Ingress (update-sg-ids (:Ingress opts)))
-                 (assoc :Egress (update-sg-ids (:Egress opts))))
+                 (assoc :Ingress (update-sg-ids (:Ingress opts) (:VpcId opts)))
+                 (assoc :Egress (update-sg-ids (:Egress opts) (:VpcId opts))))
         response (process :DescribeSecurityGroups (filter-params opts))]
     (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text)]
       (compare-sg sg-id response opts)
@@ -216,4 +236,4 @@
 (defn delete-sgs
   [{:keys [SecurityGroups]}]
   (doseq [group (reverse SecurityGroups)]
-    (delete-sg (:GroupName group))))
+    (delete-sg (:GroupName group) (:VpcId group))))

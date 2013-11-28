@@ -136,22 +136,6 @@
   ([title action url status body]
      (throw-aws-exception title action url status body :xml)))
 
-(defn sg-rule
-  "Creates a Ingress/Egress config for a security group
-   http://docs.aws.amazon.com/AWSEC2/latest/APIReference/ApiReference-query-AuthorizeSecurityGroupEgress.html"
-  ([protocol from-port to-port ip-ranges]
-     (let [record (without-nils {:IpProtocol (str protocol)
-                                 :FromPort (str from-port)
-                                 :ToPort (str to-port)
-                                 :IpRanges ip-ranges})]
-       (if (coll? ip-ranges)
-         (map #(merge record {:IpRanges %}) ip-ranges)
-         record)))
-  ([protocol ip-ranges]
-     (sg-rule protocol nil nil ip-ranges))
-  ([{:keys [IpProtocol FromPort ToPort IpRanges]}]
-     (sg-rule IpProtocol FromPort ToPort IpRanges)))
-
 (defn join-policies
   [policy-docs]
   {:Statement (vec (map #(first (:Statement %)) policy-docs))})

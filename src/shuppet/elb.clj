@@ -33,14 +33,8 @@
       body
       (throw-aws-exception "ELB" (get params "Action") url status body))))
 
-(defn- sg-name-to-id
-  [name]
-  (if (.startsWith name "sg-")
-    name
-    (sg-id name)))
-
-(defn- sg-names-to-ids [config]
-  (assoc config :SecurityGroups (map sg-name-to-id (:SecurityGroups config))))
+(defn- sg-names-to-ids [config vpc-id]
+  (assoc config :SecurityGroups (map #(sg-id % vpc-id) (:SecurityGroups config))))
 
 (defn- get-elements [xml path]
   (apply xml-> xml (concat [:DescribeLoadBalancersResult :LoadBalancerDescriptions :member] path)))
@@ -164,9 +158,10 @@
       (update-elb name :ApplySecurityGroupsToLoadBalancer :SecurityGroups local))
     config))
 
-(defn ensure-elb [{:keys [LoadBalancer]}]
+(defn ensure-elb [{:keys [LoadBalancer SecurityGroups]}]
   (when LoadBalancer
-    (let [local (sg-names-to-ids LoadBalancer)
+    (let [vpc-id (or (:VpcId LoadBalancer) (:VpcId (first SecurityGroups)))
+          local (sg-names-to-ids LoadBalancer vpc-id)
           remote (find-elb (:LoadBalancerName local))]
       (if remote
         (-> {:local local :remote remote}
