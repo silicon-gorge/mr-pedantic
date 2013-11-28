@@ -54,7 +54,7 @@
   []
   (when-not (contains? environments "local") ;dont want the auto scheduler for our test envs
     (doseq [environ environments]
-      (at-at/after (* 1 60 1000)
+      (at-at/after (* 2 60 1000)
                    #(schedule environ)
                    (get-pool environ)
                    :desc (rfc2616-time)))))
