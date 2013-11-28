@@ -190,7 +190,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       (catch InvalidRemoteException e
         (rm "-rf" (repo-path name branch))
         (let [message (str "Missing shuppet configuration for application '" name  "'")]
-          (cf/error {:message message})
+          (error {:message message})
           (send-error 404 message)))
       (catch NullPointerException e
         (rm "-rf" (repo-path name branch))
@@ -283,16 +283,16 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
     (if (= name response)
       (do
         (cf/info (str "I've succesfully created a new git repository for application '" name "'"))
-        
+
         (when-not master-only
           (doseq [branch valid-environments]
             (setup-branch name branch))
           (cf/info (str "I've succesfully created the branches "
                         (conj valid-environments "master") " for application '" name "'")))
-        
+
         {:status 201
          :branches (if master-only ["master"]  (conj valid-environments "master"))})
-      
+
       {:status 200
        :branches (map #(last (split (.getName %) #"/")) (remote-branches name))})))
 
