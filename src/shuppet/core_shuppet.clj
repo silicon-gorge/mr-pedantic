@@ -113,13 +113,14 @@
   (let [config (cf/with-messages {:env env :app-name app-name}
                    (load-config env app-name))]
     (cf/with-messages {:env env :app-name app-name :config config}
+      (when app-name
+        (validate config))
       (doto config
-          validate
-          ensure-sgs
-          ensure-elb
-          ensure-iam
-          ensure-s3s
-          ensure-ddbs))))
+        ensure-sgs
+        ensure-elb
+        ensure-iam
+        ensure-s3s
+        ensure-ddbs))))
 
 (defn clean-config [environment app-name]
   (let [config (load-config environment app-name)]
