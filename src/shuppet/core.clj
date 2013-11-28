@@ -4,7 +4,8 @@
              [git :as git]
              [campfire :as cf]
              [signature :as signature]
-             [util :refer [is-prod?]]]
+             [util :refer [is-prod?]]
+             [validator :refer [validate]]]
             [clojure.string :refer [lower-case split]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
@@ -65,7 +66,9 @@
 (defn get-config
   [env & [app-name]]
   (with-ent-bindings env
-    (shuppet/load-config env app-name)))
+    (when-let [config (shuppet/load-config env app-name)]
+      (validate config)
+      config)))
 
 (defn- env-config? [config]
   (re-find #"\(def +\$" config))
@@ -75,7 +78,9 @@
   (with-ent-bindings env
     (if (env-config? config)
       (shuppet/try-env-config config)
-      (shuppet/try-app-config (or env "poke") (or app-name "app-name") config))))
+      (when-let [config (shuppet/try-app-config (or env "poke") (or app-name "app-name") config)]
+        (validate config)
+        config))))
 
 (defn create-config
   [env app-name master-only]

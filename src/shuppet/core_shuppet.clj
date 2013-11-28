@@ -14,7 +14,8 @@
              [s3 :refer [ensure-s3s delete-s3s]]
              [ddb :refer [ensure-ddbs delete-ddbs]]
              [campfire :as cf]
-             [util :refer [to-vec]]]
+             [util :refer [to-vec]]
+             [validator :refer [validate]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -112,7 +113,8 @@
   (let [config (cf/with-messages {:env env :app-name app-name}
                    (load-config env app-name))]
     (cf/with-messages {:env env :app-name app-name :config config}
-        (doto config
+      (doto config
+          validate
           ensure-sgs
           ensure-elb
           ensure-iam

@@ -11,6 +11,11 @@
   (fn [req]
     (try+
      (handler req)
+     (catch [:type :shuppet.validator/validator] e
+       (->  (ring-response/response (write-str {:message "Validation Failure"
+                                                :details (e :details)}))
+            (ring-response/content-type "application/json")
+            (ring-response/status 400)))
      (catch [:type :shuppet.git/git] e
        (->  (ring-response/response (write-str {:message (e :message)}))
             (ring-response/content-type "application/json")
