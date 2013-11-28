@@ -28,7 +28,7 @@
                     (configuration ..env.. ..name..) => "this is a test config"))
 
             (fact "string is correctly evaluated"
-                  (execute-string "(def val \"ok\")val") => "ok")
+                  (execute-string "(def var-val \"ok\")var-val") => "ok")
 
             (fact "long running code times out"
                   (execute-string "(Thread/sleep 600000000)") => (throws java.util.concurrent.TimeoutException))

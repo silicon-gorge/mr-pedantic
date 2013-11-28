@@ -38,4 +38,6 @@
                       {:InstancePort "8080"
                        :InstanceProtocol "HTTP"
                        :LoadBalancerPort "80"
-                       :Protocol "HTTP"}]))
+                       :Protocol "HTTP"}])
+
+            (future-fact "config is correctly compared"))
