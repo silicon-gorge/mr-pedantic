@@ -8,17 +8,17 @@
 (fact-group :unit
 
             (fact "campfire message is sent when aws error"
-                  (with-messages {:env "env" :app-name "app-name"} (throw+  {:type :shuppet.util/aws})) => (throws clojure.lang.ExceptionInfo)
+                  (with-messages {:environment "env" :app-name "app-name"} (throw+  {:type :shuppet.util/aws})) => (throws clojure.lang.ExceptionInfo)
                   (provided
-                   (error {:env "env" :app-name "app-name" :type :shuppet.util/aws}) => nil))
+                   (error {:environment "env" :app-name "app-name" :type :shuppet.util/aws}) => nil))
 
             (fact "campfire message is sent when compilation error"
-                  (with-messages {:env "env" :app-name "app-name"} (throw (clojure.lang.Compiler$CompilerException. "message" 0 0 (Throwable.)))) => (throws clojure.lang.Compiler$CompilerException)
+                  (with-messages {:environment "env" :app-name "app-name"} (throw (clojure.lang.Compiler$CompilerException. "message" 0 0 (Throwable.)))) => (throws clojure.lang.Compiler$CompilerException)
                   (provided
                    (error anything) => nil))
 
             (fact "messages are sent to default rooms"
-                  (with-messages {:env "env"
+                  (with-messages {:environment "env"
                                   :app-name "app-name"}
                     (info "info")
                     (error {})) => anything
@@ -34,7 +34,7 @@
                      (cf/message ..default-error.. "error") => ..response..))
 
             (fact "messages are sent to all the rooms"
-                  (with-messages {:env "env"
+                  (with-messages {:environment "env"
                                   :app-name "app-name"
                                   :config {:Campfire {:Info "info"
                                                       :Error "error"}}}
