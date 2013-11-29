@@ -121,8 +121,6 @@
 
   :uberjar-name "shuppet.jar"
 
-  :resource-paths ["shared"]
-
   :rpm {:name "shuppet"
         :summary "RPM for Shuppet service"
         :copyright "Nokia 2013"
