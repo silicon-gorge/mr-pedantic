@@ -34,7 +34,7 @@
  :LoadBalancer {:LoadBalancerName $app-name
                 :Listeners [elb-8080->8080]
                 :SecurityGroups [elb-sg-name]
-                :Subnets $elb-subnets
+                :Subnets $elb-subnets-be
                 :Scheme "internal"
                 :HealthCheck elb-healthcheck-ping}
 

@@ -8,31 +8,13 @@
                            :UnhealthyThreshold 4
                            :Interval 12
                            :Timeout 5})
-(def elb-sg-name (str $app-name "-lb"));$app-name is made available by Shuppet
 ;Here we define a configuration as a Clojure map, it must be at the end of the file to be used by Shuppet.
-;Security group doc http://docs.aws.amazon.com/AWSEC2/latest/APIReference/Welcome.html
-{:SecurityGroups [;Define a security group for our elb
-                  {:GroupName elb-sg-name
-                   :GroupDescription (str "Security group for load balancer " $app-name)
-                   :VpcId $vpc-id
-                   :Ingress [{:IpRanges $private-ips
-                              :IpProtocol "tcp"
-                              :FromPort 8080
-                              :ToPort 8080}]
-                   :Egress $sg-egress-all}
-                  ;Define a security group for our application so only our elb can talk to it
-                  {:GroupName $app-name
-                   :GroupDescription (str "Security group for application " $app-name)
-                   :VpcId $vpc-id
-                   :Ingress [{:IpRanges elb-sg-name
-                              :IpProtocol "tcp"
-                              :FromPort 8080
-                              :ToPort 8080}]
-                   :Egress $sg-egress-all}]
+
+{
 ;Elastic load balancer doc http://docs.aws.amazon.com/ElasticLoadBalancing/latest/APIReference/Welcome.html
  :LoadBalancer {:LoadBalancerName $app-name
                 :Listeners [elb-8080->8080]
-                :SecurityGroups [elb-sg-name $sg-ssh]
+                :SecurityGroups [$sg-http-8080]
                 :Subnets $elb-subnets-be
                 :Scheme "internal"
                 :HealthCheck elb-healthcheck-ping}
