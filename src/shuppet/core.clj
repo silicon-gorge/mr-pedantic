@@ -80,8 +80,7 @@
     (if (env-config? config)
       (shuppet/try-env-config config)
       (when-let [config (shuppet/try-app-config (or env "poke") (or app-name "app-name") config)]
-        (when app-name
-          (validate config))
+        (validate config)
         config))))
 
 (defn create-config
