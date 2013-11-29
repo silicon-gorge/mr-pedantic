@@ -31,6 +31,7 @@
         body (-> (:body response)
                  (xml/parse)
                  (zip/xml-zip))]
+    (log/info "Security group request: " url)
     (if (or
          (= 200 status)
          (acceptable-error? (get params "Action") status body))

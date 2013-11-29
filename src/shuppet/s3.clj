@@ -101,6 +101,7 @@
         status (:status response)
         body (:body response)
         content-type (get-in response [:headers "content-type"])]
+    (log/info "S3 get request: " url)
     (condp = status
       200 body
       404 nil
@@ -122,6 +123,7 @@
                                      :body body
                                      :throw-exceptions false})
            status (:status response)]
+       (log/info "S3 put request: " url)
        (when (and (not= 204 status)
                   (not= 200 status))
          (throw-aws-exception "S3" "PUT" url status (xml-to-map (:body response))))))

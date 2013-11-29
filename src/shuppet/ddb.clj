@@ -38,7 +38,7 @@
                                         :as :json
                                         :throw-exceptions false})
         status (:status response)]
-    (prn response)
+    (log/info "Ddb action: " action ", body: " body)
     (if (= status 200)
       (:body response)
       (let [body (read-str (:body response) :key-fn keyword)]

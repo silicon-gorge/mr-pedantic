@@ -29,6 +29,7 @@
         body (-> (:body response)
                  (xml/parse)
                  (zip/xml-zip))]
+    (log/info "Elb request: " url)
     (if (= 200 status)
       body
       (throw-aws-exception "ELB" (get params "Action") url status body))))

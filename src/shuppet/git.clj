@@ -190,13 +190,15 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       (catch InvalidRemoteException e
         (rm "-rf" (repo-path name branch))
         (let [message (str "Missing shuppet configuration for application '" name  "'")]
-          (error {:message message})
+          (error (with-out-str (.printStackTrace e)))
           (send-error 404 message)))
       (catch NullPointerException e
         (rm "-rf" (repo-path name branch))
+        (error (with-out-str (.printStackTrace e)))
         (send-error (str "Missing branch '" branch "' for application '" name "'.")))
       (catch MissingObjectException e
         (rm "-rf" (repo-path name branch))
+        (error (with-out-str (.printStackTrace e)))
         (send-error (str "Missing object for revision HEAD in repo '" name "': " e))))))
 
 (defn- remote-branches

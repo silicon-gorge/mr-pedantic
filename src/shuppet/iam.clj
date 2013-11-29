@@ -33,6 +33,7 @@
         body (-> (:body response)
                  (xml/parse)
                  (zip/xml-zip))]
+    (log/info "Iam post request:" url)
     (condp = status
       200 body
       (throw-aws-exception "IAM" (get params "Action") url status body))))
@@ -49,6 +50,7 @@
         body (-> (:body response)
                  (xml/parse)
                  (zip/xml-zip))]
+    (log/info "Iam get request:" url)
     (condp = status
       200 body
       404 nil
