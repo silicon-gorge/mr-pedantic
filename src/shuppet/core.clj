@@ -4,7 +4,6 @@
              [git :as git]
              [campfire :as cf]
              [signature :as signature]
-             [util :refer [is-prod?]]
              [validator :refer [validate]]]
             [clojure.string :refer [lower-case split]]
             [clj-http.client :as client]
@@ -31,8 +30,8 @@
 (deftype GitConfig []
            shuppet/Configuration
            (as-string
-             [_ env filename]
-             (git/get-data env filename))
+             [_ environment filename]
+             (git/get-data environment filename))
            (configure
              [_ appname master-only]
              (git/create-application appname master-only)))
@@ -59,14 +58,14 @@
        ~@body)))
 
 (defn apply-config
-  ([env & [app-name]]
-     (with-ent-bindings env
-       (shuppet/apply-config env app-name))))
+  ([environment & [app-name]]
+     (with-ent-bindings environment
+       (shuppet/apply-config environment app-name))))
 
 (defn get-config
-  [env & [app-name]]
-  (with-ent-bindings env
-    (when-let [config (shuppet/load-config env app-name)]
+  [environment & [app-name]]
+  (with-ent-bindings environment
+    (when-let [config (shuppet/load-config environment app-name)]
       (when app-name
         (validate config))
       config)))
@@ -75,17 +74,17 @@
   (re-find #"\(def +\$" config))
 
 (defn validate-config
-  [env app-name config]
-  (with-ent-bindings env
+  [environment app-name config]
+  (with-ent-bindings environment
     (if (env-config? config)
       (shuppet/try-env-config config)
-      (when-let [config (shuppet/try-app-config (or env "poke") (or app-name "app-name") config)]
+      (when-let [config (shuppet/try-app-config (or environment "poke") (or app-name "app-name") config)]
         (validate config)
         config))))
 
 (defn create-config
-  [env app-name master-only]
-  (with-ent-bindings env
+  [environment app-name master-only]
+  (with-ent-bindings environment
     (shuppet/create-config app-name master-only)))
 
 (defn clean-config
@@ -93,8 +92,8 @@
   (with-ent-bindings environment
     (shuppet/clean-config environment app-name)))
 
-(defn app-names [env]
-  (with-ent-bindings env
+(defn app-names [environment]
+  (with-ent-bindings environment
     (shuppet/app-names)))
 
 (defn- filter-tooling-services
@@ -104,15 +103,15 @@
    (set (split (env :service-tooling-applications) #","))))
 
 (defn update-configs
-  [env]
-  (let [names (app-names env)
-        names (if (= env "prod")
+  [environment]
+  (let [names (app-names environment)
+        names (if (= environment "prod")
                 (filter-tooling-services names)
                 names)]
-    (pmap #(with-ent-bindings env
-             (shuppet/apply-config env %)) names)))
+    (pmap #(with-ent-bindings environment
+             (shuppet/apply-config environment %)) names)))
 
 (defn configure-apps
-  [env]
-  (apply-config env)
-  (update-configs env))
+  [environment]
+  (apply-config environment)
+  (update-configs environment))

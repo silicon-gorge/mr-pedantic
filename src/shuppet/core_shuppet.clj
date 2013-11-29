@@ -88,31 +88,31 @@
   [app-name master-only]
   (configure *configuration* app-name master-only))
 
-(defn- configuration [env name]
-  (as-string *configuration* env name))
+(defn- configuration [environment name]
+  (as-string *configuration* environment name))
 
 (defn load-config
-  [env & [app-name]]
-  (let [environment (configuration env env)]
+  [environ & [app-name]]
+  (let [environment (configuration environ environ)]
     (if app-name
-      (let [application (configuration env app-name)]
-        (execute-string (str environment "\n" application) env app-name))
+      (let [application (configuration environ app-name)]
+        (execute-string (str environment "\n" application) environ app-name))
       (execute-string environment))))
 
 (defn try-app-config
-  [env app-name config]
-  (let [environment (configuration env env)]
-      (execute-string (str environment "\n" config) env app-name)))
+  [environ app-name config]
+  (let [environment (configuration environ environ)]
+      (execute-string (str environment "\n" config) environ app-name)))
 
 (defn try-env-config
   [config]
   (execute-string config))
 
 (defn apply-config
-  [env app-name]
-  (let [config (cf/with-messages {:env env :app-name app-name}
-                   (load-config env app-name))]
-    (cf/with-messages {:env env :app-name app-name :config config}
+  [environment app-name]
+  (let [config (cf/with-messages {:environment environment :app-name app-name}
+                   (load-config environment app-name))]
+    (cf/with-messages {:environment environment :app-name app-name :config config}
       (when app-name
         (validate config))
       (doto config

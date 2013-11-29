@@ -58,9 +58,6 @@
     (.init mac signing-key)
     mac))
 
-(def ^:private mac-sha256 (delay (get-mac-sha256)))
-(def ^:private mac-sha1 (delay (get-mac-sha1)))
-
 (defn- calculate-hmac
   [data sha]
   (try
@@ -99,12 +96,12 @@
         host (lower-case (.getHost url))
         path (get-path url)
         data (v2-url-to-sign method host path query-params)]
-    (base64 (calculate-hmac data @mac-sha256))))
+    (base64 (calculate-hmac data (get-mac-sha256)))))
 
 (defn s3-header
   "Gets the S3 Authorisation header for the given url"
   [url]
-  {"Authorization" (str "AWS " (*aws-keys* :key) ":" (base64 (calculate-hmac url @mac-sha1)))})
+  {"Authorization" (str "AWS " (*aws-keys* :key) ":" (base64 (calculate-hmac url (get-mac-sha1))))})
 
 (defn- sha-256
   [str]

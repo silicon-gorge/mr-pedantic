@@ -29,10 +29,10 @@
   (when-not (env :service-campfire-off)
     (dorun (map #(cf/message (room %) message) *info-rooms*))))
 
-(defn- error-messages [{:keys [env app-name title url message status]}]
+(defn- error-messages [{:keys [environment app-name title url message status]}]
   (remove nil? [(when title (str title))
                 (when app-name (str "Application: " app-name))
-                (when env (str "Environment: " env))
+                (when environment (str "Environment: " environment))
                 (when url (str "Requested-URL: " url))
                 (when status (str "Status: " status))
                 (when message (str "Message: " message))]))
@@ -48,7 +48,7 @@
                 (or *error-rooms* (default-error-rooms))))))
 
 (defmacro with-messages
-  [{:keys [env app-name config]} & body]
+  [{:keys [environment app-name config]} & body]
   `(let [info-rooms# (conj (to-vec (get-in ~config [:Campfire :Info]))
                            (env :service-campfire-default-info-room))
          error-rooms# (flatten (conj
@@ -60,10 +60,10 @@
        (try+
         ~@body
         (catch [:type :shuppet.util/aws] e#
-          (error (merge {:env ~env :app-name ~app-name} e#))
+          (error (merge {:env ~environment :app-name ~app-name} e#))
           (throw+ e#))
         (catch clojure.lang.Compiler$CompilerException e#
-          (error {:env ~env
+          (error {:environment ~environment
                   :app-name ~app-name
                   :title "I cannot read this config"
                   :message (.getMessage e#)})
