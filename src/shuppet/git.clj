@@ -194,7 +194,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
           (send-error 404 message)))
       (catch NullPointerException e
         (rm "-rf" (repo-path name branch))
-        (send-error (str "HEAD revision not found in remote repo '" name "': " e)))
+        (send-error (str "Missing branch '" branch "' for application '" name "'.")))
       (catch MissingObjectException e
         (rm "-rf" (repo-path name branch))
         (send-error (str "Missing object for revision HEAD in repo '" name "': " e))))))
