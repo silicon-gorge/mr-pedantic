@@ -1,6 +1,7 @@
 (ns shuppet.acceptance
   (:require [shuppet.test-util :refer :all]
             [clj-http.client :as client]
+            [clojure.java.io :refer [input-stream]]
             [midje.sweet :refer :all]
             [cheshire.core :as json]
             [clojure.data.zip.xml :as xml]
@@ -54,18 +55,15 @@
                          res => (contains {:status 200})
                          res => (contains {:body "{}"})))
 
-                 (fact "app config can be validated"
+                 (fact "app config can is correctly validated"
+                       (let [config (input-stream "test/shuppet/resources/local/localtest.clj")
+                             res (client/post (url+ "/validate") {:query-params {"env" "local"}
+                                                                  :body config
+                                                                  :throw-exceptions false})]
+                         res => (contains {:status 200})))
+
+                 (fact "invalid app config is rejected"
                        (let [res (client/post (url+ "/validate") {:query-params {"env" "local"}
-                                                                  :body "{}"})]
-                         res => (contains {:status 200})
-                         res => (contains {:body "{}"})))
-
-                 (future-fact "schedule can be controlled")
-
-                 (future-fact "aws error is returned when applying app config")
-
-                 (future-fact "aws error is returned when applying env config")
-
-                 (future-fact "env config is correctly expanded")
-
-                 (future-fact "app config is correctly expanded"))
+                                                                  :body "{}"
+                                                                  :throw-exceptions false})]
+                         res => (contains {:status 400}))))

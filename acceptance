@@ -2,11 +2,11 @@
 
 # override properties like:
 # export environment_music_scrobbling1_baseurl="http://localhost:"
-export service_aws_ec2_url="http://localhost::${RESTDRIVER_PORT:="8081"}"
-export service_aws_elb_url="http://localhost::${RESTDRIVER_PORT:="8081"}"
-export service_aws_iam_url="http://localhost::${RESTDRIVER_PORT:="8081"}"
-export service_aws_s3_url="http://localhost::${RESTDRIVER_PORT:="8081"}"
-export service_aws_ddb_url="http://localhost::${RESTDRIVER_PORT:="8081"}"
+export service_aws_ec2_url="http://localhost:${RESTDRIVER_PORT:="8081"}"
+export service_aws_elb_url="http://localhost:${RESTDRIVER_PORT:="8081"}"
+export service_aws_iam_url="http://localhost:${RESTDRIVER_PORT:="8081"}"
+export service_aws_s3_url="http://localhost:${RESTDRIVER_PORT:="8081"}"
+export service_aws_ddb_url="http://localhost:${RESTDRIVER_PORT:="8081"}"
 
 . test_helper.sh
 TIMEOUT=60

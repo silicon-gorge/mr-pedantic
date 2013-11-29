@@ -29,14 +29,14 @@
                                             :ap-southeast-2 :ap-northeast-1 :sa-east-1})
 
 (def ^:private location
-  (let [host (-> s3-url
-                 URL.
-                 .getHost)
-        location (first (split (subs host 0 (.indexOf  host ".amazonaws.com")) #"[.]"))
-        s3-location (if (= "s3" location) "" (lower-case (subs location 3)))]
-    (if (contains? s3-valid-locations (keyword s3-location))
-      s3-location
-      "")))
+  (delay (let [host (-> s3-url
+                        URL.
+                        .getHost)
+               location (first (split (subs host 0 (.indexOf  host ".amazonaws.com")) #"[.]"))
+               s3-location (if (= "s3" location) "" (lower-case (subs location 3)))]
+           (if (contains? s3-valid-locations (keyword s3-location))
+             s3-location
+             ""))))
 
 (def ^:private s3-sub-resources #{:versioning :location :acl :torrent
                                   :lifecycle :versionId :logging :notification
@@ -45,7 +45,7 @@
 
 (defn- create-bucket-body []
   (emit-str (element :CreateBucketConfiguration {}
-                     (element :LocationConstraint {} location))))
+                     (element :LocationConstraint {} @location))))
 
 (defn- s3-path
   [host path]
