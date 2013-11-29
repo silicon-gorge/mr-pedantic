@@ -60,7 +60,7 @@
        (try+
         ~@body
         (catch [:type :shuppet.util/aws] e#
-          (error (merge {:env ~environment :app-name ~app-name} e#))
+          (error (merge {:environment ~environment :app-name ~app-name} e#))
           (throw+ e#))
         (catch clojure.lang.Compiler$CompilerException e#
           (error {:environment ~environment
