@@ -5,8 +5,8 @@
    [environ.core :refer [env]]
    [clj-campfire.core :as cf]))
 
-(def ^:const api-token (env :service-campfire-api-token))
-(def ^:const sub-domain (env :service-campfire-sub-domain))
+(def ^:private api-token (env :service-campfire-api-token))
+(def ^:private sub-domain (env :service-campfire-sub-domain))
 (def ^:dynamic *info-rooms* nil)
 (def ^:dynamic *error-rooms* nil)
 

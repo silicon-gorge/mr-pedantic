@@ -24,7 +24,7 @@
 (defn- xml-to-map [xml-string]
   (zip/xml-zip (xml/parse (java.io.ByteArrayInputStream. (.getBytes xml-string)))))
 
-(def ^:const ^:private s3-url (env :service-aws-s3-url))
+(def ^:private s3-url (env :service-aws-s3-url))
 (def ^:const ^:private s3-valid-locations #{:eu :eu-west-1 :eu-west-2 :ap-southeast-1
                                             :ap-southeast-2 :ap-northeast-1 :sa-east-1})
 

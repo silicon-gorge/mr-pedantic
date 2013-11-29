@@ -14,8 +14,8 @@
    [clojure.zip :as zip])
   (:refer-clojure :exclude [replace]))
 
-(def ^:const ^:private iam-url (env :service-aws-iam-url))
-(def ^:const ^:private iam-version (env :service-aws-iam-api-version))
+(def ^:private iam-url (env :service-aws-iam-url))
+(def ^:private iam-version (env :service-aws-iam-api-version))
 
 (def ^:private default-role-policy (write-str (create-policy {:Principal {:Service "ec2.amazonaws.com"}
                                                               :Action "sts:AssumeRole"})))

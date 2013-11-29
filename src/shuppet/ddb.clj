@@ -12,9 +12,9 @@
    [slingshot.slingshot :refer [try+ throw+]])
   (:refer-clojure :exclude [replace]))
 
-(def ^:const ^:private ddb-version (replace (env :service-aws-ddb-api-version) #"-" ""))
-(def ^:const ^:private action-prefix (str  "DynamoDB_" ddb-version "."))
-(def ^:const ^:private ddb-url (env :service-aws-ddb-url))
+(def ^:private ddb-version (replace (env :service-aws-ddb-api-version) #"-" ""))
+(def ^:private action-prefix (str  "DynamoDB_" ddb-version "."))
+(def ^:private ddb-url (env :service-aws-ddb-url))
 
 (defn- nil-returnable-exception?
   [status {:keys [__type]} action]

@@ -13,8 +13,8 @@
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
-(def ^:const ^:private elb-url (env :service-aws-elb-url))
-(def ^:const ^:private elb-version (env :service-aws-elb-api-version))
+(def ^:private elb-url (env :service-aws-elb-url))
+(def ^:private elb-version (env :service-aws-elb-api-version))
 
 (defn get-request
   [params]

@@ -12,8 +12,8 @@
    [clojure.zip :as zip]
    [slingshot.slingshot :refer [try+ throw+]]))
 
-(def ^:const ^:private ec2-url (env :service-aws-ec2-url))
-(def ^:const ^:private ec2-version (env :service-aws-ec2-api-version))
+(def ^:private ec2-url (env :service-aws-ec2-url))
+(def ^:private ec2-version (env :service-aws-ec2-api-version))
 
 (defn- acceptable-error?
   [action status body];AWS sometimes doesnt return all the ip ranges!!!
