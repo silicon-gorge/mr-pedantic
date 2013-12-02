@@ -99,7 +99,7 @@
 (defn- filter-tooling-services
   [names]
   (clojure.set/difference
-   names
+   (set names)
    (set (split (env :service-tooling-applications) #","))))
 
 (defn update-configs
