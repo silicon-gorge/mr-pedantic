@@ -30,6 +30,7 @@
                  (xml/parse)
                  (zip/xml-zip))]
     (log/info "Elb request: " url)
+    (log/info "Elb request headers: " auth-headers)
     (if (= 200 status)
       body
       (throw-aws-exception "ELB" (get params "Action") url status body))))
@@ -163,6 +164,7 @@
   (when LoadBalancer
     (let [vpc-id (or (:VpcId LoadBalancer) (:VpcId (first SecurityGroups)))
           local (sg-names-to-ids LoadBalancer vpc-id)
+          local (dissoc local :VpcId)
           remote (find-elb (:LoadBalancerName local))]
       (if remote
         (-> {:local local :remote remote}
