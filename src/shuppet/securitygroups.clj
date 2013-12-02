@@ -32,11 +32,11 @@
                  (xml/parse)
                  (zip/xml-zip))]
     (log/info "Security group request: " url)
-    (if (or
-         (= 200 status)
-         (acceptable-error? (get params "Action") status body))
-      body
-      (throw-aws-exception "EC2" (get params "Action") url status body))))
+
+    (cond
+     (= 200 status) body
+     (acceptable-error? (get params "Action") status body) nil
+     :else (throw-aws-exception "EC2" (get params "Action") url status body)) ))
 
 (defn- create-params [opts]
   (without-nils {"GroupName" (:GroupName opts)
@@ -121,13 +121,14 @@
   [sg-id opts]
   (when-let [ingress (:Ingress opts)]
     (do
-      (network-action sg-id ingress :AuthorizeSecurityGroupIngress)
-      (cf/info (str "I've added the ingress rules '" (vec ingress) "' for the security group '" (:GroupName opts) "'"))))
+      (when (network-action sg-id ingress :AuthorizeSecurityGroupIngress)
+        (cf/info (str "I've added the ingress rules '" (vec ingress) "' for the security group '" (:GroupName opts) "'")))))
   (let [egress (check-default-egress opts)]
     (when-not (empty? egress)
-      (network-action sg-id egress :AuthorizeSecurityGroupEgress)
-      (cf/info (str "I've added the egress rules '" (vec egress) "' for the security group '" (:GroupName opts) "'"))
-      (network-action sg-id (list {:IpRanges "0.0.0.0/0" :IpProtocol "-1"}) :RevokeSecurityGroupEgress))))
+      (when (network-action sg-id egress :AuthorizeSecurityGroupEgress)
+        (cf/info (str "I've added the egress rules '" (vec egress) "' for the security group '" (:GroupName opts) "'")))
+      (when (network-action sg-id (list {:IpRanges "0.0.0.0/0" :IpProtocol "-1"}) :RevokeSecurityGroupEgress)
+        (cf/info (str "I've revoked the  default egress rules for the security group '"  (:GroupName opts) "'"))))))
 
 (defn- network-config
   [params]
