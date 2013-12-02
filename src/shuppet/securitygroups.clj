@@ -58,11 +58,15 @@
     :CreateSecurityGroup (create params)
     (get-request (merge params {"Action" (name action)}))))
 
+(defn- filter-params
+  [name vpc-id]
+  {"Filter.1.Name" "group-name"
+   "Filter.1.Value" name
+   "Filter.2.Name" "vpc-id"
+   "Filter.2.Value" vpc-id})
+
 (defn- retrieve-sg-id [name vpc-id]
-  (xml1-> (process :DescribeSecurityGroups {"Filter.1.Name" "group-name"
-                                              "Filter.1.Value" name
-                                              "Filter.2.Name" "vpc-id"
-                                              "Filter.2.Value" vpc-id})
+  (xml1-> (process :DescribeSecurityGroups (filter-params name vpc-id))
           :securityGroupInfo :item :groupId text))
 
 (defn- sg-rule
@@ -174,14 +178,16 @@
 
 (defn- delete-sg
   [name vpc-id]
-  (if-let [id (sg-id name vpc-id)]
-    (do
-      (process :DeleteSecurityGroup {"GroupId" id})
-      (cf/info  (str "I've succesfully deleted the security group '" name "' with id: " id)))))
+  (try+
+   (if-let [id (sg-id name vpc-id)]
+     (do
+       (process :DeleteSecurityGroup {"GroupId" id})
+       (cf/info  (str "I've succesfully deleted the security group '" name "' with id: " id))))
+   (catch [:type :shuppet.securitygroups/sg-not-found] _
+     (log/info "Ignore sg-not-found when deleting"))))
 
 (defn- build-sg
   [opts]
-  (delete-sg (:GroupName opts) (:VpcId opts))
   (if-let [sg-id (create opts)]
     (try+
      (do
@@ -190,15 +196,6 @@
      (catch map? error
        (delete-sg (:GroupName opts) (:VpcId opts))
        (throw+ error)))))
-
-(defn- filter-params
-  [opts]
-  {"Filter.1.Name" "group-name"
-   "Filter.1.Value" (:GroupName opts)
-   "Filter.2.Name" "vpc-id"
-   "Filter.2.Value" (:VpcId opts)
-   "Filter.3.Name" "description"
-   "Filter.3.Value" (:GroupDescription opts)})
 
 (defn- update-sg-id
   [name vpc-id]
@@ -223,11 +220,11 @@
   "Get details of the security group, if one exists
    if not present create and apply ingress/outgress
    if present compare with the local config and apply changes if needed"
-  [opts]
+  [{:keys [VpcId GroupName Ingress Egress] :as opts}]
   (let [opts (-> opts
-                 (assoc :Ingress (update-sg-ids (:Ingress opts) (:VpcId opts)))
-                 (assoc :Egress (update-sg-ids (:Egress opts) (:VpcId opts))))
-        response (process :DescribeSecurityGroups (filter-params opts))]
+                 (assoc :Ingress (update-sg-ids Ingress VpcId))
+                 (assoc :Egress (update-sg-ids Egress VpcId)))
+        response (process :DescribeSecurityGroups (filter-params GroupName VpcId))]
     (if-let [sg-id (xml1-> response :securityGroupInfo :item :groupId text)]
       (compare-sg sg-id response opts)
       (build-sg opts))))
