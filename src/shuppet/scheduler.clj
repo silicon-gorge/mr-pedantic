@@ -9,7 +9,7 @@
 
 (def ^:private environments (set (split (env :service-environments) #",")))
 
-(def ^:private default-interval (Integer/parseInt (env :service-default-update-interval)))
+(def ^:private default-interval (Integer/parseInt (env :service-scheduler-interval)))
 
 (def ^:private schedule-pools (atom {}))
 
@@ -53,8 +53,8 @@
 (defn start
   []
   (when-not (contains? environments "local") ;dont want the auto scheduler for our test envs
-    (doseq [environ environments]
-      (at-at/after (* 10 60 1000)
-                   #(schedule environ)
-                   (get-pool environ)
+    (doseq [environment environments]
+      (at-at/after (* (or (env (keyword (str "service-scheduler-delay-" environment))) 10) 60 1000)
+                   #(schedule environment)
+                   (get-pool environment)
                    :desc (rfc2616-time)))))

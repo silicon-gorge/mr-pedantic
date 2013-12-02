@@ -94,7 +94,7 @@
         :service-campfire-default-info-room "Shuppet Info"
         :service-campfire-default-error-room "Shuppet Error"
 
-        :service-default-update-interval "120"
+        :service-scheduler-interval "120"
 
         :service-local-config-path "test/shuppet/resources"
         :service-local-app-names "localtest"
