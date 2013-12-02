@@ -98,9 +98,7 @@
 
 (defn- filter-tooling-services
   [names]
-  (clojure.set/difference
-   (set names)
-   (set (split (env :service-tooling-applications) #","))))
+  (remove (set (split (env :service-tooling-applications) #","))  names))
 
 (defn update-configs
   [environment]
@@ -108,8 +106,10 @@
         names (if (= environment "prod")
                 (filter-tooling-services names)
                 names)]
-    (pmap #(with-ent-bindings environment
-             (shuppet/apply-config environment %)) names)))
+    (pmap (fn [app-name]
+            (with-ent-bindings environment
+              (shuppet/apply-config environment app-name)))
+          names)))
 
 (defn configure-apps
   [environment]
