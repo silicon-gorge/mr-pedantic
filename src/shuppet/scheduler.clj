@@ -54,7 +54,10 @@
   []
   (when-not (= (env :environment-name) "local") ;dont want the auto scheduler for our test envs
     (doseq [environment environments]
-      (at-at/after (* (or (env (keyword (str "service-scheduler-delay-" environment))) 10) 60 1000)
+      (at-at/after (* (or
+                       (Integer/parseInt (env (keyword (str "service-scheduler-delay-" environment))))
+                       10)
+                      60 1000)
                    #(schedule environment)
                    (get-pool environment)
                    :desc (rfc2616-time)))))
