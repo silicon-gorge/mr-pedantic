@@ -17,4 +17,9 @@
             (fact "sg names are replaced"
                   (update-sg-ids [{:IpRanges "name"}] "vpc") => `({:IpRanges ..id..})
                   (provided
-                   (sg-id "name" "vpc") => ..id..)))
+                   (sg-id "name" "vpc") => ..id..))
+
+            (fact "error when id not found"
+                  (sg-id "name" "vpc") => (throws clojure.lang.ExceptionInfo)
+                  (provided
+                   (#'shuppet.securitygroups/retrieve-sg-id "name" "vpc")=> nil)))

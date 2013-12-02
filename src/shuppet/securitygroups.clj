@@ -84,7 +84,9 @@
   [name vpc-id]
   (if (and (empty? (re-find #"[\d\/.]*" name))
            (empty? (re-find #"^sg-" name)))
-    (retrieve-sg-id name vpc-id)
+    (if-let [id (retrieve-sg-id name vpc-id)]
+      id
+      (throw+ {:type ::sg-not-found}))
     name))
 
 (defn- ip-ranges-param [index v]
