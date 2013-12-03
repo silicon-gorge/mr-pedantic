@@ -93,11 +93,16 @@
 
 (defn load-config
   [environ & [app-name]]
-  (let [environment (configuration environ environ)]
+  (let [environment (configuration environ environ)
+        env-config (execute-string environment)]
     (if app-name
-      (let [application (configuration environ app-name)]
-        (execute-string (str environment "\n" application) environ app-name))
-      (execute-string environment))))
+      (let [default-policies (:DefaultRolePolicies env-config)
+            application (configuration environ app-name)
+            config (execute-string (str environment "\n" application) environ app-name)]
+        (assoc-in config [:Role :Policies]
+                  (concat (get-in config [:Role :Policies])
+                          default-policies)))
+      env-config)))
 
 (defn try-app-config
   [environ app-name config]
