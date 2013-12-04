@@ -280,8 +280,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- configure-app
   [name master-only]
-  (let [master-only (Boolean/parseBoolean master-only)
-        response (setup-repository name)]
+  (let [response (setup-repository name)]
     (if (= name response)
       (do
         (cf/info (str "I've succesfully created a new git repository for application '" name "'"))

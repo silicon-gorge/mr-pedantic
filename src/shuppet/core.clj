@@ -82,10 +82,15 @@
         (validate config)
         config))))
 
+(defn- tooling-service?
+  [name]
+  ((set (split (env :service-tooling-applications) #",")) name))
+
 (defn create-config
   [environment app-name master-only]
-  (with-ent-bindings environment
-    (shuppet/create-config app-name master-only)))
+  (let [master-only (or master-only (tooling-service? app-name))]
+    (with-ent-bindings environment
+      (shuppet/create-config app-name master-only))))
 
 (defn clean-config
   [environment app-name]
@@ -98,7 +103,7 @@
 
 (defn- filter-tooling-services
   [names]
-  (remove (set (split (env :service-tooling-applications) #","))  names))
+  (remove tooling-service?  names))
 
 (defn update-configs
   [environment]

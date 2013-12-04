@@ -192,7 +192,7 @@
 
    (POST "/apps/:name"
          [name local masteronly]
-         (create-app-config (lower-case name) local masteronly))
+         (create-app-config (lower-case name) local (Boolean/parseBoolean masteronly)))
 
    (POST "/validate"
          [env app-name :as {body :body}]
