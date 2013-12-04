@@ -57,10 +57,15 @@
                                       (aws-keys-map ~environment)) ]
        ~@body)))
 
+(defn- tooling-service?
+  [name]
+  ((set (split (env :service-tooling-applications) #",")) name))
+
 (defn apply-config
   ([environment & [app-name]]
-     (with-ent-bindings environment
-       (shuppet/apply-config environment app-name))))
+     (when-not (and (= environment "prod") (tooling-service? app-name))
+       (with-ent-bindings environment
+         (shuppet/apply-config environment app-name)))))
 
 (defn get-config
   [environment & [app-name]]
@@ -81,10 +86,6 @@
       (when-let [config (shuppet/try-app-config (or environment "poke") (or app-name "app-name") config)]
         (validate config)
         config))))
-
-(defn- tooling-service?
-  [name]
-  ((set (split (env :service-tooling-applications) #",")) name))
 
 (defn create-config
   [environment app-name master-only]

@@ -30,4 +30,13 @@
 
             (fact "can tell when environment config"
                   (env-config? "(def $var \"value\")") => truthy
-                  (env-config? "(def var \"value\")") => falsey))
+                  (env-config? "(def var \"value\")") => falsey)
+
+            (fact "don't apply config in prod for tooling services"
+                  (apply-config "prod" "ditto") => nil
+                  (apply-config "prod" "other") => ..response..
+                  (provided
+                   (shuppet/apply-config anything anything) => ..response.. :times 1)
+                  (apply-config "poke" "ditto") => ..response..
+                  (provided
+                   (shuppet/apply-config anything anything) => ..response.. :times 1)))
