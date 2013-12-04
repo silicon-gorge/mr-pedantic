@@ -68,8 +68,6 @@
         ;;aws-config
         :service-aws-access-key-id-poke "AKIAI7INFGUXMYXWWBYQ"
         :service-aws-secret-access-key-poke "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"
-        :service-aws-access-key-id-prod "AKIAIF5YNFT5EURMDOQQ"
-        :service-aws-secret-access-key-prod "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"
 
         :service-aws-ec2-url "https://ec2.eu-west-1.amazonaws.com"
         :service-aws-ec2-api-version "2013-10-01"
