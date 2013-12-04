@@ -7,9 +7,6 @@
             [environ.core :refer [env]])
   (:import [java.util UUID]))
 
-(defn url+ [& suffix] (apply str
-                             (format (env :service-url) (env :service-port))
-                             suffix))
 
 (defn content-type
   [response]
@@ -34,18 +31,18 @@
 
 (lazy-fact-group :integration
    (fact "Ping resource returns 200 HTTP response"
-         (let [response (client/get (url+ "/ping")  {:throw-exceptions false})]
+         (let [response (http-get "/ping")]
            response => (contains {:status 200})))
 
    (fact "Status returns all required elements"
-         (let [response (client/get (url+ "/status") {:throw-exceptions false})
+         (let [response (http-get "/status")
                body (read-body response)]
            response => (contains {:status 200})))
 
    (fact "Test config is applied without errors"
-         (client/get (url+ "/envs/poke/apps/test/clean"))
-         (client/get (url+ "/envs/poke/apps/test/apply")) => (contains {:status 200})
-         (client/get (url+ "/envs/poke/apps/test/apply")) => (contains {:status 200})
-         (client/get (url+ "/envs/poke/apps/test/clean")))
+         (http-get  "/envs/poke/apps/test/clean") => (contains {:status 200})
+         (http-get  "/envs/poke/apps/test/apply") => (contains {:status 200})
+         (http-get  "/envs/poke/apps/test/apply") => (contains {:status 200})
+         (http-get  "/envs/poke/apps/test/clean"))
 
    (future-fact "Correct branch is read from git"))

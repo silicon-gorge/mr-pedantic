@@ -8,10 +8,6 @@
             [environ.core :refer [env]])
   (:import [java.util UUID]))
 
-(defn url+ [& suffix] (apply str
-                             (format (env :service-url) (env :service-port))
-                             suffix))
-
 (defn content-type
   [response]
   (if-let [ct ((:headers response) "content-type")]
@@ -33,37 +29,35 @@
 
 (lazy-fact-group :acceptance
                  (fact "Ping resource returns 200 HTTP response"
-                       (let [response (client/get (url+ "/ping")  {:throw-exceptions false})]
+                       (let [response (http-get "/ping"  {:throw-exceptions false})]
                          response => (contains {:status 200})))
 
                  (fact "Status returns all required elements"
-                       (let [response (client/get (url+ "/status") {:throw-exceptions false})
+                       (let [response (http-get "/status" {:throw-exceptions false})
                              body (read-body response)]
                          response => (contains {:status 200})))
 
                  (fact "envs can be listed"
-                       (client/get (url+ "/envs")) => (contains {:status 200}))
+                       (http-get "/envs") => (contains {:status 200}))
 
                  (fact "env config can be read"
-                       (client/get (url+ "/envs/local")) => (contains {:status 200}))
+                       (http-get "/envs/local") => (contains {:status 200}))
 
                  (fact "app config can be read"
-                       (client/get (url+ "/envs/local/apps/localtest")) => (contains {:status 200}))
+                       (http-get "/envs/local/apps/localtest") => (contains {:status 200}))
 
                  (fact "env config can be validated"
-                       (let [res (client/post (url+ "/validate") {:body "(def $some-var \"value\") {}"})]
+                       (let [res (http-post "/validate" {:body "(def $some-var \"value\") {}"})]
                          res => (contains {:status 200})
                          res => (contains {:body "{}"})))
 
                  (fact "app config can is correctly validated"
                        (let [config (input-stream "test/shuppet/resources/local/localtest.clj")
-                             res (client/post (url+ "/validate") {:query-params {"env" "local"}
-                                                                  :body config
-                                                                  :throw-exceptions false})]
+                             res (http-post "/validate" {:query-params {"env" "local"}
+                                                         :body config})]
                          res => (contains {:status 200})))
 
                  (fact "invalid app config is rejected"
-                       (let [res (client/post (url+ "/validate") {:query-params {"env" "local"}
-                                                                  :body "{}"
-                                                                  :throw-exceptions false})]
+                       (let [res (http-post "/validate" {:query-params {"env" "local"}
+                                                         :body "{}"})]
                          res => (contains {:status 400}))))
