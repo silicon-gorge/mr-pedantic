@@ -1,6 +1,7 @@
 (ns shuppet.elb
   (:require
    [shuppet
+    [ec2 :as ec2]
     [campfire :as cf]
     [securitygroups :refer [sg-id]]
     [signature :refer [v4-auth-headers]]
@@ -160,9 +161,16 @@
       (update-elb name :ApplySecurityGroupsToLoadBalancer :SecurityGroups local))
     config))
 
+(defn- subnet-to-vpc
+  [subnet]
+  (xml1->
+   (ec2/get-request {"Action" "DescribeSubnets"
+                     "SubnetId.1" subnet})
+   :subnetSet :item :vpcId text))
+
 (defn ensure-elb [{:keys [LoadBalancer SecurityGroups]}]
   (when LoadBalancer
-    (let [vpc-id (or (:VpcId LoadBalancer) (:VpcId (first SecurityGroups)))
+    (let [vpc-id (subnet-to-vpc (first (:Subnets LoadBalancer)))
           local (sg-names-to-ids LoadBalancer vpc-id)
           local (dissoc local :VpcId)
           remote (find-elb (:LoadBalancerName local))]
