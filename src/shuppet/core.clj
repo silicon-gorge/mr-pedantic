@@ -98,20 +98,20 @@
   (with-ent-bindings environment
     (shuppet/clean-config environment app-name)))
 
+(defn- filter-tooling-services
+  [environment names]
+  (if (= environment "prod")
+    (remove tooling-service? names)
+    names))
+
 (defn app-names [environment]
   (with-ent-bindings environment
-    (shuppet/app-names)))
-
-(defn- filter-tooling-services
-  [names]
-  (remove tooling-service?  names))
+    (filter-tooling-services environment (shuppet/app-names))))
 
 (defn update-configs
   [environment]
   (let [names (app-names environment)
-        names (if (= environment "prod")
-                (filter-tooling-services names)
-                names)]
+        names (filter-tooling-services environment names)]
     (pmap (fn [app-name]
             (with-ent-bindings environment
               (shuppet/apply-config environment app-name)))

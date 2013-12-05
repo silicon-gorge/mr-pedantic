@@ -97,7 +97,7 @@
         :service-local-config-path "test/shuppet/resources"
         :service-local-app-names "localtest"
         :service-campfire-off true
-        :service-tooling-applications "ditto,exploud,numel,tyranitar,onix,garbodor"
+        :service-tooling-applications "ditto,exploud,numel,tyranitar,onix,garbodor,shuppet"
         }
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
