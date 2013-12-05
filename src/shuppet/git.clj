@@ -103,7 +103,7 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 
 (defn- repo-path
   ([repo-name branch-name]
-     (str base-git-path "/" repo-name "/" branch-name))
+     (str base-git-path repo-name "/" branch-name))
   ([repo-name]
      (repo-path repo-name "master")))
 
