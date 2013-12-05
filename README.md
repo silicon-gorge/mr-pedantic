@@ -19,9 +19,9 @@ On top of this Shuppet also supports:
 
 Shuppet also has a configuration per environment and ensures that it stays as defined.
 
-All the configuration is stored in GIT repositories in source.nokia.com in the _shuppet_ project.
+All the configuration is stored in GIT repositories in source.nokia.com in the _shuppet_ project. Each service has a _master_ branch applied to Poke environment, when you are ready just merge to _prod_ branch to apply the changes to Prod environment.
 
-Shuppet uses Campfire to communicate configuration changes.
+Shuppet uses Campfire to communicate configuration changes in [Shuppet Info](https://nokia-entertainment.campfirenow.com/room/580514) and [Shuppet Error](https://nokia-entertainment.campfirenow.com/room/580515) rooms.
 
 ## Resources
 
