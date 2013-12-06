@@ -15,7 +15,6 @@
  :LoadBalancer {:LoadBalancerName $app-name
                 :Listeners [elb-8080->8080]
                 :SecurityGroups [$sg-http-8080]
-                :VpcId $vpc-id
                 :Subnets $elb-subnets-be
                 :Scheme "internal"
                 :HealthCheck elb-healthcheck-ping}
