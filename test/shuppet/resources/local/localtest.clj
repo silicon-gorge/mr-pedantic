@@ -40,7 +40,7 @@
 
 
  :Role {:RoleName $app-name
-        :Policies  [{:PolicyName "s3-read-only"
+        :Policies  [{:PolicyName "ec2DescribeTags"
                      :PolicyDocument [{:Effect "Allow"
                                        :Action "EC2:Describe*"
                                        :Resource "*"}

@@ -15,7 +15,7 @@
              [ddb :refer [ensure-ddbs delete-ddbs]]
              [campfire :as cf]
              [util :refer [to-vec]]
-             [validator :refer [validate]]]
+             [validator :refer [validate validate-names]]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -98,9 +98,10 @@
     (if app-name
       (let [default-policies (:DefaultRolePolicies env-config)
             application (configuration environ app-name)
-            config (execute-string (str environment "\n" application) environ app-name)]
-        (assoc-in config [:Role :Policies]
-                  (concat (get-in config [:Role :Policies])
+            app-config (execute-string (str environment "\n" application) environ app-name)]
+        (validate-names env-config app-config)
+        (assoc-in app-config [:Role :Policies]
+                  (concat (get-in app-config [:Role :Policies])
                           default-policies)))
       env-config)))
 
