@@ -74,12 +74,23 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   ([message]
      (send-error 409 message)))
 
-(def snc-url
+(def ^:private snc-url
   (str (env :service-snc-api-base-url)
        "projects/shuppet/repositories?api_username="
        (env :service-snc-api-username)
        "&api_secret="
        (env :service-snc-api-secret)))
+
+(defn ^:private snc-permission-url
+  [repo-name]
+  (str (env :service-snc-api-base-url)
+       "projects/shuppet/repositories/"
+       repo-name
+       "/repo_permissions?api_username="
+       (env :service-snc-api-username)
+       "&api_secret="
+       (env :service-snc-api-secret)
+       "&kind=Git"))
 
 (def ^:private my-jcs-factory
   (proxy [JschConfigSessionFactory] []
@@ -213,13 +224,29 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   [name]
   (str "repository[name]=" name "&repository[kind]=Git"))
 
+(defn- create-permission-body
+  [role-name]
+  (str "repo_permission[role_name]=" role-name "&repo_permission[permission]=w"))
+
+(defn- set-permissions
+  [repo-name]
+  (let [role (env :service-snc-shuppet-user-group)
+        response (client/post (snc-permission-url repo-name)
+                              {:body (create-permission-body role)
+                               :content-type "application/x-www-form-urlencoded"
+                               :throw-exceptions false})]
+    (when-not (= (:status response) 200)
+      (send-error 409 (str "Unable to apply role '" role "' to the configuration repository for '" name "'."
+                           (:message (parse-string (:body response) true)))))))
+
 (defn- create-repository
   [name]
   (let [response (client/post snc-url {:body (repo-create-body name)
                                        :content-type "application/x-www-form-urlencoded"
                                        :throw-exceptions false})
         status (:status response)]
-    (when (not= status 200)
+    (if (= status 200)
+      (set-permissions name)
       (if (= status 422) ;We think the repository is alrady there
         (get-data "poke" name)
         (send-error 409 (str "Unable to create new git repository for application '" name "'. "

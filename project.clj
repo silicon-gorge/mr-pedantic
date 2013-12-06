@@ -85,6 +85,7 @@
         :service-snc-api-base-url "https://source.nokia.com/api/v2/"
         :service-snc-api-username "shpaul"
         :service-snc-api-secret "de6ad71e0eace6e3a4cae9955c2f67d7"
+        :service-snc-shuppet-user-group "ShuppetUsers"
 
         ;;campfire
         :service-campfire-api-token "acec839becb8d253b2973f1614d46ce34e640da4"
