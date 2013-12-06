@@ -1,6 +1,8 @@
 (ns shuppet.git
   (:require [environ.core :refer [env]]
-            [shuppet.campfire :as cf]
+            [shuppet
+             [campfire :as cf]
+             [util :as util]]
             [clojure.java.io :refer [as-file make-reader copy file resource]]
             [clojure.tools.logging :refer [info warn error]]
             [clj-http.client :as client]
@@ -201,16 +203,18 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       (catch InvalidRemoteException e
         (rm "-rf" (repo-path name branch))
         (let [message (str "Missing shuppet configuration for application '" name  "'")]
-          (error (with-out-str (.printStackTrace e)))
+          (warn message)
           (send-error 404 message)))
       (catch NullPointerException e
         (rm "-rf" (repo-path name branch))
-        (error (with-out-str (.printStackTrace e)))
-        (send-error (str "Missing branch '" branch "' for application '" name "'.")))
+        (let [message (str "Missing branch '" branch "' for application '" name "'.")]
+          (warn message)
+          (send-error message)))
       (catch MissingObjectException e
         (rm "-rf" (repo-path name branch))
-        (error (with-out-str (.printStackTrace e)))
-        (send-error (str "Missing object for revision HEAD in repo '" name "': " e))))))
+        (let [message (str "Missing object for revision HEAD in repo '" name "': " e)]
+          (warn message)
+          (send-error message))))))
 
 (defn- remote-branches
   [name]

@@ -1,15 +1,15 @@
 (ns shuppet.scheduler
   (:require
    [shuppet
+    [graphite :as graphite]
     [core :as core]
-    [util :refer [rfc2616-time]]]
+    [util :refer [rfc2616-time str-stacktrace]]]
+   [clojure.tools.logging :refer [info warn error]]
    [environ.core :refer [env]]
    [clojure.string :refer [split]]
    [overtone.at-at :as at-at]))
 
 (def ^:private environments (set (split (env :service-environments) #",")))
-
-(def ^:private default-interval (Integer/parseInt (env :service-scheduler-interval)))
 
 (def ^:private schedule-pools (atom {}))
 
@@ -25,21 +25,28 @@
       pool
       (env (swap! schedule-pools merge (create-pool env))))))
 
+(defn configure-apps [env]
+  (try
+    (graphite/report-time
+     (str "scheduler." env ".configure_apps")
+     (core/configure-apps env))
+    (catch Exception e
+      (error (str-stacktrace e)))))
+
 (defn schedule
   [env & [action interval]]
   (let [pool (get-pool env)]
     (at-at/stop-and-reset-pool! pool :strategy :kill)
     (if (= action "stop")
       {:message "Succefully stopped the shuppet scheduler"}
-      (do
-        (let [interval (if interval (Integer/parseInt interval) default-interval)]
-          (at-at/every (* interval 60 1000)
-                       #(core/configure-apps env)
-                       pool
-                       :desc (rfc2616-time))
-          {:message
-           (str "Succesfully started the shuppet scheduler. The scheduler will run in every "
-                interval " minutes.") })))))
+      (let [interval (Integer/parseInt (or interval (env :service-scheduler-interval)))]
+        (at-at/every (* interval 60 1000)
+                     #(configure-apps env)
+                     pool
+                     :desc (rfc2616-time))
+        {:message
+         (str "Succesfully started the shuppet scheduler. The scheduler will run in every "
+              interval " minutes.") }))))
 
 (defn get-schedule
   [env]

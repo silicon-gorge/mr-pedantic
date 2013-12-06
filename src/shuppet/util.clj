@@ -5,7 +5,8 @@
    [clojure.string :refer [join upper-case split]]
    [slingshot.slingshot :refer [try+ throw+]]
    [clojure.data.zip.xml :refer [xml1-> text]]
-   [environ.core :refer [env]]))
+   [environ.core :refer [env]])
+  (:import [java.io StringWriter PrintWriter]))
 
 (def ^:const new-line "\n")
 
@@ -203,3 +204,9 @@
       (when (number? n) n))))
 
 (def is-prod? (Boolean/valueOf (env :service-production)))
+
+(defn str-stacktrace
+  [e]
+  (let [sw (StringWriter.)]
+    (.printStackTrace e (PrintWriter. sw))
+    (str sw)))
