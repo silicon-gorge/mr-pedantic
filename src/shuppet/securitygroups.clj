@@ -2,6 +2,7 @@
   (:require
    [shuppet
     [signature :refer [v2-url]]
+    [ec2 :as ec2]
     [util :refer :all]
     [campfire :as cf]]
    [environ.core :refer [env]]
@@ -16,27 +17,20 @@
 (def ^:private ec2-version (env :service-aws-ec2-api-version))
 
 (defn- acceptable-error?
-  [action status body];AWS sometimes doesnt return all the ip ranges!!!
+  [action status code];AWS sometimes doesnt return all the ip ranges!!!
   (and
    (or (= action "AuthorizeSecurityGroupIngress") (= action "AuthorizeSecurityGroupEgress"))
    (= status 400)
-   (= "InvalidPermission.Duplicate" (xml1-> body :Errors :Error :Code text))))
+   (= code "InvalidPermission.Duplicate")))
 
 (defn- get-request
   [params]
-  (let [url (v2-url ec2-url (merge {"Version" ec2-version} params))
-        response (client/get url {:as :stream
-                                  :throw-exceptions false})
-        status (:status response)
-        body (-> (:body response)
-                 (xml/parse)
-                 (zip/xml-zip))]
-    (log/info "Security group request: " url)
-
-    (cond
-     (= 200 status) body
-     (acceptable-error? (get params "Action") status body) nil
-     :else (throw-aws-exception "EC2" (get params "Action") url status body)) ))
+  (try+
+   (ec2/get-request params)
+   (catch [:type :shuppet.util/aws] {:keys [status code] :as e}
+       (if (acceptable-error? (params "Action") status code)
+         nil
+         (throw+ e)))))
 
 (defn- create-params [opts]
   (without-nils {"GroupName" (:GroupName opts)
