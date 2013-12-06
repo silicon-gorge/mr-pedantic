@@ -40,7 +40,7 @@
 
 
  :Role {:RoleName $app-name
-        :Policies  [{:PolicyName "s3ReposReadOnly"
+        :Policies  [{:PolicyName "s3-Repos-ReadOnly-1"
                      :PolicyDocument [{:Effect "Allow"
                                        :Action "EC2:Describe*"
                                        :Resource "*"}
