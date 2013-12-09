@@ -28,7 +28,7 @@
        (->  (ring-response/response (write-str {:message (e :message)}))
             (ring-response/content-type "application/json")
             (ring-response/status (e :status))))
-     (catch  clojure.lang.Compiler$CompilerException e
+     (catch  java.util.concurrent.ExecutionException e
        (->  (ring-response/response (write-str {:message (.getMessage e)}))
             (ring-response/content-type "application/json")
             (ring-response/status 400)))
