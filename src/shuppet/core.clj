@@ -122,7 +122,10 @@
                  (catch [:type :shuppet.git/git] {:keys [message]}
                    (warn message))
                  (catch Exception e
-                   ;TODO: campfire message
+                   (cf/error  {:environment environment
+                               :title "error while applying configs"
+                               :app-name app-name
+                               :message (.getMessage e) })
                    (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))))))
            names))))
 
