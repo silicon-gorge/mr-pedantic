@@ -82,8 +82,8 @@
 
 (defn- clean-app-config
   [environment name]
-  (when-not (= (env :environment-name) "local")
-    (throw+ {:type ::wrong-environment}))
+  (when-not (or (= (env :environment-name) "local") (= name "test"))
+    (throw+ {:type ::clean-not-allowed}));only allow clean for dev and integration test
   (core/clean-config environment name)
   (response {:message (str "Succesfully cleaned the configuration for application " name)}))
 
