@@ -1,11 +1,13 @@
 (ns shuppet.core
   (:require [shuppet
+             [util :as util]
              [core-shuppet :as shuppet]
              [git :as git]
              [campfire :as cf]
              [signature :as signature]
              [validator :refer [validate]]]
             [clojure.string :refer [lower-case split]]
+            [clojure.tools.logging :refer [info warn error]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
             [slingshot.slingshot :refer [try+ throw+]])
@@ -112,10 +114,17 @@
   [environment]
   (let [names (app-names environment)
         names (filter-tooling-services environment names)]
-    (pmap (fn [app-name]
-            (with-ent-bindings environment
-              (shuppet/apply-config environment app-name)))
-          names)))
+    (doall
+     (pmap (fn [app-name]
+             (with-ent-bindings environment
+               (try+
+                 (shuppet/apply-config environment app-name)
+                 (catch [:type :shuppet.git/git] {:keys [message]}
+                   (warn message))
+                 (catch Exception e
+                   ;TODO: campfire message
+                   (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))))))
+           names))))
 
 (defn configure-apps
   [environment]
