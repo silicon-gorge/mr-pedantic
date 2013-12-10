@@ -118,15 +118,18 @@
      (pmap (fn [app-name]
              (with-ent-bindings environment
                (try+
-                 (shuppet/apply-config environment app-name)
-                 (catch [:type :shuppet.git/git] {:keys [message]}
-                   (warn message))
-                 (catch Exception e
-                   (cf/error  {:environment environment
-                               :title "error while applying configs"
-                               :app-name app-name
-                               :message (.getMessage e) })
-                   (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))))))
+                (shuppet/apply-config environment app-name)
+                (catch [:type :shuppet.git/git] {:keys [message]}
+                  (warn message))
+                (catch java.util.concurrent.ExecutionException e
+                  (cf/error {:environment environment
+                             :title "error while loading config"
+                             :app-name app-name
+                             :message (.getMessage e) })
+                  (error (str app-name " config in " environment " cannot be loaded: " (util/str-stacktrace e))))
+
+                (catch Exception e
+                  (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))))))
            names))))
 
 (defn configure-apps
