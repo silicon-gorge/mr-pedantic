@@ -1,9 +1,8 @@
 (ns shuppet.securitygroups
   (:require
    [shuppet
-    [signature :refer [v2-url]]
-    [ec2 :as ec2]
     [util :refer :all]
+    [signature :refer :all]
     [campfire :as cf]]
    [environ.core :refer [env]]
    [clj-http.client :as client]
@@ -13,8 +12,8 @@
    [clojure.zip :as zip]
    [slingshot.slingshot :refer [try+ throw+]]))
 
-(def ^:private ec2-url (env :service-aws-ec2-url))
-(def ^:private ec2-version (env :service-aws-ec2-api-version))
+
+
 
 (defn- acceptable-error?
   [action status code];AWS sometimes doesnt return all the ip ranges!!!
@@ -23,10 +22,19 @@
    (= status 400)
    (= code "InvalidPermission.Duplicate")))
 
-(defn- get-request
+(defn get-request
   [params]
   (try+
-   (ec2/get-request params)
+   (let [request (get-signed-request "ec2" {:params params})
+         response (client/get (request :url) {:as :stream
+                                              :throw-exceptions false})
+         status (:status response)
+         body (-> (:body response)
+                  (xml/parse)
+                  (zip/xml-zip))]
+     (if (= 200 status)
+       body
+       (throw-aws-exception "EC2" (get params "Action") (env :service-aws-ec2-url) status body)))
    (catch [:type :shuppet.util/aws] {:keys [status code] :as e}
        (if (acceptable-error? (params "Action") status code)
          nil

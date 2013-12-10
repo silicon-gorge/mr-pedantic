@@ -1,10 +1,9 @@
 (ns shuppet.elb
   (:require
    [shuppet
-    [ec2 :as ec2]
     [campfire :as cf]
-    [securitygroups :refer [sg-id]]
-    [signature :refer [v4-auth-headers]]
+    [securitygroups :as sg]
+    [signature :refer :all]
     [util :refer :all]]
    [clj-http.client :as client]
    [environ.core :refer [env]]
@@ -14,30 +13,23 @@
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
 
-(def ^:private elb-url (env :service-aws-elb-url))
-(def ^:private elb-version (env :service-aws-elb-api-version))
-
 (defn get-request
   [params]
-  (let [url (str elb-url  "/?" (map-to-query-string
-                                (merge {"Version" elb-version} params)))
-        auth-headers (v4-auth-headers {:url url} )
-        response (client/get url
-                             {:headers auth-headers
+  (let [request (get-signed-request "elb" {:params params})
+        response (client/get (request :url)
+                             {:headers (request :headers)
                               :as :stream
                               :throw-exceptions false})
         status (:status response)
         body (-> (:body response)
                  (xml/parse)
                  (zip/xml-zip))]
-    (log/info "Elb request: " url)
-    (log/info "Elb request headers: " auth-headers)
     (if (= 200 status)
       body
-      (throw-aws-exception "ELB" (get params "Action") url status body))))
+      (throw-aws-exception "ELB" (get params "Action") (request :url) status body))))
 
 (defn- sg-names-to-ids [config vpc-id]
-  (assoc config :SecurityGroups (map #(sg-id % vpc-id) (:SecurityGroups config))))
+  (assoc config :SecurityGroups (map #(sg/sg-id % vpc-id) (:SecurityGroups config))))
 
 (defn- get-elements [xml path]
   (apply xml-> xml (concat [:DescribeLoadBalancersResult :LoadBalancerDescriptions :member] path)))
@@ -164,7 +156,7 @@
 (defn- subnet-to-vpc
   [subnet]
   (xml1->
-   (ec2/get-request {"Action" "DescribeSubnets"
+   (sg/get-request {"Action" "DescribeSubnets"
                      "SubnetId.1" subnet})
    :subnetSet :item :vpcId text))
 

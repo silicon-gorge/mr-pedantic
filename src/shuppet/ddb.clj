@@ -2,7 +2,7 @@
   (:require
    [shuppet
     [util :refer :all]
-    [signature :refer [v4-auth-headers]]
+    [signature :refer [get-signed-request]]
     [campfire :as cf]]
    [environ.core :refer [env]]
    [clj-http.client :as client]
@@ -14,7 +14,6 @@
 
 (def ^:private ddb-version (replace (env :service-aws-ddb-api-version) #"-" ""))
 (def ^:private action-prefix (str  "DynamoDB_" ddb-version "."))
-(def ^:private ddb-url (env :service-aws-ddb-url))
 
 (defn- nil-returnable-exception?
   [status {:keys [__type]} action]
@@ -26,24 +25,21 @@
 
 (defn- post-request
   [action body]
-  (let [body (write-str body)
-        headers {:x-amz-target (str action-prefix (name action))
-                 :content-type "application/x-amz-json-1.0"}
-        auth-headers (v4-auth-headers {:url ddb-url
-                                       :method :post
-                                       :body body
-                                       :headers headers})
-        response  (client/post ddb-url {:headers auth-headers
-                                        :body body
-                                        :as :json
-                                        :throw-exceptions false})
+  (let [request (get-signed-request "ddb" {:body (write-str body)
+                                           :headers {:x-amz-target (str action-prefix (name action))
+                                                     :content-type "application/x-amz-json-1.0"}
+                                           :method :post})
+        response  (client/post (request :url) {:headers (request :headers)
+                                               :body (request :body)
+                                               :as :json
+                                               :throw-exceptions false})
         status (:status response)]
     (log/info "Ddb action: " action ", body: " body)
     (if (= status 200)
       (:body response)
       (let [body (read-str (:body response) :key-fn keyword)]
         (when-not (nil-returnable-exception? status body action)
-          (throw-aws-exception "DynamoDB" action ddb-url status body :json))))))
+          (throw-aws-exception "DynamoDB" action (request :url) status body :json))))))
 
 (defn- create-attr-defns
   [attrs]
@@ -126,7 +122,7 @@
                (Thread/sleep 45000)
                (post-request :CreateTable local)
                (cf/info (str "I've created a new dynamodb table called '" TableName "'"))))
-      (throw-aws-exception "DynamoDB" "POST" ddb-url "400" {:__type "Table Configuration Mismatch" :message "Mismatch in table configuration. If you want to apply the current local configuration, please add :ForceDelete true confirming that its ok to delete the current table and create a new table with the new configuration.Note: All data in the current table will be lost after this operation"} :json))))
+      (throw-aws-exception "DynamoDB" "POST" (env :service-aws-ddb-url) "400" {:__type "Table Configuration Mismatch" :message "Mismatch in table configuration. If you want to apply the current local configuration, please add :ForceDelete true confirming that its ok to delete the current table and create a new table with the new configuration.Note: All data in the current table will be lost after this operation"} :json))))
 
 (defn- compare-table
   [opts body]

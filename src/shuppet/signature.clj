@@ -1,10 +1,12 @@
 (ns shuppet.signature
   (:require
    [shuppet.util :refer :all]
-   [clojure.string :refer [join lower-case upper-case trim split]]
+   [nephelai.core :refer [signed-request]]
+   [clojure.string :refer [join lower-case upper-case trim split replace]]
    [clojure.tools.logging :as log]
    [environ.core :refer [env]]
    [clj-http.client :as client])
+  (:refer-clojure :exclude [replace])
   (:import
    [java.net URL]
    [java.net URLEncoder]
@@ -14,12 +16,46 @@
    [org.apache.commons.codec.binary Base64]
    [org.apache.commons.codec.binary Hex]))
 
-(def ^:const ^:private v4-algorithm "AWS4-HMAC-SHA256")
-(def ^:const ^:private default-region "us-east-1")
-
 (def default-keys-map
   {:key (env :service-aws-access-key-id-poke)
    :secret (env :service-aws-secret-access-key-poke)})
+
+(def ^:dynamic *aws-credentials* default-keys-map)
+
+(def ^:private endpoints {:ec2-url (env :service-aws-ec2-url)
+                          :ec2-version (env :service-aws-ec2-api-version)
+                          :elb-url (env :service-aws-elb-url)
+                          :elb-version (env :service-aws-elb-api-version)
+                          :iam-url (env :service-aws-iam-url)
+                          :iam-version (env :service-aws-iam-api-version)
+                          :ddb-url (env :service-aws-ddb-url)
+                          :ddb-version (replace (env :service-aws-ddb-api-version) #"-" "")})
+
+(defn get-signed-request
+  [suffix opts]
+  (prn "params ========= " opts)
+  (let [opts (merge {:url (endpoints (keyword (str suffix "-url")))}
+                     opts
+                     *aws-credentials*)
+        opts (if-not (= "ddb" suffix)
+               (without-nils (merge opts
+                                    {:params (assoc (:params opts) :Version (endpoints  (keyword (str suffix "-version"))))}))
+               opts)]
+    (prn "OPTS ======== " opts)
+    (signed-request opts)))
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:const ^:private v4-algorithm "AWS4-HMAC-SHA256")
+(def ^:const ^:private default-region "us-east-1")
 
 (def ^:dynamic *aws-keys* default-keys-map)
 

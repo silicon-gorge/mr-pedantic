@@ -30,7 +30,8 @@
                  [me.raynes/conch "0.5.0"]
                  [clj-campfire "2.1.0"]
                  [clojail "1.0.6"]
-                 [overtone/at-at "1.2.0"]]
+                 [overtone/at-at "1.2.0"]
+                 [nephelai "0.0.1"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
                                    :exclusions [org.slf4j/slf4j-nop

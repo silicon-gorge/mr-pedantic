@@ -1,7 +1,7 @@
 (ns shuppet.iam
   (:require
    [shuppet
-    [signature :refer [v4-auth-headers]]
+    [signature :refer [get-signed-request]]
     [util :refer :all]
     [campfire :as cf]]
    [clojure.string :refer [replace]]
@@ -14,47 +14,42 @@
    [clojure.zip :as zip])
   (:refer-clojure :exclude [replace]))
 
-(def ^:private iam-url (env :service-aws-iam-url))
-(def ^:private iam-version (env :service-aws-iam-api-version))
+(def ^:private iam-url )
+(def ^:private iam-version )
 
 (def ^:private default-role-policy (write-str (create-policy {:Principal {:Service "ec2.amazonaws.com"}
                                                               :Action "sts:AssumeRole"})))
 
 (defn- post-request
   [params]
-  (let [url (str iam-url "/?" (map-to-query-string
-                               (merge {"Version" iam-version} params)))
-        auth-headers (v4-auth-headers {:url url
-                                       :method :post} )
-        response (client/post url {:headers auth-headers
-                                   :as :stream
-                                   :throw-exceptions false})
+  (let [request (get-signed-request "iam" (merge {:method :post} {:params params}))
+        response (client/post (request :url)
+                              {:headers (request :headers)
+                               :as :stream
+                               :throw-exceptions false})
         status (:status response)
         body (-> (:body response)
                  (xml/parse)
                  (zip/xml-zip))]
-    (log/info "Iam post request:" url)
     (condp = status
       200 body
-      (throw-aws-exception "IAM" (get params "Action") url status body))))
+      (throw-aws-exception "IAM" (get params "Action") (request :url) status body))))
 
 (defn- get-request
   [params]
-  (let [url (str iam-url "/?" (map-to-query-string
-                               (merge {"Version" iam-version} params)))
-        auth-headers (v4-auth-headers {:url url} )
-        response (client/get url {:headers auth-headers
-                                  :as :stream
-                                  :throw-exceptions false})
+  (let [request (get-signed-request "iam" {:params params})
+        response (client/get (request :url)
+                             {:headers (request :headers)
+                              :as :stream
+                              :throw-exceptions false})
         status (:status response)
         body (-> (:body response)
                  (xml/parse)
                  (zip/xml-zip))]
-    (log/info "Iam get request:" url)
     (condp = status
       200 body
       404 nil
-      (throw-aws-exception "IAM" (get params "Action") url status body))))
+      (throw-aws-exception "IAM" (get params "Action") (request :url) status body))))
 
 (defn- process
   [action params]

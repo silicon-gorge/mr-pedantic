@@ -54,9 +54,9 @@
                shuppet/*configuration* (if local?#
                                          (shuppet/LocalConfig.)
                                          (GitConfig.))
-               signature/*aws-keys* (if local?#
+               signature/*aws-credentials* (if local?#
                                       signature/default-keys-map
-                                      (aws-keys-map ~environment)) ]
+                                      (aws-keys-map ~environment))]
        ~@body)))
 
 (defn- tooling-service?
