@@ -74,11 +74,14 @@
 
 (defn- execute-string
   [clojure-string & [env app-name]]
-  (let [clojure-string (with-vars {:$app-name app-name
-                                   :$env env} clojure-string)
-        wrapped (str "(let [_ nil] \n" clojure-string "\n)")
-        form (safe-read wrapped)]
-    ((make-sandbox) form)))
+  (try+
+    (let [clojure-string (with-vars {:$app-name app-name
+                                     :$env env} clojure-string)
+          wrapped (str "(let [_ nil] \n" clojure-string "\n)")
+          form (safe-read wrapped)]
+      ((make-sandbox) form))
+    (catch java.util.concurrent.ExecutionException e
+      (throw+ {:type ::invalid-config :message (.getMessage e)}))))
 
 (defn app-names
   []

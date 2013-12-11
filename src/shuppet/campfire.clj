@@ -62,9 +62,9 @@
         (catch [:type :shuppet.util/aws] e#
           (error (merge {:environment ~environment :app-name ~app-name} e#))
           (throw+ e#))
-        (catch clojure.lang.Compiler$CompilerException e#
+        (catch [:type :shuppet.core-shuppet/invalid-config] {:keys [message#] :as e#}
           (error {:environment ~environment
                   :app-name ~app-name
                   :title "I cannot read this config"
-                  :message (.getMessage e#)})
+                  :message message#})
           (throw+ e#))))))

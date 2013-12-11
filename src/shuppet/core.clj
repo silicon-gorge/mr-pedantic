@@ -121,12 +121,12 @@
                 (shuppet/apply-config environment app-name)
                 (catch [:type :shuppet.git/git] {:keys [message]}
                   (warn message))
-                (catch java.util.concurrent.ExecutionException e
+                (catch  [:type :shuppet.core-shuppet/invalid-config] {:keys [message]}
                   (cf/error {:environment environment
                              :title "error while loading config"
                              :app-name app-name
-                             :message (.getMessage e) })
-                  (error (str app-name " config in " environment " cannot be loaded: " (util/str-stacktrace e))))
+                             :message message })
+                  (error (str app-name " config in " environment " cannot be loaded: " message)))
 
                 (catch Exception e
                   (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))))))

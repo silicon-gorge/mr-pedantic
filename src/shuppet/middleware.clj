@@ -28,11 +28,11 @@
        (->  (ring-response/response (write-str {:message (e :message)}))
             (ring-response/content-type "application/json")
             (ring-response/status (e :status))))
-     (catch  java.util.concurrent.ExecutionException e
-       (->  (ring-response/response (write-str {:message (.getMessage e)}))
+     (catch [:type :shuppet.core-shuppet/invalid-config] e
+       (->  (ring-response/response (write-str (select-keys e [:message])))
             (ring-response/content-type "application/json")
             (ring-response/status 400)))
-      (catch java.io.FileNotFoundException e
+     (catch java.io.FileNotFoundException e
        (->  (ring-response/response (write-str {:message "Cannot find this one"}))
             (ring-response/content-type "application/json")
             (ring-response/status 404))))))

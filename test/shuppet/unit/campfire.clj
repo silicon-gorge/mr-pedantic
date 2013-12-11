@@ -13,9 +13,10 @@
                    (error {:environment "env" :app-name "app-name" :type :shuppet.util/aws}) => nil))
 
             (fact "campfire message is sent when compilation error"
-                  (with-messages {:environment "env" :app-name "app-name"} (throw (clojure.lang.Compiler$CompilerException. "message" 0 0 (Throwable.)))) => (throws clojure.lang.Compiler$CompilerException)
+                  (with-messages {:environment "env" :app-name "app-name"} (throw+ {:type :shuppet.core-shuppet/invalid-config :message ..message..}))
+                  => (throws clojure.lang.ExceptionInfo)
                   (provided
-                   (error anything) => nil))
+                   (error (checker [actual] (contains {:message ..message..}))) => nil))
 
             (fact "messages are sent to default rooms"
                   (with-messages {:environment "env"
