@@ -4,18 +4,16 @@
    [cheshire.core :refer [generate-string]]
    [shuppet
     [util :refer [map-to-query-string url-encode]]
-    [signature :refer [v4-auth-headers]]]
+    [signature :refer [get-signed-request]]]
    [clj-http.client :as client]))
 
 (defn- send-message
   [queue-url message]
-  (let [url (str queue-url  "/?" (map-to-query-string
-                                  {"Version" "2012-11-05"
-                                   "Action" "SendMessage"
-                                   "MessageBody" message}))
-        auth-headers (v4-auth-headers {:url url})]
-    (client/get url
-                {:headers auth-headers})))
+  (let [request (get-signed-request {:url queue-url
+                                     :params {:Action "SendMessage"
+                                              :MessageBody message}})]
+    (client/get (request :url)
+                {:headers (request :headers)})))
 
 (defn- elb-created-message
   "Create the message describing the creation of a load balancer."

@@ -79,6 +79,7 @@
         :service-aws-s3-url "https://s3-eu-west-1.amazonaws.com"
         :service-aws-ddb-url "https://dynamodb.eu-west-1.amazonaws.com"
         :service-aws-ddb-api-version "2012-08-10"
+        :service-aws-sqs-api-version "2012-11-05"
 
         ;;git-config
         :service-base-git-repository-url "ssh://snc@source.nokia.com/shuppet/git/"

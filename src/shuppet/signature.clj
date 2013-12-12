@@ -17,7 +17,8 @@
                           :iam-url (env :service-aws-iam-url)
                           :iam-version (env :service-aws-iam-api-version)
                           :ddb-url (env :service-aws-ddb-url)
-                          :s3-url (env :service-aws-s3-url)})
+                          :s3-url (env :service-aws-s3-url)
+                          :sqs-version (env :service-aws-sqs-api-version)})
 
 (defn get-signed-request
   [suffix opts]
