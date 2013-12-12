@@ -9,9 +9,9 @@
 
 (defn- send-message
   [queue-url message]
-  (let [request (get-signed-request {:url queue-url
-                                     :params {:Action "SendMessage"
-                                              :MessageBody message}})]
+  (let [request (get-signed-request "sqs" {:url queue-url
+                                           :params {:Action "SendMessage"
+                                                    :MessageBody message}})]
     (client/get (request :url)
                 {:headers (request :headers)})))
 
