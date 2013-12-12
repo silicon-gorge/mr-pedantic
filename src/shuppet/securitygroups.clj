@@ -2,7 +2,7 @@
   (:require
    [shuppet
     [util :refer :all]
-    [signature :refer :all]
+    [signature :refer [get-signed-request]]
     [campfire :as cf]]
    [environ.core :refer [env]]
    [clj-http.client :as client]
@@ -11,9 +11,6 @@
    [clojure.xml :as xml]
    [clojure.zip :as zip]
    [slingshot.slingshot :refer [try+ throw+]]))
-
-
-
 
 (defn- acceptable-error?
   [action status code];AWS sometimes doesnt return all the ip ranges!!!

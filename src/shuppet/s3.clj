@@ -1,7 +1,7 @@
 (ns shuppet.s3
   (:require
    [shuppet
-    [signature :refer [s3-header]]
+    [signature :refer [get-signed-request]]
     [util :refer :all]
     [campfire :as cf]]
    [environ.core :refer [env]]
@@ -38,65 +38,46 @@
              s3-location
              ""))))
 
-(def ^:private s3-sub-resources #{:versioning :location :acl :torrent
-                                  :lifecycle :versionId :logging :notification
-                                  :partNumber :policy :requestPayment :uploadId
-                                  :uploads :versions :website})
-
 (defn- create-bucket-body []
   (emit-str (element :CreateBucketConfiguration {}
                      (element :LocationConstraint {} @location))))
 
-(defn- s3-path
-  [host path]
-  (if (empty? (re-find #"^s3.*.amazonaws.com" host))
-    (str "/" (first (split host #".s3")) path)
-    path))
+(defn- delete-request
+  [url date]
+  (let [request (get-signed-request "s3" {:url url
+                                          :headers (without-nils {"x-amz-date" date
+                                                                  "x-amz-security-token" *session-token*})})]
+    (client/delete (request :url) {:headers  (request :headers)
+                                   :as :xml
+                                   :throw-exceptions false})))
 
-(defn- add-query
-  [path q-map]
-  (let [opts  (into (sorted-map) (map #(if (contains? q-map %) {% (% q-map)}) s3-sub-resources))]
-    (if (empty? opts)
-      path
-      (str path "?" (map-to-query-string opts)))))
-
-(defn- canon-path
-  [url]
-  (let [url (URL. url)
-        path (s3-path (.getHost url) (.getPath url))
-        q-string (.getQuery url)
-        path (if (empty? q-string) path
-                 (add-query path (query-string-to-map q-string)))]
-    (if (empty? path) "/" path)))
-
-(defn- url-to-sign
-  [method c-md5 c-type c-headers c-path]
-  (str (upper-case (name method)) new-line
-       c-md5 new-line
-       c-type new-line
-       new-line
-       c-headers
-       c-path))
-
-(defn- get-amz-headers
-  [headers]
-  (apply dissoc headers (keep #(-> % key name (.startsWith "x-amz-") (if nil (key %))) headers)))
-
-(defn- amz-headers-str
-  [headers]
-  (let [amz-headers (get-amz-headers headers)
-        headers-str (join new-line (map #(str (lower-case (name (key %))) ":" (trim (val %))) amz-headers))]
-    (if (empty? headers-str) nil (str headers-str new-line))))
-
-(defn- auth-header
-  [{:keys [url method content-md5 content-type headers]}]
-  (let [headers-str (amz-headers-str (without-nils headers))
-        uri (url-to-sign method content-md5 content-type headers-str (canon-path url))]
-    (s3-header uri)))
+(defn- put-request
+  [url date body & [content-type]]
+  (let [content-type (if content-type content-type "application/xml")
+        type (keyword (second (split content-type  #"\/")))
+        request (get-signed-request "s3" {:url url
+                                          :method :put
+                                          :body body
+                                          :content-type content-type
+                                          :headers (without-nils {"x-amz-date" date
+                                                                  "x-amz-security-token" *session-token*})})
+        response (client/put (request :url) {:headers  (request :headers)
+                                             :as type
+                                             :content-type content-type
+                                             :body (request :body)
+                                             :throw-exceptions false})
+           status (:status response)]
+       (log/info "S3 put request: " url)
+       (when (and (not= 204 status)
+                  (not= 200 status))
+         (throw-aws-exception "S3" "PUT" url status (xml-to-map (:body response))))))
 
 (defn- get-request
-  [url headers]
-  (let [response (client/get url {:headers  headers
+  [url date]
+  (let [request (get-signed-request "s3" {:url url
+                                          :headers (without-nils {"x-amz-date" date
+                                                                  "x-amz-security-token" *session-token*})})
+        response (client/get (request :url) {:headers  (request :headers)
                                   :throw-exceptions false} )
         status (:status response)
         body (:body response)
@@ -108,53 +89,18 @@
       301 nil ;tocheck
       (throw-aws-exception "S3" "GET" url status (xml-to-map (:body response))))))
 
-(defn- delete-request
-  [url headers]
-  (client/delete url {:headers  headers
-                      :as :xml
-                      :throw-exceptions false}))
-
-(defn- put-request
-  ([url headers body content-type]
-     (let [type (keyword (second (split content-type  #"\/")))
-           response (client/put url {:headers  headers
-                                     :as type
-                                     :content-type content-type
-                                     :body body
-                                     :throw-exceptions false})
-           status (:status response)]
-       (log/info "S3 put request: " url)
-       (when (and (not= 204 status)
-                  (not= 200 status))
-         (throw-aws-exception "S3" "PUT" url status (xml-to-map (:body response))))))
-  ([url headers body]
-     (put-request url headers body "application/xml")))
-
-(defn- request-header
-  ([url date method content-type]
-     (let [headers (without-nils {"x-amz-date" date
-                                  "x-amz-security-token" *session-token*})]
-       (merge headers (auth-header {:url url
-                                    :headers headers
-                                    :method method
-                                    :content-type content-type}))))
-  ([url date]
-     (request-header url date :get nil))
-  ([url date method]
-     (request-header url date method "application/xml")))
-
 (defn- process
   ([action url body]
      (let [date (rfc2616-time)]
        (condp = (keyword action)
-         :CreateBucket  (put-request url (request-header url date :put) body "application/xml")
-         :ListBucket (get-request url (request-header url date))
-         :DeleteBucket (delete-request url (request-header url date :delete nil))
-         :GetBucketPolicy (get-request url (request-header url date))
-         :CreateBucketPolicy (put-request url (request-header url date :put "application/json") body "application/json")
-         :DeleteBucketPolicy (delete-request url (request-header url date :delete nil))
-         :GetBucketAcl (get-request url (request-header url date))
-         :CreateBucketAcl (put-request url (request-header url date :put) body "application/xml"))))
+         :CreateBucket  (put-request url date body)
+         :ListBucket (get-request url date)
+         :DeleteBucket (delete-request url date)
+         :GetBucketPolicy (get-request url date)
+         :CreateBucketPolicy (put-request url date body "application/json")
+         :DeleteBucketPolicy (delete-request url date)
+         :GetBucketAcl (get-request url date)
+         :CreateBucketAcl (put-request url date body))))
   ([action url]
      (process action url nil)))
 
