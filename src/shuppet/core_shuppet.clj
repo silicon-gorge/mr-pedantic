@@ -7,6 +7,7 @@
             [clojail.core :refer [sandbox safe-read]]
             [clojail.testers :refer [secure-tester-without-def blanket]]
             [shuppet
+             [report :as report]
              [git :as git]
              [securitygroups :refer [ensure-sgs delete-sgs]]
              [elb :refer [ensure-elb delete-elb]]
@@ -117,19 +118,22 @@
   [config]
   (execute-string config))
 
+;TODO: extract campfire and remove all calls in various ensure-*
 (defn apply-config
   [environment app-name]
   (let [config (cf/with-messages {:environment environment :app-name app-name}
-                   (load-config environment app-name))]
+                 (load-config environment app-name))]
     (cf/with-messages {:environment environment :app-name app-name :config config}
       (when app-name
         (validate config))
-      (doto config
-        ensure-sgs
-        ensure-elb
-        ensure-iam
-        ensure-s3s
-        ensure-ddbs))))
+      (binding [report/report (atom [])]
+        (doto config
+          ensure-sgs
+          ensure-elb
+          ensure-iam
+          ensure-s3s
+          ensure-ddbs)
+        @report/report))))
 
 (defn clean-config [environment app-name]
   (let [config (load-config environment app-name)]
