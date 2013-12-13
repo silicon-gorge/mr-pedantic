@@ -9,11 +9,12 @@
 
 (defn- send-message
   [queue-url message]
-  (let [request (get-signed-request "sqs" {:url queue-url
-                                           :params {:Action "SendMessage"
-                                                    :MessageBody message}})]
-    (client/get (request :url)
-                {:headers (request :headers)})))
+  (when-not (e/env :service-sqs-disabled)
+    (let [request (get-signed-request "sqs" {:url queue-url
+                                             :params {:Action "SendMessage"
+                                                      :MessageBody message}})]
+      (client/get (request :url)
+                  {:headers (request :headers)}))))
 
 (defn- elb-created-message
   "Create the message describing the creation of a load balancer."
@@ -22,5 +23,6 @@
                                                :LoadbalancerName elb-name})}))
 
 (defn announce-elb [elb-name environment]
+  ;check nils
   (when-let [q-url (e/env (keyword (str "service-sqs-autoscale-announcements-" environment)))]
     (send-message q-url (elb-created-message elb-name))))
