@@ -1,6 +1,7 @@
 (ns shuppet.ddb
   (:require
    [shuppet
+    [report :as report]
     [util :refer :all]
     [signature :refer [get-signed-request]]
     [campfire :as cf]]
@@ -81,6 +82,7 @@
 (defn- create-table
   [opts]
   (post-request :CreateTable (create-table-body opts))
+  (report/add :CreateTable (str "I've created a new dynamodb table called '" (:TableName opts) "'"))
   (cf/info (str "I've created a new dynamodb table called '" (:TableName opts) "'")))
 
 (defn- formatted-throughput
@@ -118,9 +120,11 @@
     (if ForceDelete
       (future (dorun
                (post-request :DeleteTable {:TableName TableName})
+               (report/add :DeleteTable  (str "I've succesfully deleted the dynamodb table '" TableName "'"))
                (cf/info (str "I've succesfully deleted the dynamodb table '" TableName "'"))
                (Thread/sleep 45000)
                (post-request :CreateTable local)
+               (report/add :CreateTable (str "I've created a new dynamodb table called '" TableName "'"))
                (cf/info (str "I've created a new dynamodb table called '" TableName "'"))))
       (throw-aws-exception "DynamoDB" "POST" (env :service-aws-ddb-url) "400" {:__type "Table Configuration Mismatch" :message "Mismatch in table configuration. If you want to apply the current local configuration, please add :ForceDelete true confirming that its ok to delete the current table and create a new table with the new configuration.Note: All data in the current table will be lost after this operation"} :json))))
 
@@ -133,6 +137,10 @@
         (do
           (post-request :UpdateTable (merge {:ProvisionedThroughput (:ProvisionedThroughput local)}
                                             {:TableName (:TableName local)}))
+          (report/add :UpdateTable  (str "I've succesfully updated the dynamodb table "
+                        (:TableName local)
+                        " with :ProvisionedThroughput "
+                        (:ProvisionedThroughput local)))
           (cf/info (str "I've succesfully updated the dynamodb table "
                         (:TableName local)
                         " with :ProvisionedThroughput "

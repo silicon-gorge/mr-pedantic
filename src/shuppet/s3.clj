@@ -1,6 +1,7 @@
 (ns shuppet.s3
   (:require
    [shuppet
+    [report :as report]
     [signature :refer [get-signed-request]]
     [util :refer :all]
     [campfire :as cf]]
@@ -188,6 +189,7 @@
         local-config (local-acls AccessControlPolicy)]
         ;Not doing the comparison here as is not a requirement now.
     (put-acl AccessControlPolicy local-config url)
+    (report/add :CreateBucketAcl  (str "I've succesfully applied the acl for '" BucketName "'"))
     (cf/info (str "I've succesfully applied the acl for '" BucketName "'"))))
 
 (defn- ensure-policy
@@ -200,10 +202,12 @@
         [r l] (compare-config local remote)]
     (when-not (empty? l)
       (process :CreateBucketPolicy url (write-str (without-nils (merge l-config {:Id Id}))))
+      (report/add :CreateBucketPolicy  (str "I've succesfully created a bucket policy for '" BucketName "'"))
       (cf/info (str "I've succesfully created a bucket policy for '" BucketName "'")))
     (when-not (empty? r)
       (when (empty? l)
         (process :DeleteBucketPolicy url)
+        (report/add :DeleteBucketPolicy (str "I've succesfully deleted the bucket policy for '" BucketName "'"))
         (cf/info (str "I've succesfully deleted the bucket policy for '" BucketName "'"))))))
 
 (defn- ensure-s3
@@ -212,6 +216,7 @@
         get-response (process :ListBucket url)]
     (when (empty? get-response)
       (process :CreateBucket url (create-bucket-body))
+      (report/add :CreateBucket (str "I've created a new S3 bucket called '" BucketName "'"))
       (cf/info (str "I've created a new S3 bucket called '" BucketName "'")))
     (when (:Statement opts)
       (ensure-policy opts))

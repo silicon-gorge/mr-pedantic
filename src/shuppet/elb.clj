@@ -1,6 +1,7 @@
 (ns shuppet.elb
   (:require
    [shuppet
+    [report :as report]
     [campfire :as cf]
     [securitygroups :as sg]
     [signature :refer :all]
@@ -69,13 +70,16 @@
   (dissoc config :HealthCheck))
 
 (defn create-healthcheck [config]
-(get-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
+  (get-request (merge {"Action" "ConfigureHealthCheck"} (to-aws-format (healthcheck-config config))))
   (cf/info (str "I've created a new health check config for elb " (elb-name config)))
+  (report/add :ConfigureHealthCheck (str "I've created a new health check config for elb " (elb-name config)))
   config)
 
 (defn create-elb [config]
   (get-request (merge {"Action" "CreateLoadBalancer"} (to-aws-format  (elb-config config))))
-   (cf/info (str "I've created a new ELB called " (elb-name config)))
+  (report/add :CreateLoadBalancer (str "I've created a new ELB called " (elb-name config))
+              {:elb-name (elb-name config)})
+  (cf/info (str "I've created a new ELB called " (elb-name config)))
   config)
 
 (defn- find-elb [name]
@@ -108,15 +112,15 @@
                                 (children-to-map))
         local-health-check (values-tostring (:HealthCheck local))]
     (when-not (= remote-health-check local-health-check)
-      (create-healthcheck local)
-      (cf/info (str "I've replaced healthcheck config for elb " (elb-name local))))
+      (create-healthcheck local))
     config))
 
 (defn- update-elb [elb-name action prefix fields]
   (get-request (merge {"Action" (name action)
                        "LoadBalancerName" elb-name}
                       (apply hash-map (flatten (list-to-member (name prefix) fields)))))
-  (cf/info (str "I had to " (name action) " " (vec fields) " on " elb-name)))
+  (cf/info (str "I had to " (name action) " " (vec fields) " on " elb-name))
+  (report/add action (str "I had to " (name action) " " (vec fields) " on " elb-name)))
 
 (defn- ensure-listeners [{:keys [local remote] :as config}]
   (let [remote (-> remote

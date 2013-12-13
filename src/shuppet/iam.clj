@@ -1,6 +1,7 @@
 (ns shuppet.iam
   (:require
    [shuppet
+    [report :as report]
     [signature :refer [get-signed-request]]
     [util :refer :all]
     [campfire :as cf]]
@@ -66,6 +67,7 @@
   (process :CreateRole {"RoleName" name
                         "Path" "/"
                         "AssumeRolePolicyDocument" default-role-policy})
+  (report/add :CreateRole  (str "I've created a new iam role  called '" name "'"))
   (cf/info (str "I've created a new iam role  called '" name "'")))
 
 (defn- ensure-role
@@ -83,6 +85,7 @@
   [r-name p-name]
   (process :AddRoleToInstanceProfile {"RoleName" r-name
                                       "InstanceProfileName" p-name})
+  (report/add :AddRoleToInstanceProfile (str  "I've succesfully attached the role name " r-name " to the profile " p-name))
   (cf/info (str  "I've succesfully attached the role name " r-name " to the profile " p-name)))
 
 (defn- ensure-profile-with-role
@@ -93,6 +96,7 @@
 (defn- create-iprofile
   [name]
   (process :CreateInstanceProfile {"InstanceProfileName" name})
+  (report/add :CreateInstanceProfile  (str "I've succesfully created the instance profile : " name))
   (cf/info (str "I've succesfully created the instance profile : " name)))
 
 (defn- iprofile-exists?
@@ -142,6 +146,7 @@
   [r-name {:keys [PolicyName]}]
   (process :DeleteRolePolicy {"RoleName" r-name
                               "PolicyName" PolicyName})
+  (report/add :DeleteRolePolicy  (str "I've succesfully deleted the policy " PolicyName " for role " r-name))
   (cf/info (str "I've succesfully deleted the policy " PolicyName " for role " r-name)))
 
 (defn- put-role-policy
@@ -149,6 +154,7 @@
   (process :PutRolePolicy {"RoleName" r-name
                            "PolicyName" PolicyName
                            "PolicyDocument" PolicyDocument})
+  (report/add :PutRolePolicy  (str "I've succesfully created/updated the policy " PolicyName " for role '" r-name "' with statement " PolicyDocument))
   (cf/info (str "I've succesfully created/updated the policy " PolicyName " for role '" r-name "' with statement " PolicyDocument)))
 
 (defn- ensure-policies

@@ -1,6 +1,7 @@
 (ns shuppet.securitygroups
   (:require
    [shuppet
+    [report :as report]
     [util :refer :all]
     [signature :refer [get-signed-request]]
     [campfire :as cf]]
@@ -49,6 +50,7 @@
     (if-let [response (get-request (merge params {"Action" "CreateSecurityGroup"}))]
       (do
         (cf/info (str "I've created a new security group called '" (:GroupName opts) "'"))
+        (report/add :CreateSecurityGroup  (str "I've created a new security group called '" (:GroupName opts) "'"))
         (xml1-> response :groupId text)))))
 
 (defn- process
@@ -127,12 +129,15 @@
   (when-let [ingress (:Ingress opts)]
     (do
       (when (network-action sg-id ingress :AuthorizeSecurityGroupIngress)
+        (report/add :AuthorizeSecurityGroupIngress (str "I've added the ingress rules '" (vec ingress) "' for the security group '" (:GroupName opts) "'"))
         (cf/info (str "I've added the ingress rules '" (vec ingress) "' for the security group '" (:GroupName opts) "'")))))
   (let [egress (check-default-egress opts)]
     (when-not (empty? egress)
       (when (network-action sg-id egress :AuthorizeSecurityGroupEgress)
+        (report/add :AuthorizeSecurityGroupEgress (str "I've added the egress rules '" (vec egress) "' for the security group '" (:GroupName opts) "'"))
         (cf/info (str "I've added the egress rules '" (vec egress) "' for the security group '" (:GroupName opts) "'")))
       (when (network-action sg-id (list {:IpRanges "0.0.0.0/0" :IpProtocol "-1"}) :RevokeSecurityGroupEgress)
+        (report/add :RevokeSecurityGroupEgress (str "I've revoked the  default egress rules for the security group '"  (:GroupName opts) "'"))
         (cf/info (str "I've revoked the  default egress rules for the security group '"  (:GroupName opts) "'"))))))
 
 (defn- network-config
@@ -153,18 +158,22 @@
   [sg-name sg-id [revoke-config add-config]]
   (when-not (empty? add-config)
     (network-action sg-id add-config :AuthorizeSecurityGroupIngress)
+    (report/add :AuthorizeSecurityGroupIngress (str "I've applied the new ingress rule '" (vec add-config) "' to the existing security group '" sg-name "'"))
     (cf/info (str "I've applied the new ingress rule '" (vec add-config) "' to the existing security group '" sg-name "'")))
   (when-not (empty? revoke-config)
     (network-action sg-id revoke-config :RevokeSecurityGroupIngress)
+    (report/add :RevokeSecurityGroupIngress (str "I've revoked the ingress rule '" (vec revoke-config) "' from the existing security group '" sg-name "'"))
     (cf/info (str "I've revoked the ingress rule '" (vec revoke-config) "' from the existing security group '" sg-name "'"))))
 
 (defn- ensure-egress
   [sg-name sg-id [revoke-config add-config]]
   (when-not (empty? add-config)
     (network-action sg-id add-config :AuthorizeSecurityGroupEgress)
+    (report/add :AuthorizeSecurityGroupEgress (str "I've applied the new egress rule '" (vec add-config) "' to the existing security group '" sg-name "'"))
     (cf/info (str "I've applied the new egress rule '" (vec add-config) "' to the existing security group '" sg-name "'")))
   (when-not (empty? revoke-config)
     (network-action sg-id revoke-config :RevokeSecurityGroupEgress)
+    (report/add :RevokeSecurityGroupEgress (str "I've revoked the egress rule '" (vec revoke-config) "' from the existing security group '" sg-name "'"))
     (cf/info (str "I've revoked the egress rule '" (vec revoke-config) "' from the existing security group '" sg-name "'"))))
 
 (defn- compare-sg
@@ -181,6 +190,7 @@
    (if-let [id (sg-id name vpc-id)]
      (do
        (process :DeleteSecurityGroup {"GroupId" id})
+       (report/add :DeleteSecurityGroup (str "I've succesfully deleted the security group '" name "' with id: " id))
        (cf/info  (str "I've succesfully deleted the security group '" name "' with id: " id))))
    (catch [:type :shuppet.securitygroups/sg-not-found] _
      (log/info "Ignore sg-not-found when deleting"))))
@@ -189,9 +199,7 @@
   [opts]
   (if-let [sg-id (create opts)]
     (try+
-     (do
-       (configure-network sg-id opts)
-       (cf/info (str "I've succesfully created and configured the security group '" (:GroupName opts) "'")))
+     (configure-network sg-id opts)
      (catch map? error
        (delete-sg (:GroupName opts) (:VpcId opts))
        (throw+ error)))))
