@@ -1,14 +1,17 @@
 (ns shuppet.unit.core
   (:require  [slingshot.slingshot :refer [try+ throw+]]
-             [shuppet.core-shuppet :as shuppet])
+             [shuppet.core-shuppet :as shuppet]
+             [shuppet.sqs :as sqs])
   (:use [shuppet.core]
+        [midje.util]
         [midje.sweet])
    (:import [shuppet.core_shuppet LocalConfig]
             [shuppet.core_shuppet LocalAppNames]
             [shuppet.core OnixAppNames]
             [shuppet.core GitConfig]))
 
-(def env-config?  @#'shuppet.core/env-config?)
+(testable-privates shuppet.core env-config?)
+
 
 (fact-group :unit
             (fact "onix is used to get app names"
@@ -39,4 +42,20 @@
                    (shuppet/apply-config anything anything) => ..response.. :times 1)
                   (apply-config "poke" "ditto") => ..response..
                   (provided
-                   (shuppet/apply-config anything anything) => ..response.. :times 1)))
+                   (shuppet/apply-config anything anything) => ..response.. :times 1))
+
+            (fact "sqs message is sent when elb is created while applying a config"
+                  (apply-config ..env.. ..app..) => [{:action :CreateLoadBalancer
+                                              :elb-name ..elb-name..}]
+                  (provided
+                   (#'shuppet.core/*apply-config ..env.. ..app..) =>  [{:action :CreateLoadBalancer
+                                                                :elb-name ..elb-name..}]
+                   (sqs/announce-elb ..elb-name.. ..env.. ) => ..anything.. :times 1))
+
+            (fact "sqs message is sent when elb is created while updating all configs"
+                  (update-configs ..env..) => [[{:action :CreateLoadBalancer
+                                                 :elb-name ..elb-name..}]]
+                  (provided
+                   (#'shuppet.core/concurrent-config-update ..env..) =>  [[{:action :CreateLoadBalancer
+                                                             :elb-name ..elb-name..}]]
+                   (sqs/announce-elb ..elb-name.. ..env.. ) => ..anything.. :times 1)))

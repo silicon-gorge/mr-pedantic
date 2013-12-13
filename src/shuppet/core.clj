@@ -3,6 +3,7 @@
              [util :as util]
              [core-shuppet :as shuppet]
              [git :as git]
+             [sqs :as sqs]
              [campfire :as cf]
              [signature :as signature]
              [validator :refer [validate]]]
@@ -63,11 +64,24 @@
   [name]
   ((set (split (env :service-tooling-applications) #",")) name))
 
-(defn apply-config
+(defn- process-report [report environment]
+  (doall
+   (map #(when (= :CreateLoadBalancer (:action %))
+           (sqs/announce-elb (:elb-name %) environment))
+        report))
+  report)
+
+(defn- *apply-config
   ([environment & [app-name]]
      (when-not (and (= environment "prod") (tooling-service? app-name))
        (with-ent-bindings environment
          (shuppet/apply-config environment app-name)))))
+
+(defn apply-config
+  ([environment & [app-name]]
+     (->
+      (*apply-config environment app-name)
+      (process-report environment))))
 
 (defn get-config
   [environment & [app-name]]
@@ -110,27 +124,36 @@
   (with-ent-bindings environment
     (filter-tooling-services environment (shuppet/app-names))))
 
-(defn update-configs
-  [environment]
-  (let [names (app-names environment)
-        names (filter-tooling-services environment names)]
+(defn- process-reports [reports environment]
+  (doall
+   (map #(process-report % environment)
+        reports))
+  reports)
+
+(defn- concurrent-config-update [environment]
+  (let [names (app-names environment)]
     (doall
      (pmap (fn [app-name]
-             (with-ent-bindings environment
-               (try+
-                (shuppet/apply-config environment app-name)
-                (catch [:type :shuppet.git/git] {:keys [message]}
-                  (warn message))
-                (catch  [:type :shuppet.core-shuppet/invalid-config] {:keys [message]}
-                  (cf/error {:environment environment
-                             :title "error while loading config"
-                             :app-name app-name
-                             :message message })
-                  (error (str app-name " config in " environment " cannot be loaded: " message)))
+             (try+
+              (*apply-config environment app-name)
+              (catch [:type :shuppet.git/git] {:keys [message]}
+                (warn message))
+              (catch  [:type :shuppet.core-shuppet/invalid-config] {:keys [message]}
+                (cf/error {:environment environment
+                           :title "error while loading config"
+                           :app-name app-name
+                           :message message })
+                (error (str app-name " config in " environment " cannot be loaded: " message)))
 
-                (catch Exception e
-                  (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))))))
+              (catch Exception e
+                (error (str app-name " in " environment " failed: " (util/str-stacktrace e))))))
            names))))
+
+(defn update-configs
+  [environment]
+  (->
+   (concurrent-config-update environment)
+   (process-reports environment)))
 
 (defn configure-apps
   [environment]
