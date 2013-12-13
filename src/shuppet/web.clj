@@ -76,9 +76,7 @@
 
 (defn- apply-app-config
   [env name]
-  (core/apply-config env name)
-  (response {:message (str "Succesfully applied the configuration for application " name "."
-                           "Please check the campfire room '" cf-info-room "' for a detailed report.")}))
+  (response {:report (core/apply-config env name)}))
 
 (defn- clean-app-config
   [environment name]
@@ -89,9 +87,7 @@
 
 (defn- apply-apps-config
   [env]
-  (core/configure-apps env)
-  (response  {:message (str "Started applying the configuration for all applications in environment " env "."
-                            "Please check the campfire room '" cf-error-room  "' for any error cases.")}))
+  (response {:reports  (core/configure-apps env)}))
 
 (defn- create-app-config
   [name local master-only]
