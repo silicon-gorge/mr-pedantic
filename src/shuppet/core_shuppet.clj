@@ -26,7 +26,7 @@
 
 (defn- make-sandbox []
   (sandbox shuppet-tester
-           :timeout 2000
+           :timeout 4000
            :init '(future (Thread/sleep 6000)
                           (-> *ns* .getName remove-ns))))
 
