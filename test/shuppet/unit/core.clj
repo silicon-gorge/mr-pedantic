@@ -45,17 +45,17 @@
                    (shuppet/apply-config anything anything) => ..response.. :times 1))
 
             (fact "sqs message is sent when elb is created while applying a config"
-                  (apply-config ..env.. ..app..) => [{:action :CreateLoadBalancer
+                  (apply-config "poke" ..app..) => [{:action :CreateLoadBalancer
                                               :elb-name ..elb-name..}]
                   (provided
-                   (#'shuppet.core/*apply-config ..env.. ..app..) =>  [{:action :CreateLoadBalancer
+                   (#'shuppet.core/*apply-config "poke" ..app..) =>  [{:action :CreateLoadBalancer
                                                                 :elb-name ..elb-name..}]
-                   (sqs/announce-elb ..elb-name.. ..env.. ) => ..anything.. :times 1))
+                   (sqs/announce-elb ..elb-name.. "poke" ) => ..anything.. :times 1))
 
             (fact "sqs message is sent when elb is created while updating all configs"
-                  (update-configs ..env..) => [[{:action :CreateLoadBalancer
+                  (update-configs "poke") => [[{:action :CreateLoadBalancer
                                                  :elb-name ..elb-name..}]]
                   (provided
-                   (#'shuppet.core/concurrent-config-update ..env..) =>  [[{:action :CreateLoadBalancer
+                   (#'shuppet.core/concurrent-config-update "poke") =>  [[{:action :CreateLoadBalancer
                                                              :elb-name ..elb-name..}]]
-                   (sqs/announce-elb ..elb-name.. ..env.. ) => ..anything.. :times 1)))
+                   (sqs/announce-elb ..elb-name.. "poke" ) => ..anything.. :times 1)))
