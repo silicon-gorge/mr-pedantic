@@ -65,10 +65,10 @@
   ((set (split (env :service-tooling-applications) #",")) name))
 
 (defn- process-report [report environment]
-  (doall
-   (map #(when (= :CreateLoadBalancer (:action %))
-           (sqs/announce-elb (:elb-name %) environment))
-        report))
+  (with-ent-bindings environment
+    (doseq [item report]
+      (when (= :CreateLoadBalancer (:action item))
+        (sqs/announce-elb (:elb-name item) environment))))
   report)
 
 (defn- *apply-config
