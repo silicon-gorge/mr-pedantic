@@ -67,8 +67,8 @@
         :environment-entertainment-onix-url "http://onix.brislabs.com:8080/1.x"
 
         ;;aws-config
-        :service-aws-access-key-id-poke "AKIAI7INFGUXMYXWWBYQ"
-        :service-aws-secret-access-key-poke "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"
+        :service-aws-access-key-id-poke "AKIAIIUNFSJESZJXXCQQ"
+        :service-aws-secret-access-key-poke "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"
 
         :service-aws-ec2-url "https://ec2.eu-west-1.amazonaws.com"
         :service-aws-ec2-api-version "2013-10-01"
