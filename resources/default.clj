@@ -3,7 +3,7 @@
                       :InstancePort 8080
                       :Protocol "http"
                       :InstanceProtocol "http"})
-(def elb-healthcheck-ping {:Target "HTTP:8080/1.x/ping"
+(def elb-healthcheck-ping {:Target "HTTP:8080/healthcheck"
                            :HealthyThreshold 2
                            :UnhealthyThreshold 4
                            :Interval 12
