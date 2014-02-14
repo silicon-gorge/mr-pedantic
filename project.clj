@@ -82,6 +82,7 @@
         :service-aws-sqs-api-version "2012-11-05"
 
         ;;git-config
+        :service-git-timeout "10"
         :service-base-git-repository-url "ssh://snc@source.nokia.com/shuppet/git/"
         :service-base-git-repository-path "/tmp/repos/"
         :service-snc-api-base-url "https://source.nokia.com/api/v2/"

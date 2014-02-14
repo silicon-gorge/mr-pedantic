@@ -1,5 +1,6 @@
 (ns shuppet.git
   (:require [environ.core :refer [env]]
+            [clojail.core :refer [thunk-timeout]]
             [shuppet
              [campfire :as cf]
              [util :as util]]
@@ -57,6 +58,8 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
   "|1|UoVqPabY168wScQJfyEUyDX35Xk=|DTUa0H6lR05jNuvHIMl4ReJLqXM= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
 |1|xtbIYF+FIx2dSIOML++8N0Ohwuw=|f11MX7uxFmdYTaPNxh961FunJI0= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
 ")
+
+(def ^:private snc-timeout (Integer/parseInt (env :service-git-timeout)))
 
 (def ^:private base-git-url (env :service-base-git-repository-url))
 (def ^:private base-git-path (env :service-base-git-repository-path))
@@ -193,7 +196,9 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       (info (str "Repo '" repo-name "' not found - attempting to clone"))
       (clone-repo repo-name branch))))
 
-(defn get-data
+
+
+(defn- *get-data
   "Fetches the data corresponding to the given application from GIT"
   [env name]
   (let [branch (repo-branch env name)]
@@ -209,6 +214,10 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       (catch MissingObjectException e
         (rm "-rf" (repo-path name branch))
         (send-error (str "Missing object for revision HEAD in repo '" name "' in branch " branch ":" e))))))
+
+(defn get-data
+  [environment name]
+  (thunk-timeout (fn [] (*get-data environment name)) snc-timeout :s))
 
 (defn- remote-branches
   [name]
@@ -322,9 +331,13 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
       {:status 200
        :branches (map #(last (split (.getName %) #"/")) (remote-branches name))})))
 
-(defn create-application
+(defn- *create-application
   [name master-only]
   (merge
    (configure-app name master-only)
    {:path (str base-git-url name)
     :name name}))
+
+(defn create-application
+  [name master-only]
+  (thunk-timeout (fn [] (*create-application name master-only)) snc-timeout :s))
