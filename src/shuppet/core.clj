@@ -150,9 +150,9 @@
                 {:app app-name
                  :error message})
               (catch Exception e
-                (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))
+                (error (str app-name " in " environment " failed: " (.getMessage e) " stacktrace: " (util/str-stacktrace e)))
                 {:app app-name
-                 :error (util/str-stacktrace e)})
+                 :error (.getMessage e)})
               (catch Object e
                 (error (str app-name " in " environment " failed: " e))
                 {:app app-name
