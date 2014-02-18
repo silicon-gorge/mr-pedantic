@@ -135,18 +135,28 @@
     (doall
      (pmap (fn [app-name]
              (try+
-              (*apply-config environment app-name)
+              {:app app-name
+               :report (*apply-config environment app-name)}
               (catch [:type :shuppet.git/git] {:keys [message]}
-                (warn message))
+                (warn message)
+                {:app app-name
+                 :error message})
               (catch  [:type :shuppet.core-shuppet/invalid-config] {:keys [message]}
                 (cf/error {:environment environment
                            :title "error while loading config"
                            :app-name app-name
                            :message message })
-                (error (str app-name " config in " environment " cannot be loaded: " message)))
-
+                (error (str app-name " config in " environment " cannot be loaded: " message))
+                {:app app-name
+                 :error message})
+              (catch Object e
+                (error "unexpected error: " &throw-context)
+                {:app app-name
+                 :error (:object e)})
               (catch Exception e
-                (error (str app-name " in " environment " failed: " (util/str-stacktrace e))))))
+                (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))
+                {:app app-name
+                 :error (util/str-stacktrace e)})))
            names))))
 
 (defn update-configs
