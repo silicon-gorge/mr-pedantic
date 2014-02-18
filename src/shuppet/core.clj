@@ -133,7 +133,7 @@
 (defn- concurrent-config-update [environment]
   (let [names (app-names environment)]
     (doall
-     (pmap (fn [app-name]
+     (map (fn [app-name]
              (try+
               {:app app-name
                :report (*apply-config environment app-name)}
