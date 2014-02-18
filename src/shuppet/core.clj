@@ -149,14 +149,14 @@
                 (error (str app-name " config in " environment " cannot be loaded: " message))
                 {:app app-name
                  :error message})
-              (catch Object e
-                (error "unexpected error: " &throw-context)
-                {:app app-name
-                 :error (:object e)})
               (catch Exception e
                 (error (str app-name " in " environment " failed: " (util/str-stacktrace e)))
                 {:app app-name
-                 :error (util/str-stacktrace e)})))
+                 :error (util/str-stacktrace e)})
+              (catch Object e
+                (error (str app-name " in " environment " failed: " e))
+                {:app app-name
+                 :error e})))
            names))))
 
 (defn update-configs
