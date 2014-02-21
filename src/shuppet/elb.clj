@@ -7,12 +7,19 @@
     [signature :refer :all]
     [util :refer :all]]
    [clj-http.client :as client]
+   [clojure.string :refer [lower-case]]
    [environ.core :refer [env]]
    [clojure.tools.logging :as log]
    [clojure.xml :as xml]
    [clojure.zip :as zip :refer [children xml-zip]]
    [slingshot.slingshot :refer [throw+ try+]]
    [clojure.data.zip.xml :refer [xml1-> text xml->]]))
+
+(defn values-to-lowercase
+  [m]
+  (into {} (map (fn [[k v]]
+                  [k (lower-case v)])
+                m)))
 
 (defn get-request
   [params]
@@ -127,8 +134,9 @@
                    (get-elements [:ListenerDescriptions :member children])
                    (filter-children :Listener)
                    (children-to-maps))
+        remote (map #(values-to-lowercase %) remote)
         name (elb-name local)
-        local (map #(values-to-uppercase %) (:Listeners local))
+        local (map #(values-to-lowercase %) (:Listeners local))
         [r l] (compare-config local remote)]
     (when-not (empty? r)
       (update-elb name :DeleteLoadBalancerListeners :LoadBalancerPorts (map #(:LoadBalancerPort %) r)))

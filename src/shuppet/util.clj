@@ -44,12 +44,6 @@
   [s]
   (java.net.URLDecoder/decode s "UTF-8"))
 
-(defn values-to-uppercase
-  [m]
-  (into {} (map (fn [[k v]]
-                  [k (upper-case v)])
-                m)))
-
 (defn keys-as-string
   [m]
   (into {}
