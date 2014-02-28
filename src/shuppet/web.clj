@@ -101,6 +101,31 @@
            :status code
            :message message}))
 
+(defn- env-schedule
+  [env]
+  (if-let [schedule (scheduler/get-schedule env)]
+    (response schedule)
+    (response {:message "No jobs are currently scheduled"} 404)))
+
+(defn- stop-schedule
+  [env name]
+  (core/stop-schedule-temporarily env name)
+  (response {:message (str "Scheduler for " name " is stopped for 30 minutes in " env)}))
+
+(defn- start-schedule
+  [env name]
+  (core/restart-app-schedule env name)
+  (env-schedule env))
+
+(defn- app-schedule
+  [env name action]
+  (case action
+    "stop" (stop-schedule env name)
+    "start" (start-schedule env name)
+    (if-let [start-time (core/get-app-schedule env name)]
+      (response {:message (str "The scheduler is currently stopped for " name "  and will be restarted again at " start-time)})
+      (env-schedule env))))
+
 (def ^:private resources
   {:GET
    (array-map
@@ -115,7 +140,8 @@
     "/1.x/envs/:env-name/schedule" "Shows the current shuppet schedule, if any"
     "/1.x/envs/:env-name/apps/apply" "Apply configuration for all applications listed in Onix"
     "/1.x/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from GIT repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
-    "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment")
+    "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment"
+    "/1.x/envs/:env-name/apps/:app-name/schedule" "Displays the current schedule for the app, use QS action=start/stop to start/stop the scheduler (the default interval is 30 minutes)")
    :POST
    (array-map
     "/1.x/apps/:app-name" "Create an application configuration, QS Parameter masteronly=true, just creates the master branch"
@@ -146,9 +172,7 @@
 
   (GET "/:env/schedule"
        [env]
-       (if-let [schedule (scheduler/get-schedule env)]
-         (response schedule)
-         (response {:message "No jobs are currently scheduled"} 404)))
+       (env-schedule env))
 
   (POST "/:env/schedule"
         [env action interval]
@@ -158,14 +182,17 @@
        [env name]
        (show-app-config env name))
 
+  (GET "/:env/apps/:name/schedule"
+       [env name action]
+       (app-schedule env name action))
+
   (GET "/:env/apps/:name/apply"
        [env name]
        (apply-app-config env name))
 
   (GET "/:env/apps/:name/clean"
        [env name]
-       (clean-app-config env name))
-)
+       (clean-app-config env name)))
 
 (defroutes routes
   (context

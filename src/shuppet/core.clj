@@ -11,9 +11,14 @@
             [clojure.tools.logging :refer [info warn error]]
             [clj-http.client :as client]
             [environ.core :refer [env]]
-            [slingshot.slingshot :refer [try+ throw+]])
+            [slingshot.slingshot :refer [try+ throw+]]
+            [clj-time.local :refer [local-now to-local-date-time]]
+            [clj-time.core :refer [plus after? minutes]])
   (:import [shuppet.core_shuppet LocalConfig]
            [shuppet.core_shuppet LocalAppNames]))
+
+(def no-schedule-services  (atom {}))
+(def default-stop-interval 30)
 
 (deftype OnixAppNames [^String url]
            shuppet/ApplicationNames
@@ -71,9 +76,38 @@
         (sqs/announce-elb (:elb-name item) environment))))
   report)
 
+(defn stop-schedule-temporarily
+  [env name]
+  (let [t-key (keyword (str env "-" name))
+        services @no-schedule-services]
+    (reset! no-schedule-services (merge services {t-key (local-now)}))))
+
+(defn restart-app-schedule
+  [env name]
+  (if-let [services @no-schedule-services]
+    (reset! no-schedule-services (dissoc services (keyword (str env "-" name))))))
+
+(defn get-app-schedule
+  [env name]
+  (if-let [start-time (@no-schedule-services (keyword (str env "-" name)))]
+    (plus start-time (minutes default-stop-interval))))
+
+(defn- is-stopped?
+  [env name]
+  (if-let [services @no-schedule-services]
+    (if (after? (local-now) (get-app-schedule env name))
+        (not (empty? (reset! no-schedule-services (dissoc services (keyword (str env "-" name))))))
+        true)))
+
+(defn- can-apply-config?
+  [env name]
+  (not (or (is-stopped? env name)
+           (and (= env "prod")
+                (tooling-service? name)))))
+
 (defn- *apply-config
   ([environment & [app-name]]
-     (when-not (and (= environment "prod") (tooling-service? app-name))
+     (when (can-apply-config? environment app-name)
        (with-ent-bindings environment
          (shuppet/apply-config environment app-name)))))
 
