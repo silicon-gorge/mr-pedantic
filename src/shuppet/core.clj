@@ -21,35 +21,35 @@
 (def default-stop-interval 30)
 
 (deftype OnixAppNames [^String url]
-           shuppet/ApplicationNames
-           (list-names
-             [_]
-             (let [url (str url "/applications")
-                   response (client/get url {:as :json
-                                             :throw-exceptions false})
-                   status (:status response)]
-               (if (= 200 status)
-                 (get-in response [:body :applications])
-                 (cf/error {:title "Failed to get application list from Onix."
-                            :url url
-                            :status status
-                            :message (:body response)})))))
+  shuppet/ApplicationNames
+  (list-names
+    [_]
+    (let [url (str url "/applications")
+          response (client/get url {:as :json
+                                    :throw-exceptions false})
+          status (:status response)]
+      (if (= 200 status)
+        (get-in response [:body :applications])
+        (cf/error {:title "Failed to get application list from Onix."
+                   :url url
+                   :status status
+                   :message (:body response)})))))
 
 (deftype GitConfig []
-           shuppet/Configuration
-           (as-string
-             [_ environment filename]
-             (git/get-data environment filename))
-           (configure
-             [_ appname master-only]
-             (git/create-application appname master-only)))
+  shuppet/Configuration
+  (as-string
+    [_ environment filename]
+    (git/get-data environment filename))
+  (configure
+    [_ appname master-only]
+    (git/create-application appname master-only)))
 
 (defn aws-keys-map
   [environment]
   {:key (env (keyword (str "service-aws-access-key-id-" environment)))
    :secret (env (keyword (str "service-aws-secret-access-key-" environment)))} )
 
-;change env arg to flag
+                                        ;change env arg to flag
 (defmacro with-ent-bindings
   "Specific Entertainment bindings"
   [environment & body]
@@ -61,8 +61,8 @@
                                          (shuppet/LocalConfig.)
                                          (GitConfig.))
                signature/*aws-credentials* (if local?#
-                                      signature/default-keys-map
-                                      (aws-keys-map ~environment))]
+                                             signature/default-keys-map
+                                             (aws-keys-map ~environment))]
        ~@body)))
 
 (defn- tooling-service?
@@ -94,10 +94,11 @@
 
 (defn- is-stopped?
   [env name]
-  (if-let [services @no-schedule-services]
-    (if (after? (local-now) (get-app-schedule env name))
+  (let [services @no-schedule-services]
+    (when-not (empty? services)
+      (if (after? (local-now) (get-app-schedule env name))
         (not (empty? (reset! no-schedule-services (dissoc services (keyword (str env "-" name))))))
-        true)))
+        true))))
 
 (defn- can-apply-config?
   [env name]
@@ -168,30 +169,30 @@
   (let [names (app-names environment)]
     (doall
      (map (fn [app-name]
-             (try+
-              {:app app-name
-               :report (*apply-config environment app-name)}
-              (catch [:type :shuppet.git/git] {:keys [message]}
-                (warn message)
-                {:app app-name
-                 :error message})
-              (catch  [:type :shuppet.core-shuppet/invalid-config] {:keys [message]}
-                (cf/error {:environment environment
-                           :title "error while loading config"
-                           :app-name app-name
-                           :message message })
-                (error (str app-name " config in " environment " cannot be loaded: " message))
-                {:app app-name
-                 :error message})
-              (catch Exception e
-                (error (str app-name " in " environment " failed: " (.getMessage e) " stacktrace: " (util/str-stacktrace e)))
-                {:app app-name
-                 :error (.getMessage e)})
-              (catch Object e
-                (error (str app-name " in " environment " failed: " e))
-                {:app app-name
-                 :error e})))
-           names))))
+            (try+
+             {:app app-name
+              :report (*apply-config environment app-name)}
+             (catch [:type :shuppet.git/git] {:keys [message]}
+               (warn message)
+               {:app app-name
+                :error message})
+             (catch  [:type :shuppet.core-shuppet/invalid-config] {:keys [message]}
+               (cf/error {:environment environment
+                          :title "error while loading config"
+                          :app-name app-name
+                          :message message })
+               (error (str app-name " config in " environment " cannot be loaded: " message))
+               {:app app-name
+                :error message})
+             (catch Exception e
+               (error (str app-name " in " environment " failed: " (.getMessage e) " stacktrace: " (util/str-stacktrace e)))
+               {:app app-name
+                :error (.getMessage e)})
+             (catch Object e
+               (error (str app-name " in " environment " failed: " e))
+               {:app app-name
+                :error e})))
+          names))))
 
 (defn update-configs
   [environment]
