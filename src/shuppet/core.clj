@@ -94,11 +94,12 @@
 
 (defn- is-stopped?
   [env name]
-  (let [services @no-schedule-services]
-    (when-not (empty? services)
-      (if (after? (local-now) (get-app-schedule env name))
-        (not (empty? (reset! no-schedule-services (dissoc services (keyword (str env "-" name))))))
-        true))))
+  (let [schedule (get-app-schedule env name)]
+    (if schedule
+      (if (after? (local-now) schedule)
+        (not (empty? (reset! no-schedule-services (dissoc @no-schedule-services (keyword (str env "-" name))))))
+        true)
+      false)))
 
 (defn- can-apply-config?
   [env name]
