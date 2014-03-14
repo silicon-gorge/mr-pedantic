@@ -11,6 +11,8 @@
             [shuppet.core GitConfig]))
 
 (testable-privates shuppet.core env-config?)
+(testable-privates shuppet.core apply-config)
+(testable-privates shuppet.core concurrent-config-update)
 
 
 (fact-group :unit
@@ -48,14 +50,15 @@
                   (apply-config "poke" ..app..) => [{:action :CreateLoadBalancer
                                               :elb-name ..elb-name..}]
                   (provided
-                   (#'shuppet.core/*apply-config "poke" ..app..) =>  [{:action :CreateLoadBalancer
+                   (shuppet/apply-config "poke" ..app..) =>  [{:action :CreateLoadBalancer
                                                                 :elb-name ..elb-name..}]
                    (sqs/announce-elb ..elb-name.. "poke" ) => ..anything.. :times 1))
 
             (fact "sqs message is sent when elb is created while updating all configs"
-                  (update-configs "poke") => [[{:action :CreateLoadBalancer
-                                                 :elb-name ..elb-name..}]]
+                  (update-configs "poke") => (list {:app ..app.. :report [{:action :CreateLoadBalancer
+                                                 :elb-name ..elb-name..}]})
                   (provided
-                   (#'shuppet.core/concurrent-config-update "poke") =>  [[{:action :CreateLoadBalancer
-                                                             :elb-name ..elb-name..}]]
+                   (app-names "poke") => [..app..]
+                   (shuppet/apply-config "poke" ..app..) =>  [{:action :CreateLoadBalancer
+                                                                :elb-name ..elb-name..}]
                    (sqs/announce-elb ..elb-name.. "poke" ) => ..anything.. :times 1)))

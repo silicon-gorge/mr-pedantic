@@ -18,7 +18,8 @@
            [shuppet.core_shuppet LocalAppNames]))
 
 (def no-schedule-services  (atom {}))
-(def default-stop-interval 30)
+(def default-stop-interval 60)
+(def max-stop-interval 720)
 
 (deftype OnixAppNames [^String url]
   shuppet/ApplicationNames
@@ -70,54 +71,48 @@
   ((set (split (env :service-tooling-applications) #",")) name))
 
 (defn- process-report [report environment]
-  (with-ent-bindings environment
-    (doseq [item report]
-      (when (= :CreateLoadBalancer (:action item))
-        (sqs/announce-elb (:elb-name item) environment))))
+  (doseq [item report]
+    (when (= :CreateLoadBalancer (:action item))
+      (sqs/announce-elb (:elb-name item) environment)))
   report)
 
 (defn stop-schedule-temporarily
-  [env name]
-  (let [t-key (keyword (str env "-" name))
-        services @no-schedule-services]
-    (reset! no-schedule-services (merge services {t-key (local-now)}))))
+  [env name interval]
+  (let [interval (or interval default-stop-interval)
+        interval (if (> interval max-stop-interval) max-stop-interval interval)
+        t-key (keyword (str env "-" name))]
+    (swap! no-schedule-services merge {t-key (plus (local-now) (minutes interval))})))
 
 (defn restart-app-schedule
   [env name]
-  (if-let [services @no-schedule-services]
-    (reset! no-schedule-services (dissoc services (keyword (str env "-" name))))))
+  (swap! no-schedule-services dissoc (keyword (str env "-" name))))
 
 (defn get-app-schedule
   [env name]
-  (if-let [start-time (@no-schedule-services (keyword (str env "-" name)))]
-    (plus start-time (minutes default-stop-interval))))
+  (@no-schedule-services (keyword (str env "-" name))))
 
 (defn- is-stopped?
   [env name]
   (let [schedule (get-app-schedule env name)]
     (if schedule
       (if (after? (local-now) schedule)
-        (not (empty? (reset! no-schedule-services (dissoc @no-schedule-services (keyword (str env "-" name))))))
+        (not (empty? (swap! no-schedule-services dissoc (keyword (str env "-" name)))))
         true)
       false)))
 
-(defn- can-apply-config?
-  [env name]
-  (not (or (is-stopped? env name)
-           (and (= env "prod")
-                (tooling-service? name)))))
+(defn direct-apply-config
+  [environment & [app-name]]
+  (when-not (and (= environment "prod")
+                 (tooling-service? app-name))
+    (with-ent-bindings environment
+      (->
+       (shuppet/apply-config environment app-name)
+       (process-report environment)))))
 
-(defn- *apply-config
+(defn- apply-config
   ([environment & [app-name]]
-     (when (can-apply-config? environment app-name)
-       (with-ent-bindings environment
-         (shuppet/apply-config environment app-name)))))
-
-(defn apply-config
-  ([environment & [app-name]]
-     (->
-      (*apply-config environment app-name)
-      (process-report environment))))
+     (when-not (is-stopped? environment app-name)
+       (direct-apply-config environment app-name))))
 
 (defn get-config
   [environment & [app-name]]
@@ -160,19 +155,13 @@
   (with-ent-bindings environment
     (filter-tooling-services environment (shuppet/app-names))))
 
-(defn- process-reports [reports environment]
-  (doall
-   (map #(process-report % environment)
-        reports))
-  reports)
-
 (defn- concurrent-config-update [environment]
   (let [names (app-names environment)]
     (doall
      (map (fn [app-name]
             (try+
              {:app app-name
-              :report (*apply-config environment app-name)}
+              :report (apply-config environment app-name)}
              (catch [:type :shuppet.git/git] {:keys [message]}
                (warn message)
                {:app app-name
@@ -198,8 +187,7 @@
 (defn update-configs
   [environment]
   (->
-   (concurrent-config-update environment)
-   (process-reports environment)))
+   (concurrent-config-update environment)))
 
 (defn configure-apps
   [environment]

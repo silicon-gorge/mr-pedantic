@@ -56,9 +56,7 @@
 
 (defn- apply-env-config
   [env]
-  (core/apply-config env)
-  (response  {:message (str "Succesfully applied the configuration for environment " env "."
-                            "Please check the campfire room '" cf-info-room "' for a detailed report.")}))
+  (response {:report (core/direct-apply-config env)}))
 
 (defn- list-apps
   [env]
@@ -76,7 +74,7 @@
 
 (defn- apply-app-config
   [env name]
-  (response {:report (core/apply-config env name)}))
+  (response {:report (core/direct-apply-config env name)}))
 
 (defn- clean-app-config
   [environment name]
@@ -108,9 +106,9 @@
     (response {:message "No jobs are currently scheduled"} 404)))
 
 (defn- stop-schedule
-  [env name]
-  (core/stop-schedule-temporarily env name)
-  (response {:message (str "Scheduler for " name " is stopped for 30 minutes in " env)}))
+  [env name interval]
+  (core/stop-schedule-temporarily env name interval)
+  (response {:message (str "Scheduler for " name " is stopped for " interval " minutes in environment" env)}))
 
 (defn- start-schedule
   [env name]
@@ -118,9 +116,9 @@
   (env-schedule env))
 
 (defn- app-schedule
-  [env name action]
+  [env name action interval]
   (case action
-    "stop" (stop-schedule env name)
+    "stop" (stop-schedule env name interval)
     "start" (start-schedule env name)
     (if-let [start-time (core/get-app-schedule env name)]
       (response {:message (str "The scheduler is currently stopped for " name "  and will be restarted again at " start-time)})
@@ -141,7 +139,7 @@
     "/1.x/envs/:env-name/apps/apply" "Apply configuration for all applications listed in Onix"
     "/1.x/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from GIT repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
     "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment"
-    "/1.x/envs/:env-name/apps/:app-name/schedule" "Displays the current schedule for the app, use QS action=start/stop to start/stop the scheduler (the default interval is 30 minutes)")
+    "/1.x/envs/:env-name/apps/:app-name/schedule" "Displays the current schedule for the app, use QS action=start/stop to start/stop the scheduler interval=xx in minutes (the default interval is 60 minutes, and the maximum stop interval is 720 minutes.)")
    :POST
    (array-map
     "/1.x/apps/:app-name" "Create an application configuration, QS Parameter masteronly=true, just creates the master branch"
@@ -183,8 +181,8 @@
        (show-app-config env name))
 
   (GET "/:env/apps/:name/schedule"
-       [env name action]
-       (app-schedule env name action))
+       [env name action interval]
+       (app-schedule env name action interval))
 
   (GET "/:env/apps/:name/apply"
        [env name]
