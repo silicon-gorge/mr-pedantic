@@ -23,6 +23,10 @@
     </encoder>
   </appender>
 
+  <appender name="metrics" class="com.yammer.metrics.logback.InstrumentedAppender">
+       <filter class="com.ovi.common.logging.GraphiteReporterFilter" />
+  </appender>
+
   <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>${SERVICE_LOGGING_CONSOLETHRESHOLD:-info}</level>
