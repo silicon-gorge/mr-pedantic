@@ -1,6 +1,5 @@
 (ns shuppet.campfire
   (:require
-   [shuppet.util :refer [to-vec]]
    [slingshot.slingshot :refer [try+ throw+]]
    [environ.core :refer [env]]
    [clj-campfire.core :as cf]))
@@ -59,7 +58,7 @@
                *error-rooms* error-rooms#]
        (try+
         ~@body
-        (catch [:type :shuppet.util/aws] e#
+        (catch [:type :cluppet.util/aws] e#
           (error (merge {:environment ~environment :app-name ~app-name} e#))
           (throw+ e#))
         (catch [:type :shuppet.core-shuppet/invalid-config] {:keys [message#] :as e#}

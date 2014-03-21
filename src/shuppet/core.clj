@@ -1,79 +1,76 @@
 (ns shuppet.core
   (:require [shuppet
              [util :as util]
-             [core-shuppet :as shuppet]
              [git :as git]
              [sqs :as sqs]
              [campfire :as cf]
-             [signature :as signature]
              [validator :refer [validate]]]
+            [cluppet
+             [core :as cl-core]
+             [signature :as cl-sign]]
             [clojure.string :refer [lower-case split]]
             [clojure.tools.logging :refer [info warn error]]
             [clj-http.client :as client]
-            [environ.core :refer [env]]
+            [environ.core :as env]
             [slingshot.slingshot :refer [try+ throw+]]
             [clj-time.local :refer [local-now to-local-date-time]]
-            [clj-time.core :refer [plus after? minutes]])
-  (:import [shuppet.core_shuppet LocalConfig]
-           [shuppet.core_shuppet LocalAppNames]))
+            [clj-time.core :refer [plus after? minutes]]))
 
 (def no-schedule-services  (atom {}))
 (def default-stop-interval 30)
 
-(deftype OnixAppNames [^String url]
-  shuppet/ApplicationNames
-  (list-names
-    [_]
-    (let [url (str url "/applications")
-          response (client/get url {:as :json
-                                    :throw-exceptions false})
-          status (:status response)]
-      (if (= 200 status)
-        (get-in response [:body :applications])
-        (cf/error {:title "Failed to get application list from Onix."
-                   :url url
-                   :status status
-                   :message (:body response)})))))
+(def default-keys-map
+  {:key (env/env :service-aws-access-key-id-poke)
+   :secret (env/env :service-aws-secret-access-key-poke)})
 
-(deftype GitConfig []
-  shuppet/Configuration
-  (as-string
-    [_ environment filename]
-    (git/get-data environment filename))
-  (configure
-    [_ appname master-only]
-    (git/create-application appname master-only)))
+(defn onix-app-names
+  []
+  (let [url (str  (env/env :environment-entertainment-onix-url) "/applications")
+        response (client/get url {:as :json
+                                  :throw-exceptions false})
+        status (:status response)]
+    (if (= 200 status)
+      (get-in response [:body :applications])
+      (cf/error {:title "Failed to get application list from Onix."
+                 :url url
+                 :status status
+                 :message (:body response)}))))
+
+(defn local-app-names
+  []
+  (split (env/env :service-local-app-names) #","))
+
+(defn git-config-as-string
+  [environment app-name]
+  (git/get-data environment app-name))
+
+(defn create-git-config
+  [appname master-only]
+  (git/create-application appname master-only))
 
 (defn aws-keys-map
   [environment]
-  {:key (env (keyword (str "service-aws-access-key-id-" environment)))
-   :secret (env (keyword (str "service-aws-secret-access-key-" environment)))} )
+  {:key (env/env (keyword (str "service-aws-access-key-id-" environment)))
+   :secret (env/env (keyword (str "service-aws-secret-access-key-" environment)))} )
 
                                         ;change env arg to flag
 (defmacro with-ent-bindings
   "Specific Entertainment bindings"
   [environment & body]
   `(let [local?# (= "local" ~environment)]
-     (binding [shuppet/*application-names* (if local?#
-                                             (shuppet/LocalAppNames.)
-                                             (OnixAppNames. (env :environment-entertainment-onix-url)))
-               shuppet/*configuration* (if local?#
-                                         (shuppet/LocalConfig.)
-                                         (GitConfig.))
-               signature/*aws-credentials* (if local?#
-                                             signature/default-keys-map
-                                             (aws-keys-map ~environment))]
+     (binding [cl-sign/*aws-credentials* (if local?#
+                                           default-keys-map
+                                           (aws-keys-map ~environment))]
        ~@body)))
 
 (defn- tooling-service?
   [name]
-  ((set (split (env :service-tooling-applications) #",")) name))
+  ((set (split (env/env :service-tooling-applications) #",")) name))
 
-(defn- process-report [report environment]
-  (with-ent-bindings environment
-    (doseq [item report]
-      (when (= :CreateLoadBalancer (:action item))
-        (sqs/announce-elb (:elb-name item) environment))))
+(defn- process-report [report env]
+  (doseq [item report]
+    (when (= :CreateLoadBalancer (:action item))
+      (sqs/announce-elb (:elb-name item) env)))
   report)
 
 (defn stop-schedule-temporarily
@@ -107,48 +104,56 @@
            (and (= env "prod")
                 (tooling-service? name)))))
 
-(defn- *apply-config
-  ([environment & [app-name]]
-     (when (can-apply-config? environment app-name)
-       (with-ent-bindings environment
-         (shuppet/apply-config environment app-name)))))
-
-(defn apply-config
-  ([environment & [app-name]]
-     (->
-      (*apply-config environment app-name)
-      (process-report environment))))
-
 (defn get-config
-  [environment & [app-name]]
-  (with-ent-bindings environment
-    (when-let [config (shuppet/load-config environment app-name)]
-      (when app-name
-        (validate config))
-      config)))
+  ([env]
+     (cl-core/evaluate-string (git/get-data env)))
+  ([env app]
+     (get-config (git/get-data env) env app))
+  ([env-str-config env app]
+     (cl-core/evaluate-string [env-str-config (git/get-data env app)]
+                      {:$app-name app
+                       :$env env})))
 
 (defn- env-config? [config]
   (re-find #"\(def +\$" config))
 
 (defn validate-config
-  [environment app-name config]
-  (with-ent-bindings environment
-    (if (env-config? config)
-      (shuppet/try-env-config config)
-      (when-let [config (shuppet/try-app-config (or environment "poke") (or app-name "app-name") config)]
-        (validate config)
-        config))))
+  [env app config]
+  (let [env (or env "poke")
+        app (or app "app-name")
+        config (if (env-config? config)
+                 (cl-core/evaluate-string config)
+                 (cl-core/evaluate-string [(git/get-data env) config]
+                                  {:$app-name app
+                                   :$env env}))]
+    (validate config)
+    config))
 
 (defn create-config
-  [environment app-name master-only]
-  (let [master-only (or master-only (tooling-service? app-name))]
-    (with-ent-bindings environment
-      (shuppet/create-config app-name master-only))))
+  [env app master-only]
+  (when-not (= "local" env)
+    (let [master-only (or master-only (tooling-service? app))]
+      (create-git-config app master-only))))
+
+(defn apply-config
+  ([env]
+     (with-ent-bindings env
+       (->
+        (cl-core/apply-config (get-config env))
+        (process-report env))))
+  ([env app]
+     (apply-config (git/get-data env) env app))
+  ([env-str-config env app]
+     (when (can-apply-config? env app)
+       (with-ent-bindings env
+         (->
+          (cl-core/apply-config (get-config env-str-config env app))
+           (process-report env))))))
 
 (defn clean-config
-  [environment app-name]
-  (with-ent-bindings environment
-    (shuppet/clean-config environment app-name)))
+  [env app]
+  (with-ent-bindings env
+    (cl-core/clean-config (get-config env app))))
 
 (defn- filter-tooling-services
   [environment names]
@@ -157,51 +162,40 @@
     names))
 
 (defn app-names [environment]
-  (with-ent-bindings environment
-    (filter-tooling-services environment (shuppet/app-names))))
+  (filter-tooling-services
+   environment
+   (if (= "local" environment)
+     (local-app-names)
+     (onix-app-names))))
 
-(defn- process-reports [reports environment]
-  (doall
-   (map #(process-report % environment)
-        reports))
-  reports)
-
-(defn- concurrent-config-update [environment]
-  (let [names (app-names environment)]
-    (doall
-     (map (fn [app-name]
-            (try+
-             {:app app-name
-              :report (*apply-config environment app-name)}
-             (catch [:type :shuppet.git/git] {:keys [message]}
-               (warn message)
-               {:app app-name
-                :error message})
-             (catch  [:type :shuppet.core-shuppet/invalid-config] {:keys [message]}
-               (cf/error {:environment environment
-                          :title "error while loading config"
-                          :app-name app-name
-                          :message message })
-               (error (str app-name " config in " environment " cannot be loaded: " message))
-               {:app app-name
-                :error message})
-             (catch Exception e
-               (error (str app-name " in " environment " failed: " (.getMessage e) " stacktrace: " (util/str-stacktrace e)))
-               {:app app-name
-                :error (.getMessage e)})
-             (catch Object e
-               (error (str app-name " in " environment " failed: " e))
-               {:app app-name
-                :error e})))
-          names))))
-
-(defn update-configs
-  [environment]
-  (->
-   (concurrent-config-update environment)
-   (process-reports environment)))
+(defn update-configs [env-str-config env]
+  (let [apps (onix-app-names env)]
+    (doseq [app apps]
+      (try+
+       {:app app
+        :report (apply-config env-str-config env app)}
+       (catch [:type :shuppet.git/git] {:keys [message]}
+         (warn message)
+         {:app app
+          :error message})
+       (catch  [:type :cluppet.core/invalid-config] {:keys [message]}
+         (cf/error {:environment env
+                    :title "error while loading config"
+                    :app-name app
+                    :message message })
+         (error (str app " config in " env " cannot be loaded: " message))
+         {:app app
+          :error message})
+       (catch Exception e
+         (error (str app " in " env " failed: " (.getMessage e) " stacktrace: " (util/str-stacktrace e)))
+         {:app app
+          :error (.getMessage e)})
+       (catch Object e
+         (error (str app " in " env " failed: " e))
+         {:app app
+          :error e})))))
 
 (defn configure-apps
-  [environment]
-  (apply-config environment)
-  (update-configs environment))
+  [env]
+  (apply-config env)
+  (update-configs (git/get-data env) env))

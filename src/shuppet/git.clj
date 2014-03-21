@@ -2,8 +2,7 @@
   (:require [environ.core :refer [env]]
             [clojail.core :refer [thunk-timeout]]
             [shuppet
-             [campfire :as cf]
-             [util :as util]]
+             [campfire :as cf]]
             [clojure.java.io :refer [as-file make-reader copy file resource]]
             [clojure.tools.logging :refer [info warn error]]
             [clj-http.client :as client]
@@ -216,8 +215,10 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
         (send-error (str "Missing object for revision HEAD in repo '" name "' in branch " branch ":" e))))))
 
 (defn get-data
-  [environment name]
-  (thunk-timeout (fn [] (*get-data environment name)) snc-timeout :s))
+  ([environment]
+     (get-data environment environment))
+  ([environment name]
+      (thunk-timeout (fn [] (*get-data environment name)) snc-timeout :s)))
 
 (defn- remote-branches
   [name]

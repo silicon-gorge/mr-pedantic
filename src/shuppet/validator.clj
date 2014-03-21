@@ -2,7 +2,6 @@
   (:require [bouncer
              [core :as b]
              [validators :as v]]
-            [shuppet.util :refer :all]
             [clojure.set :refer [intersection]]
             [slingshot.slingshot :refer [throw+]]))
 
