@@ -31,6 +31,7 @@
                  [clj-campfire "2.1.0"]
                  [clojail "1.0.6"]
                  [overtone/at-at "1.2.0"]
+                 [cluppet "0.0.2"]
                  [nephelai "0.0.3"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"

@@ -2,9 +2,7 @@
   (:require
    [environ.core :as e]
    [cheshire.core :refer [generate-string]]
-   [shuppet
-    [util :refer [map-to-query-string url-encode]]
-    [signature :refer [get-signed-request]]]
+   [cluppet.signature :refer [get-signed-request]]
    [clj-http.client :as client]))
 
 (defn- send-message

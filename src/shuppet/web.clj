@@ -56,7 +56,7 @@
 
 (defn- apply-env-config
   [env]
-  (response {:report (core/direct-apply-config env)}))
+  (response {:report (core/apply-config env)}))
 
 (defn- list-apps
   [env]
@@ -74,7 +74,7 @@
 
 (defn- apply-app-config
   [env name]
-  (response {:report (core/direct-apply-config env name)}))
+  (response {:report (core/apply-config env name)}))
 
 (defn- clean-app-config
   [environment name]

@@ -20,7 +20,7 @@
        (->  (ring-response/response (write-str {:message (e :message)}))
             (ring-response/content-type "application/json")
             (ring-response/status (e :status))))
-     (catch [:type :shuppet.util/aws] e
+     (catch [:type :cluppet.util/aws] e
        (->  (ring-response/response (write-str e))
             (ring-response/content-type "application/json")
             (ring-response/status 409)))
@@ -28,7 +28,7 @@
        (->  (ring-response/response (write-str {:message (e :message)}))
             (ring-response/content-type "application/json")
             (ring-response/status (e :status))))
-     (catch [:type :shuppet.core-shuppet/invalid-config] e
+     (catch [:type :cluppet.core/invalid-config] e
        (->  (ring-response/response (write-str (select-keys e [:message])))
             (ring-response/content-type "application/json")
             (ring-response/status 400)))
