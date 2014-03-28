@@ -17,6 +17,10 @@
    :ssl true,
    :sub-domain sub-domain})
 
+(defn to-vec
+  [item]
+  (if (string? item) [item] (vec item)))
+
 (defn- room
   "Sets up the room for sending messages"
   [room-name]
