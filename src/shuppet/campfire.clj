@@ -50,6 +50,7 @@
                           (error-messages m))))
                 (or *error-rooms* (default-error-rooms))))))
 
+;todo: simplify, nobody uses this
 (defmacro with-messages
   [{:keys [environment app-name config]} & body]
   `(let [info-rooms# (conj (to-vec (get-in ~config [:Campfire :Info]))
@@ -65,7 +66,7 @@
         (catch [:type :cluppet.util/aws] e#
           (error (merge {:environment ~environment :app-name ~app-name} e#))
           (throw+ e#))
-        (catch [:type :shuppet.core-shuppet/invalid-config] {:keys [message#] :as e#}
+        (catch [:type :cluppet.core/invalid-config] {:keys [message#] :as e#}
           (error {:environment ~environment
                   :app-name ~app-name
                   :title "I cannot read this config"

@@ -8,12 +8,12 @@
 (fact-group :unit
 
             (fact "campfire message is sent when aws error"
-                  (with-messages {:environment "env" :app-name "app-name"} (throw+  {:type :shuppet.util/aws})) => (throws clojure.lang.ExceptionInfo)
+                  (with-messages {:environment "env" :app-name "app-name"} (throw+  {:type :cluppet.util/aws})) => (throws clojure.lang.ExceptionInfo)
                   (provided
-                   (error {:environment "env" :app-name "app-name" :type :shuppet.util/aws}) => nil))
+                   (error {:environment "env" :app-name "app-name" :type :cluppet.util/aws}) => nil))
 
             (fact "campfire message is sent when compilation error"
-                  (with-messages {:environment "env" :app-name "app-name"} (throw+ {:type :shuppet.core-shuppet/invalid-config :message ..message..}))
+                  (with-messages {:environment "env" :app-name "app-name"} (throw+ {:type :cluppet.core/invalid-config :message ..message..}))
                   => (throws clojure.lang.ExceptionInfo)
                   (provided
                    (error (checker [actual] (contains {:message ..message..}))) => nil))
