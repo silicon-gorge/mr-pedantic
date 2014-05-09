@@ -47,7 +47,8 @@
                        (http-get "/envs/local/apps/localtest") => (contains {:status 200}))
 
                  (fact "env config can be validated"
-                       (let [res (http-post "/validate" {:body "(def $some-var \"value\") {}"})]
+                       (let [res (http-post "/validate" {:query-params {"env" "local"}
+                                                         :body "(def $some-var \"value\") {}"})]
                          res => (contains {:status 200})
                          res => (contains {:body "{}"})))
 

@@ -92,18 +92,24 @@
         true)
       false)))
 
+(defn- local-config [filename]
+    (slurp (str "test/shuppet/resources/local/" filename ".clj")))
+
 (defn get-config
   ([env]
-     (-> (cl-core/evaluate-string (git/get-data env))
-         (validate)))
+     (let [config (if (= env "local") (local-config env) (git/get-data env))]
+       (-> (cl-core/evaluate-string config)
+           (validate))))
   ([env app]
-     (get-config (git/get-data env) env app))
+     (let [config (if (= env "local") (local-config env) (git/get-data env))]
+       (get-config config env app)))
   ([env-str-config env app]
-     (->
-      (cl-core/evaluate-string [env-str-config (git/get-data env app)]
-                               {:$app-name app
-                                :$env env})
-      (validate))))
+     (let [app-config (if (= env "local") (local-config app) (git/get-data env app))]
+       (->
+        (cl-core/evaluate-string [env-str-config app-config]
+                                 {:$app-name app
+                                  :$env env})
+        (validate)))))
 
 (defn apply-config
   ([env]
@@ -131,9 +137,10 @@
   [env app config]
   (let [env (or env "poke")
         app (or app "app-name")
+        env-config (if (= env "local") (local-config env) (git/get-data env))
         config (if (env-config? config)
                  (cl-core/evaluate-string config)
-                 (cl-core/evaluate-string [(git/get-data env) config]
+                 (cl-core/evaluate-string [env-config config]
                                   {:$app-name app
                                    :$env env}))]
     (validate config)
