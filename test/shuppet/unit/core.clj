@@ -14,28 +14,12 @@
                   (env-config? "(def $var \"value\")") => truthy
                   (env-config? "(def var \"value\")") => falsey)
 
-            (fact "don't apply config in prod for tooling services"
-                  (apply-config "prod" "ditto") => nil
-                  (apply-config "prod" "other") => ..response..
-                  (provided
-                   (cluppet/apply-config anything anything anything) => ..response.. :times 1)
-                  (apply-config "poke" "ditto") => ..response..
-                  (provided
-                   (cluppet/apply-config anything anything anything) => ..response.. :times 1))
 
             (fact "sqs message is sent when elb is created while applying a config"
-                  (apply-config "poke" ..app..) => [{:action :CreateLoadBalancer
-                                              :elb-name ..elb-name..}]
+                  (apply-config ..config.. "poke" ..app..) => [{:action :CreateLoadBalancer
+                                                                 :elb-name ..elb-name..}]
                   (provided
-                   (cluppet/apply-config anything "poke" ..app..) =>  [{:action :CreateLoadBalancer
-                                                                :elb-name ..elb-name..}]
-                   (sqs/announce-elb ..elb-name.. "poke" ) => ..anything.. :times 1))
-
-            (fact "sqs message is sent when elb is created while updating all configs"
-                  (update-configs anything "poke") => (list {:app ..app.. :report [{:action :CreateLoadBalancer
-                                                 :elb-name ..elb-name..}]})
-                  (provided
-                   (app-names "poke") => [..app..]
-                   (cluppet/apply-config anything "poke" ..app..) =>  [{:action :CreateLoadBalancer
-                                                                :elb-name ..elb-name..}]
+                   (get-config ..config.. "poke" ..app..) => ..evaluated-config..
+                   (cluppet/apply-config ..evaluated-config..) =>  [{:action :CreateLoadBalancer
+                                                                     :elb-name ..elb-name..}]
                    (sqs/announce-elb ..elb-name.. "poke" ) => ..anything.. :times 1)))

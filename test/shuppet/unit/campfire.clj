@@ -24,7 +24,7 @@
                     (info "info")
                     (error {})) => anything
                     (provided
-                     fire-off => nil
+                     (env :service-campfire-off) => nil
                      (env :service-campfire-default-info-room) => "default info"
                      (env :service-campfire-default-error-room) => "default error"
                      (#'shuppet.campfire/room "default info") => ..default-info..

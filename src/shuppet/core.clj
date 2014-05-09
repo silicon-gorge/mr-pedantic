@@ -26,16 +26,9 @@
 
 (defn onix-app-names
   []
-  (let [url (str  (env/env :environment-entertainment-onix-url) "/applications")
-        response (client/get url {:as :json
-                                  :throw-exceptions false})
-        status (:status response)]
-    (if (= 200 status)
-      (get-in response [:body :applications])
-      (cf/error {:title "Failed to get application list from Onix."
-                 :url url
-                 :status status
-                 :message (:body response)}))))
+  (let [url (str (env/env :environment-entertainment-onix-url) "/applications")
+        response (client/get url {:as :json})]
+    (get-in response [:body :applications])))
 
 (defn local-app-names
   []
@@ -68,6 +61,7 @@
   [name]
   ((set (split (env/env :service-tooling-applications) #",")) name))
 
+;todo: write to campfire and error logging
 (defn- process-report [report env]
   (doseq [item report]
     (when (= :CreateLoadBalancer (:action item))
@@ -100,13 +94,16 @@
 
 (defn get-config
   ([env]
-     (cl-core/evaluate-string (git/get-data env)))
+     (-> (cl-core/evaluate-string (git/get-data env))
+         (validate)))
   ([env app]
      (get-config (git/get-data env) env app))
   ([env-str-config env app]
-     (cl-core/evaluate-string [env-str-config (git/get-data env app)]
-                      {:$app-name app
-                       :$env env})))
+     (->
+      (cl-core/evaluate-string [env-str-config (git/get-data env app)]
+                               {:$app-name app
+                                :$env env})
+      (validate))))
 
 (defn apply-config
   ([env]
@@ -125,7 +122,7 @@
 (defn filtered-apply-config
   [env-str-config env app]
   (when-not (is-stopped? env app)
-       (apply-config env app)))
+       (apply-config env-str-config env app)))
 
 (defn- env-config? [config]
   (re-find #"\(def +\$" config))
@@ -160,8 +157,7 @@
     names))
 
 (defn app-names [env]
-  (with-ent-bindings env
-    (filter-tooling-services env (onix-app-names))))
+  (filter-tooling-services env (onix-app-names)))
 
 (defn update-configs [env-str-config env]
   (let [apps (app-names env)]
@@ -170,23 +166,15 @@
        {:app app
         :report (filtered-apply-config env-str-config env app)}
        (catch [:type :shuppet.git/git] {:keys [message]}
-         (warn message)
          {:app app
           :error message})
        (catch  [:type :cluppet.core/invalid-config] {:keys [message]}
-         (cf/error {:environment env
-                    :title "error while loading config"
-                    :app-name app
-                    :message message })
-         (error (str app " config in " env " cannot be loaded: " message))
          {:app app
           :error message})
        (catch Exception e
-         (error (str app " in " env " failed: " (.getMessage e) " stacktrace: " (util/str-stacktrace e)))
          {:app app
           :error (.getMessage e)})
        (catch Object e
-         (error (str app " in " env " failed: " e))
          {:app app
           :error e})))))
 

@@ -19,7 +19,8 @@
                           config
                           validator))]
     (throw+ {:type ::validator
-             :details result})))
+             :details result})
+    config))
 
 (defn validate-names
   [env-config app-config]
