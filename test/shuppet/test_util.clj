@@ -8,10 +8,12 @@
                              suffix))
 
 (defn http-get [url & [params]]
-  (client/get (url+  url) (merge {:throw-exceptions false} params)))
+  (client/get (url+  url) (merge {:as :json
+                                  :throw-exceptions false} params)))
 
 (defn http-post [url & [params]]
-  (client/post (url+  url) (merge {:throw-exceptions false} params)))
+  (client/post (url+  url) (merge {:as :json
+                                   :throw-exceptions false} params)))
 
 (defmacro lazy-fact-group [& body]
   `(deftest ~'_ ~@body))

@@ -29,17 +29,19 @@
 
 (lazy-fact-group :acceptance
                  (fact "Ping resource returns 200 HTTP response"
-                       (let [response (http-get "/ping"  {:throw-exceptions false})]
+                       (let [response (client/get (url+ "/ping") {:throw-exceptions false})]
                          response => (contains {:status 200})))
 
                  (fact "Status returns all required elements"
-                       (let [response (http-get "/status" {:throw-exceptions false})
+                       (let [response (client/get (url+ "/status") {:throw-exceptions false})
                              body (read-body response)]
                          response => (contains {:status 200})))
 
                  (fact "envs can be listed"
-                       (http-get "/envs") => (contains {:status 200}))
-
+                       (let [r (http-get "/envs")]
+                         r => (contains {:status 200})
+                         (:body r) => {:environments ["local" "poke" "prod"]}))
+;TODO check body
                  (fact "env config can be read"
                        (http-get "/envs/local") => (contains {:status 200}))
 
@@ -48,11 +50,10 @@
 
                  (fact "env config can be validated"
                        (let [res (http-post "/validate" {:query-params {"env" "local"}
-                                                         :body "(def $some-var \"value\") {}"})]
-                         res => (contains {:status 200})
-                         res => (contains {:body "{}"})))
+                                                         :body "(def $some-var \"value\") {}"})]                         res => (contains {:status 200})
+                         res => (contains {:body {}})))
 
-                 (fact "app config can is correctly validated"
+                 (fact "app config is correctly validated"
                        (let [config (input-stream "test/shuppet/resources/local/localtest.clj")
                              res (http-post "/validate" {:query-params {"env" "local"}
                                                          :body config})]

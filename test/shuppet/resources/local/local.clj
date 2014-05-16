@@ -1,3 +1,5 @@
+
+;simplify this config, only used for AT
 (def $vpc-id "vpc-7bc88713")
 (def $sg-ingress [{:IpRanges "10.216.221.0/24"
                    :IpProtocol "tcp"
