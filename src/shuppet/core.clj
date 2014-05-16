@@ -4,7 +4,7 @@
              [git :as git]
              [sqs :as sqs]
              [campfire :as cf]
-             [validator :refer [validate]]]
+             [validator :refer [validate-app validate-env]]]
             [cluppet
              [core :as cl-core]
              [signature :as cl-sign]]
@@ -99,7 +99,7 @@
   ([env]
      (let [config (if (= env "local") (local-config env) (git/get-data env))]
        (-> (cl-core/evaluate-string config)
-           (validate))))
+           (validate-env))))
   ([env app]
      (let [config (if (= env "local") (local-config env) (git/get-data env))]
        (get-config config env app)))
@@ -109,7 +109,7 @@
         (cl-core/evaluate-string [env-str-config app-config]
                                  {:$app-name app
                                   :$env env})
-        (validate)))))
+        (validate-app)))))
 
 (defn apply-config
   ([env]
@@ -135,16 +135,18 @@
 
 (defn validate-config
   [env app config]
-  (let [env (or env "poke")
+  (let [env? (env-config? config)
+        env (or env "poke")
         app (or app "app-name")
         env-config (if (= env "local") (local-config env) (git/get-data env))
-        config (if (env-config? config)
+        config (if env?
                  (cl-core/evaluate-string config)
                  (cl-core/evaluate-string [env-config config]
                                   {:$app-name app
                                    :$env env}))]
-    (validate config)
-    config))
+    (if env?
+      (validate-env config)
+      (validate-app config))))
 
 (defn create-config
   [env app master-only]
