@@ -104,12 +104,16 @@
      (let [config (if (= env "local") (local-config env) (git/get-data env))]
        (get-config config env app)))
   ([env-str-config env app]
-     (let [app-config (if (= env "local") (local-config app) (git/get-data env app))]
-       (->
-        (cl-core/evaluate-string [env-str-config app-config]
-                                 {:$app-name app
-                                  :$env env})
-        (validate-app)))))
+     (let [default-policies (:DefaultRolePolicies (cl-core/evaluate-string env-str-config))
+           app-config (if (= env "local") (local-config app) (git/get-data env app))
+           app-config (cl-core/evaluate-string [env-str-config app-config]
+                                               {:$app-name app
+                                                :$env env})
+           app-config (assoc-in app-config
+                                [:Role :Policies]
+                                (concat (get-in app-config [:Role :Policies])
+                                        default-policies))]
+       (validate-app app-config))))
 
 (defn apply-config
   ([env]
@@ -120,10 +124,10 @@
   ([env app]
      (apply-config (git/get-data env) env app))
   ([env-str-config env app]
-      (with-ent-bindings env
-        (->
-         (cl-core/apply-config (get-config env-str-config env app))
-         (process-report env)))))
+     (with-ent-bindings env
+       (->
+        (cl-core/apply-config (get-config env-str-config env app))
+        (process-report env)))))
 
 (defn filtered-apply-config
   [env-str-config env app]
@@ -189,5 +193,5 @@
 
 (defn configure-apps
   [env]
-  (apply-config env)
+  (apply-config env); add env report
   (update-configs (git/get-data env) env))
