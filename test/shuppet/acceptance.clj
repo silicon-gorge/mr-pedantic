@@ -41,23 +41,30 @@
                        (let [r (http-get "/envs")]
                          r => (contains {:status 200})
                          (:body r) => {:environments ["local" "poke" "prod"]}))
-;TODO check body
+                                        ;TODO check body
                  (fact "env config can be read"
-                       (http-get "/envs/local") => (contains {:status 200}))
+                       (:body (http-get "/envs/local"))
+                       => {:DefaultRolePolicies [{:PolicyName "default"}]})
 
                  (fact "app config can be read"
-                       (http-get "/envs/local/apps/localtest") => (contains {:status 200}))
+                       (:body (http-get "/envs/local/apps/localtest"))
+                       => {:Role {:Policies [{:PolicyName "default"}]
+                                  :RoleName "localtest"}})
 
                  (fact "env config can be validated"
-                       (let [res (http-post "/validate" {:query-params {"env" "local"}
-                                                         :body "(def $some-var \"value\") {}"})]                         res => (contains {:status 200})
-                         res => (contains {:body {}})))
+                       (let [config (input-stream "test/shuppet/resources/local/local.clj")
+                             res (http-post "/validate" {:query-params {"env" "local"}
+                                                         :body config})]
+                         res => (contains {:status 200})
+                         res => (contains {:body {:DefaultRolePolicies [{:PolicyName "default"}]}})))
 
                  (fact "app config is correctly validated"
                        (let [config (input-stream "test/shuppet/resources/local/localtest.clj")
-                             res (http-post "/validate" {:query-params {"env" "local"}
+                             res (http-post "/validate" {:query-params {"env" "local"
+                                                                        "app-name" "localtest"}
                                                          :body config})]
-                         res => (contains {:status 200})))
+                         res => (contains {:status 200})
+                         res => (contains {:body {:Role {:RoleName "localtest"}}})))
 
                  (fact "invalid app config is rejected"
                        (let [res (http-post "/validate" {:query-params {"env" "local"}
