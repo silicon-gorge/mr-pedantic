@@ -41,7 +41,7 @@
                        (let [r (http-get "/envs")]
                          r => (contains {:status 200})
                          (:body r) => {:environments ["local" "poke" "prod"]}))
-                                        ;TODO check body
+
                  (fact "env config can be read"
                        (:body (http-get "/envs/local"))
                        => {:DefaultRolePolicies [{:PolicyName "default"}]})
