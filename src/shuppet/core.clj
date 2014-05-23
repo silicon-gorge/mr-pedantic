@@ -47,16 +47,6 @@
   {:key (env/env (keyword (str "service-aws-access-key-id-" environment)))
    :secret (env/env (keyword (str "service-aws-secret-access-key-" environment)))} )
 
-                                        ;change env arg to flag
-(defmacro with-ent-bindings
-  "Specific Entertainment bindings"
-  [environment & body]
-  `(let [local?# (= "local" ~environment)]
-     (binding [cl-sign/*aws-credentials* (if local?#
-                                           default-keys-map
-                                           (aws-keys-map ~environment))]
-       ~@body)))
-
 (defn- tooling-service?
   [name]
   ((set (split (env/env :service-tooling-applications) #",")) name))
@@ -124,7 +114,7 @@
 
 (defn apply-config
   ([env]
-     (with-ent-bindings env
+     (binding [cl-sign/*aws-credentials* (aws-keys-map env)]
        (->
         (cl-core/apply-config (get-config env))
         (format-report env nil)
@@ -133,7 +123,7 @@
      (apply-config (git/get-data env) env app))
   ([env-str-config env app]
      (try+
-       (with-ent-bindings env
+       (binding [cl-sign/*aws-credentials* (aws-keys-map env)]
          (->
           (cl-core/apply-config (get-config env-str-config env app))
           (format-report env app)
@@ -188,7 +178,7 @@
 
 (defn clean-config
   [env app]
-  (with-ent-bindings env
+  (binding [cl-sign/*aws-credentials* (aws-keys-map env)]
     (cl-core/clean-config (get-config env app))))
 
 (defn- filter-tooling-services
