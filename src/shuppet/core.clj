@@ -61,11 +61,13 @@
   [name]
   ((set (split (env/env :service-tooling-applications) #",")) name))
 
-;todo: write to campfire and error logging
-(defn- process-report [report env]
-  (doseq [item report]
+(defn- process-report
+  [report]
+  (cf/info report)
+  (info report)
+  (doseq [item (:report report)]
     (when (= :CreateLoadBalancer (:action item))
-      (sqs/announce-elb (:elb-name item) env)))
+      (sqs/announce-elb (:elb-name item) (:env report))))
   report)
 
 (defn stop-schedule-temporarily
@@ -115,19 +117,45 @@
                                         default-policies))]
        (validate-app app-config))))
 
+(defn format-report [report env app]
+  (cond-> {:report report}
+          env (assoc :env env)
+          app (assoc :app app)))
+
 (defn apply-config
   ([env]
      (with-ent-bindings env
        (->
         (cl-core/apply-config (get-config env))
-        (process-report env))))
+        (format-report env nil)
+        (process-report))))
   ([env app]
      (apply-config (git/get-data env) env app))
   ([env-str-config env app]
-     (with-ent-bindings env
-       (->
-        (cl-core/apply-config (get-config env-str-config env app))
-        (process-report env)))))
+     (try+
+       (with-ent-bindings env
+         (->
+          (cl-core/apply-config (get-config env-str-config env app))
+          (format-report env app)
+          (process-report)))
+       (catch [:type :shuppet.git/git] m
+         (let [message (merge {:env env
+                               :app app} m)]
+           (warn message)
+           message))
+       (catch map? m
+         (let [message (merge {:env env
+                               :app app} m)]
+           (cf/error message)
+           (error message)
+           message))
+       (catch Exception e
+         (let [message  {:app app
+                         :env env
+                         :message (.getMessage e)
+                         :stacktrace  (util/str-stacktrace e)}]
+           (error message)
+           message)))))
 
 (defn filtered-apply-config
   [env-str-config env app]
@@ -174,24 +202,19 @@
 
 (defn update-configs [env-str-config env]
   (let [apps (app-names env)]
-    (doseq [app apps]
-      (try+
-       {:app app
-        :report (filtered-apply-config env-str-config env app)}
-       (catch [:type :shuppet.git/git] {:keys [message]}
-         {:app app
-          :error message})
-       (catch  [:type :cluppet.core/invalid-config] {:keys [message]}
-         {:app app
-          :error message})
-       (catch Exception e
-         {:app app
-          :error (.getMessage e)})
-       (catch Object e
-         {:app app
-          :error e})))))
+    (map (fn [app]
+           (filtered-apply-config env-str-config env app))
+         apps)))
 
 (defn configure-apps
   [env]
-  (apply-config env); add env report
-  (update-configs (git/get-data env) env))
+  (try
+    (apply-config env) ;todo: add env report to response
+    (update-configs (git/get-data env) env)
+    (catch Exception e
+      (let [message  {:env env
+                      :message (.getMessage e)
+                      :stacktrace  (util/str-stacktrace e)}]
+        (cf/error message)
+        (error message)
+        message))))

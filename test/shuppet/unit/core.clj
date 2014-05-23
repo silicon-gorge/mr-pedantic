@@ -17,8 +17,10 @@
 
 
             (fact "sqs message is sent when elb is created while applying a config"
-                  (apply-config ..config.. "poke" ..app..) => [{:action :CreateLoadBalancer
-                                                                :elb-name ..elb-name..}]
+                  (apply-config ..config.. "poke" ..app..) => {:app ..app..
+                                                               :env "poke"
+                                                               :report [{:action :CreateLoadBalancer
+                                                                         :elb-name ..elb-name..}]}
                   (provided
                    (get-config ..config.. "poke" ..app..) => ..evaluated-config..
                    (cluppet/apply-config ..evaluated-config..) =>  [{:action :CreateLoadBalancer
