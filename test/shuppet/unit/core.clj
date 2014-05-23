@@ -2,6 +2,7 @@
   (:require  [slingshot.slingshot :refer [try+ throw+]]
              [cluppet.core :as cluppet]
              [shuppet.sqs :as sqs]
+             [shuppet.util :as util]
              [shuppet.git :as git])
   (:use [shuppet.core]
         [midje.util]
@@ -39,4 +40,23 @@
                    => ..str-app..
                    (cluppet/evaluate-string [..str-env.. ..str-app..] anything)
                    =>  {:Role {:RoleName ..name..
-                               :Policies [..app-policy..]}})))
+                               :Policies [..app-policy..]}}))
+
+            (fact "env and all apps are configured"
+                  (configure-apps ..env..) => [..report..]
+                  (provided
+                   (apply-config ..env..) => []
+                   (git/get-data ..env..) => ..env-config..
+                   (filtered-apply-config ..env-config.. ..env.. ..app..) => ..report..
+                   (app-names ..env..) => [..app..]))
+
+            (fact "error is caught and added to report"
+                  (apply-config ..env-config.. ..env.. ..app..) => (contains {:app ..app..
+                                                                              :env ..env..
+                                                                              :message anything
+                                                                              :stacktrace anything})
+                  (provided
+                   (get-config ..env-config.. ..env.. ..app..) => ..app-config..
+                   (cluppet/apply-config ..app-config.. ) =throws=>  (NullPointerException.)))
+
+            (future-fact "env error are caught"))
