@@ -30,7 +30,7 @@
   (try
     (graphite/report-time
      (str "scheduler." env ".configure_apps")
-     (core/configure-apps env))
+     (dorun (core/configure-apps env)))
     (catch Exception e
       (error (str-stacktrace e)))))
 
