@@ -9,7 +9,7 @@
    :ssl true
    :sub-domain  (env/env :service-campfire-sub-domain)})
 
-(defn- room
+(defn room
   "Sets up the room for sending messages"
   [room-name]
   (cf/room-by-name cf-settings room-name))
@@ -25,20 +25,9 @@
     (doseq [message (build-messages report)]
       (cf/message (room (env/env :service-campfire-default-info-room)) message))))
 
-(defn- error-messages [{:keys [env app title url message status]}]
-  (remove nil? [(when title (str title))
-                (when app (str "Application: " app))
-                (when env (str "Environment: " env))
-                (when url (str "Requested-URL: " url))
-                (when status (str "Status: " status))
-                (when message (str "Message: " message))]))
-
 (defn error
-  "Sends error to the error rooms"
-  [m]
+  "Sends error to campfire room"
+  [error-messages]
   (when-not (env/env :service-campfire-off)
-    (dorun (map (fn [error-room]
-                  (dorun (map
-                          #(cf/message (room error-room) %)
-                          (error-messages m))))
-                 (env/env :service-campfire-default-info-room)))))
+    (doseq [error-message error-messages]
+      (cf/message (room (env/env :service-campfire-default-info-room)) (str (first error-message) (second error-message))))))
