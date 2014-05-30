@@ -31,11 +31,11 @@
 
 (lazy-fact-group :integration
    (fact "Ping resource returns 200 HTTP response"
-         (let [response (http-get "/ping")]
+         (let [response (client/get (url+ "/ping") {:throw-exceptions false})]
            response => (contains {:status 200})))
 
    (fact "Status returns all required elements"
-         (let [response (http-get "/status")
+         (let [response (client/get (url+ "/status") {:throw-exceptions false})
                body (read-body response)]
            response => (contains {:status 200})))
 
