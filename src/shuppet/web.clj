@@ -74,7 +74,7 @@
 
 (defn- apply-app-config
   [env name]
-  (response {:report (core/apply-config env name)}))
+  (response (core/apply-config env name)))
 
 (defn- clean-app-config
   [environment name]
@@ -85,7 +85,7 @@
 
 (defn- apply-apps-config
   [env]
-  (response {:reports  (core/configure-apps env)}))
+  (response (core/configure-apps env)))
 
 (defn- create-app-config
   [name local master-only]
