@@ -43,11 +43,11 @@
                                :Policies [..app-policy..]}}))
 
             (fact "env and all apps are configured"
-                  (configure-apps ..env..) => [..report..]
+                  (configure-apps ..env..) => [..env-report.. ..app-report..]
                   (provided
-                   (apply-config ..env..) => []
+                   (apply-config ..env..) => ..env-report..
                    (git/get-data ..env..) => ..env-config..
-                   (filtered-apply-config ..env-config.. ..env.. ..app..) => ..report..
+                   (filtered-apply-config ..env-config.. ..env.. ..app..) => ..app-report..
                    (app-names ..env..) => [..app..]))
 
             (fact "error is caught and added to report"
@@ -59,4 +59,18 @@
                    (get-config ..env-config.. ..env.. ..app..) => ..app-config..
                    (cluppet/apply-config ..app-config.. ) =throws=>  (NullPointerException.)))
 
-            (future-fact "env error are caught"))
+
+            (fact "an app can be excluded"
+                  (stop-schedule-temporarily "env" "app" nil)
+                  (filtered-apply-config ..env-config.. "env" "app") => (contains {:excluded true})
+                  (filtered-apply-config ..env-config.. "env" "anotherapp") => ..report..
+                  (provided
+                   (apply-config ..env-config..  "env" "anotherapp") => ..report..))
+
+
+            (fact "env error are caught"
+                  (configure-apps ..env..) =>  (contains {:env ..env..
+                                                          :message anything
+                                                          :stacktrace anything})
+                  (provided
+                   (apply-config ..env..) =throws=>  (NullPointerException.))))

@@ -107,8 +107,9 @@
 
 (defn- stop-schedule
   [env name interval]
-  (core/stop-schedule-temporarily env name interval)
-  (response {:message (str "Scheduler for " name " is stopped for " interval " minutes in environment" env)}))
+  (let [interval (or interval core/default-stop-interval)]
+    (core/stop-schedule-temporarily env name interval)
+    (response {:message (str "Scheduler for " name " is stopped for " interval " minutes in environment" env)})))
 
 (defn- start-schedule
   [env name]

@@ -149,8 +149,9 @@
 
 (defn filtered-apply-config
   [env-str-config env app]
-  (when-not (is-stopped? env app)
-       (apply-config env-str-config env app)))
+  (if (is-stopped? env app)
+    {:env env :app app :excluded true}
+    (apply-config env-str-config env app)))
 
 (defn- env-config? [config]
   (re-find #"\(def +\$" config))
@@ -199,8 +200,8 @@
 (defn configure-apps
   [env]
   (try
-    (apply-config env) ;todo: add env report to response
-    (update-configs (git/get-data env) env)
+    (let [env-report (apply-config env)]
+      (cons env-report (update-configs (git/get-data env) env)))
     (catch Exception e
       (let [message  {:env env
                       :message (.getMessage e)
