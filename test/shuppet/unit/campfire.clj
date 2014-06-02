@@ -27,4 +27,9 @@
                    (env/env anything) => nil
                    (room anything) => ..room..
                    (cf/message ..room.. #"title") => nil
-                   (cf/message ..room.. #"message") => nil)))
+                   (cf/message ..room.. #"message") => nil))
+            (fact "500s are never sent to campfire"
+                  (error {:status 500}) => anything
+                  (provided
+                   (env/env anything) => nil
+                   (cf/message anything anything) => nil :times 0)))

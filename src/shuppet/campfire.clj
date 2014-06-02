@@ -25,9 +25,12 @@
     (doseq [message (build-messages report)]
       (cf/message (room (env/env :service-campfire-default-info-room)) message))))
 
+(defn- ignore? [error-map]
+  (>= (or (:status error-map) 0) 500))
+
 (defn error
   "Sends error to campfire room"
-  [error-messages]
-  (when-not (env/env :service-campfire-off)
-    (doseq [error-message error-messages]
-      (cf/message (room (env/env :service-campfire-default-info-room)) (str (first error-message) (second error-message))))))
+  [error-map]
+  (when-not (or (env/env :service-campfire-off) (ignore? error-map))
+    (doseq [error-message error-map]
+      (cf/message (room (env/env :service-campfire-default-info-room)) (str (first error-message) " " (second error-message))))))
