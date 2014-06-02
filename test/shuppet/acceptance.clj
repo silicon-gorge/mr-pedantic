@@ -40,7 +40,7 @@
                  (fact "envs can be listed"
                        (let [r (http-get "/envs")]
                          r => (contains {:status 200})
-                         (:body r) => {:environments ["local" "poke" "prod"]}))
+                         (:body r) => {:environments ["local"]}))
 
                  (fact "env config can be read"
                        (:body (http-get "/envs/local"))
