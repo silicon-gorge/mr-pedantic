@@ -40,9 +40,9 @@
            response => (contains {:status 200})))
 
    (fact "Test config is applied without errors"
-         (http-get  "/envs/poke/apps/test/clean") => (contains {:status 200})
-         (http-get  "/envs/poke/apps/test/apply") => (contains {:status 200})
-         (http-get  "/envs/poke/apps/test/apply") => (contains {:status 200})
-         (http-get  "/envs/poke/apps/test/clean"))
-
-   (future-fact "Correct branch is read from git"))
+         (http-get  "/envs/poke/apps/shuppetest/clean") => (contains {:status 200})
+         (let [response (http-get  "/envs/poke/apps/shuppetest/apply")
+               report (get-in response [:body :report])]
+           (:status response) => 200
+           (seq report) => truthy)
+         (http-get  "/envs/poke/apps/shuppetest/clean")))
