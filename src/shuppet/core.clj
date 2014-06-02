@@ -96,16 +96,18 @@
      (let [config (if (= env "local") (local-config env) (git/get-data env))]
        (get-config config env app)))
   ([env-str-config env app]
-     (let [default-policies (:DefaultRolePolicies (cl-core/evaluate-string env-str-config))
-           app-config (if (= env "local") (local-config app) (git/get-data env app))
-           app-config (cl-core/evaluate-string [env-str-config app-config]
-                                               {:$app-name app
-                                                :$env env})
-           app-config (assoc-in app-config
-                                [:Role :Policies]
-                                (concat (get-in app-config [:Role :Policies])
-                                        default-policies))]
-       (validate-app app-config))))
+     (if (and env-str-config app)
+       (let [default-policies (:DefaultRolePolicies (cl-core/evaluate-string env-str-config))
+             app-config (if (= env "local") (local-config app) (git/get-data env app))
+             app-config (cl-core/evaluate-string [env-str-config app-config]
+                                                 {:$app-name app
+                                                  :$env env})
+             app-config (assoc-in app-config
+                                  [:Role :Policies]
+                                  (concat (get-in app-config [:Role :Policies])
+                                          default-policies))]
+         (validate-app app-config))
+       (get-config env))))
 
 (defn format-report [report env app]
   (cond-> {:report report}
@@ -114,11 +116,7 @@
 
 (defn apply-config
   ([env]
-     (binding [cl-sign/*aws-credentials* (aws-keys-map env)]
-       (->
-        (cl-core/apply-config (get-config env))
-        (format-report env nil)
-        (process-report))))
+     (apply-config nil env nil))
   ([env app]
      (apply-config (git/get-data env) env app))
   ([env-str-config env app]
@@ -206,6 +204,5 @@
       (let [message  {:env env
                       :message (.getMessage e)
                       :stacktrace  (util/str-stacktrace e)}]
-        (cf/error message)
         (error message)
         message))))

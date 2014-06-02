@@ -41,6 +41,14 @@
                    (cluppet/evaluate-string [..str-env.. ..str-app..] anything)
                    =>  {:Role {:RoleName ..name..
                                :Policies [..app-policy..]}}))
+            (fact "anv config is loaded when no app and env string"
+                  (get-config nil "poke" nil)
+                  => ..env-config..
+                  (provided
+                   (git/get-data "poke")
+                   => ..str-env..
+                   (cluppet/evaluate-string ..str-env..)
+                   => ..env-config...))
 
             (fact "env and all apps are configured"
                   (configure-apps ..env..) => [..env-report.. ..app-report..]
@@ -72,7 +80,7 @@
                    (apply-config ..env-str..  "env" "app") => ..report..))
 
 
-            (fact "env error are caught"
+            (fact "any errors are caught"
                   (configure-apps ..env..) =>  (contains {:env ..env..
                                                           :message anything
                                                           :stacktrace anything})
