@@ -6,11 +6,11 @@
     [util :refer [rfc2616-time str-stacktrace]]]
    [clojure.tools.logging :refer [info warn error]]
    [slingshot.slingshot :refer [try+ throw+]]
-   [environ.core :refer [env]]
+   [environ.core :as env]
    [clojure.string :refer [split]]
    [overtone.at-at :as at-at]))
 
-(def ^:private environments (set (split (env :service-environments) #",")))
+(def ^:private environments (set (split (env/env :service-environments) #",")))
 
 (def ^:private schedule-pools (atom {}))
 
@@ -41,7 +41,7 @@
      (at-at/stop-and-reset-pool! pool :strategy :kill)
      (if (= action "stop")
        {:message "Succefully stopped the shuppet scheduler"}
-       (let [interval (Integer/parseInt (or interval (env :service-scheduler-interval)))]
+       (let [interval (Integer/parseInt (or interval (env/env :service-scheduler-interval)))]
          (at-at/every (* interval 60 1000)
                       #(configure-apps environment)
                       pool
@@ -64,10 +64,10 @@
 
 (defn start
   []
-  (when-not (= (env :environment-name) "local") ;dont want the auto scheduler for our test envs
+  (when-not (env/env :service-scheduler-off)
     (doseq [environment environments]
       (at-at/after (* (Integer/parseInt
-                       (or (env (keyword (str "service-scheduler-delay-" environment))) "1"))
+                       (or (env/env (keyword (str "service-scheduler-delay-" environment))) "1"))
                       60 1000)
                    #(schedule environment)
                    (get-pool environment)

@@ -102,6 +102,7 @@
         :service-local-config-path "test/shuppet/resources"
         :service-local-app-names "localtest"
         :service-campfire-off true
+        :service-scheduler-off true
         :service-tooling-applications "ditto,exploud,numel,tyranitar,onix,garbodor,shuppet"
         :service-sqs-autoscale-announcements-poke "http://sqs.eu-west-1.amazonaws.com/513894612423/autoscale-announcements"
         :service-sqs-disabled true
