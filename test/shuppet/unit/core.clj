@@ -61,11 +61,15 @@
 
 
             (fact "an app can be excluded"
-                  (stop-schedule-temporarily "env" "app" nil)
-                  (filtered-apply-config ..env-config.. "env" "app") => (contains {:excluded true})
-                  (filtered-apply-config ..env-config.. "env" "anotherapp") => ..report..
+                  (stop-schedule-temporarily "env" "app" nil) => anything
+                  (filtered-apply-config ..env-str.. "env" "app") => (contains {:excluded true})
+                  (filtered-apply-config ..env-str.. "env" "anotherapp") => ..report..
                   (provided
-                   (apply-config ..env-config..  "env" "anotherapp") => ..report..))
+                   (apply-config ..env-str.. "env" "anotherapp") => ..report..)
+                  (restart-app-schedule "env" "app") => anything
+                  (filtered-apply-config ..env-str.. "env" "app") => ..report..
+                  (provided
+                   (apply-config ..env-str..  "env" "app") => ..report..))
 
 
             (fact "env error are caught"
