@@ -52,13 +52,6 @@ fIfvxMoc06E3U1JnKbPAPBN8HWNDnR7Xtpp/fXSW2c7vJLqZHA==
 -----END RSA PRIVATE KEY-----
 ")
 
-;; The known-hosts, i.e. source.nokia.com
-(def ^:private known-hosts
-  "|1|UoVqPabY168wScQJfyEUyDX35Xk=|DTUa0H6lR05jNuvHIMl4ReJLqXM= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
-|1|xtbIYF+FIx2dSIOML++8N0Ohwuw=|f11MX7uxFmdYTaPNxh961FunJI0= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
-source.nokia.com,147.243.160.83 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPDxbiJqlSi7KFM9GY1jnzb+LhZlJyvJRqK925hgEdTS/QG4uoH4VI0NqMWiCLn8LiPLyj2+WLnYBWpaPIsp728ighAahYY1TsZiUiP4EqpRd093Ur+EE+de7cjfuNy5iJfkU092SqLUJwQCMA05N9vvkSc0lR/hOR77bs/YLucaGyZfXGfHFbosd4+sm82hcqLJKIdQ0+ChEp3ROyZnzferlKqJbFFjJdN4TTq3ITPNjmQ1Hqmmb0kjBJ6M8W11SgqANjdzfnkXHhV46rYrjXesxoPxw3jS1BPEjbLljrY1NMBMhFOLI6tlvFTJc5Jk7c7ytmtG5+sCQ==
-")
-
 (def ^:private snc-timeout (Integer/parseInt (env :service-git-timeout)))
 
 (def ^:private base-git-url (env :service-base-git-repository-url))
@@ -101,12 +94,12 @@ source.nokia.com,147.243.160.83 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuK96oIAr4mPD
   (proxy [JschConfigSessionFactory] []
     (configure [host session]
       (info "Configuring JschConfigSessionFactory.")
-      (.setConfig session "StrictHostChecking" "yes"))
+      (.setConfig session "StrictHostKeyChecking" "no"))
     (createDefaultJSch [fs]
       (let [jsch (JSch.)]
         (info "Creating default JSch using shuppet private key and known-hosts.")
         (.addIdentity jsch "shuppet" (.getBytes shuppet-private-key) nil nil)
-        (.setKnownHosts jsch (ByteArrayInputStream. (.getBytes known-hosts)))
+        (.setKnownHosts jsch (ByteArrayInputStream. (.getBytes "")))
         jsch))))
 
 (SshSessionFactory/setInstance my-jcs-factory)
