@@ -11,3 +11,5 @@ dc-sdk.log
 .lein-plugins/
 .project
 .lein-env
+.lein-repl-history
+.nrepl-port
