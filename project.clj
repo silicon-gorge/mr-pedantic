@@ -148,9 +148,6 @@
                     :username "shuppet"
                     :groupname "shuppet"
                     :sources {:source [{:location "scripts/bin"}]}}
-                   {:directory "/usr/local/deployment/shuppet/bin"
-                    :filemode "744"
-                    :sources {:source [{:location "scripts/dmt"}]}}
                    {:directory "/etc/rc.d/init.d"
                     :filemode "744"
                     :username "shuppet"
