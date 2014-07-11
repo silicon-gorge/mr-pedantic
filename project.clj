@@ -38,10 +38,10 @@
                                                 org.eclipse.jetty.orbit/javax.servlet]]
                                   [clj-http-fake "0.4.1"]
                                   [junit "4.11"]
-                                  [midje "1.5.1"]
+                                  [midje "1.6.3"]
                                   [rest-cljer "0.1.7"]]
                    :plugins [[lein-rpm "0.0.4"]
-                             [lein-midje "3.0.1"]
+                             [lein-midje "3.1.3"]
                              [jonase/kibit "0.0.8"]]}}
 
   :plugins [[lein-ring "0.8.6"]
