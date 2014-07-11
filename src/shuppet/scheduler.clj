@@ -40,14 +40,14 @@
    (let [pool (get-pool environment)]
      (at-at/stop-and-reset-pool! pool :strategy :kill)
      (if (= action "stop")
-       {:message "Succefully stopped the shuppet scheduler"}
+       {:message "Successfully stopped the shuppet scheduler"}
        (let [interval (Integer/parseInt (or interval (env/env :service-scheduler-interval)))]
          (at-at/every (* interval 60 1000)
                       #(configure-apps environment)
                       pool
                       :desc (rfc2616-time))
          {:message
-          (str "Succesfully started the shuppet scheduler. The scheduler will run in every "
+          (str "Successfully started the shuppet scheduler. The scheduler will run every "
                interval " minutes.") })))
    (catch Exception e
      (error (str-stacktrace e))
