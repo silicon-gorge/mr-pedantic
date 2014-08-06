@@ -55,5 +55,6 @@
     <appender-ref ref="file" />
     <appender-ref ref="console" />
     <appender-ref ref="service" />
+    <appender-ref ref="metrics" />
   </root>
 </configuration>
