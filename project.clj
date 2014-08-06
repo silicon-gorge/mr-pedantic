@@ -30,7 +30,7 @@
                  [me.raynes/conch "0.5.0"]
                  [clj-campfire "2.1.0"]
                  [overtone/at-at "1.2.0"]
-                 [cluppet "0.0.7"]]
+                 [cluppet "0.0.9"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
                                    :exclusions [org.slf4j/slf4j-nop
