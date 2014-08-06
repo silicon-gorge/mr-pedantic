@@ -8,6 +8,8 @@
   <!-- As is Jetty -->
   <logger name="org.eclipse.jetty" level="info" />
 
+  <logger name="saranyu" level="info" />
+
   <!-- Properties should be provided as environment variables or the defaults will be used -->
 
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
