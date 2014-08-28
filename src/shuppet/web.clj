@@ -122,18 +122,17 @@
 
 (def ^:private resources
   {:GET (array-map "/healthcheck" "Healthcheck"
+                   "/ping" "Ping"
                    "/1.x/icon" "Icon"
-                   "/1.x/ping" "Pong"
-                   "/1.x/status" "Status"
                    "/1.x/envs" "All available environments"
-                   "/1.x/envs/:env-name" "Read and evaluate the environment configuration :env-name.clj from GIT repository :env-name, return the configuration in JSON"
+                   "/1.x/envs/:env-name" "Read and evaluate the environment configuration :env-name.clj from Git repository :env-name, return the configuration in JSON"
                    "/1.x/envs/:env-name/apply" "Apply the environment configuration"
                    "/1.x/envs/:env-name/apps" "All available applications for the given environment"
                    "/1.x/envs/:env-name/schedule" "Shows the current shuppet schedule, if any"
                    "/1.x/envs/:env-name/apps/apply" "Apply configuration for all applications listed in Onix"
-                   "/1.x/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from GIT repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
+                   "/1.x/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from Git repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
                    "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment"
-                   "/1.x/envs/:env-name/apps/:app-name/schedule" "Displays the current schedule for the app, use QS action=start/stop to start/stop the scheduler interval=xx in minutes (the default interval is 60 minutes, and the maximum stop interval is 720 minutes.)")
+                   "/1.x/envs/:env-name/apps/:app-name/schedule" "Displays the current schedule for the app, use QS action=start/stop to start/stop the scheduler interval=xx in minutes (the default interval is 60 minutes, and the maximum stop interval is 720 minutes)")
    :POST (array-map "/1.x/apps/:app-name" "Create an application configuration, QS Parameter masteronly=true, just creates the master branch"
                     "/1.x/validate" "Validate the configuration passed in the body, env and app-name are optional parameters")})
 
@@ -180,12 +179,6 @@
 
 (defroutes routes
   (context "/1.x" []
-
-   (GET "/ping" []
-        {:body "pong"})
-
-   (GET "/status" []
-        (healthcheck))
 
    (GET "/icon" []
         {:body (-> (clojure.java.io/resource "shuppet.jpg")
