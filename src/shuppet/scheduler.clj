@@ -41,7 +41,7 @@
      (at-at/stop-and-reset-pool! pool :strategy :kill)
      (if (= action "stop")
        {:message "Successfully stopped the shuppet scheduler"}
-       (let [interval (Integer/parseInt (or interval (env/env :service-scheduler-interval)))]
+       (let [interval (Integer/valueOf (or interval (env/env :service-scheduler-interval)))]
          (at-at/every (* interval 60 1000)
                       #(configure-apps environment)
                       pool
@@ -66,7 +66,7 @@
   []
   (when-not (env/env :service-scheduler-off)
     (doseq [environment environments]
-      (at-at/after (* (Integer/parseInt
+      (at-at/after (* (Integer/valueOf
                        (or (env/env (keyword (str "service-scheduler-delay-" environment))) "1"))
                       60 1000)
                    #(schedule environment)

@@ -28,8 +28,10 @@
              :details result})
     config))
 
-(defn validate-env [config]
+(defn validate-env
+  [config]
   (validate config env-validator))
 
-(defn validate-app [config]
+(defn validate-app
+  [config]
   (validate config app-validator))

@@ -16,9 +16,14 @@
             [clj-time.local :refer [local-now to-local-date-time]]
             [clj-time.core :refer [plus after? minutes]]))
 
-(def no-schedule-services  (atom {}))
-(def default-stop-interval 60)
-(def max-stop-interval 720)
+(def no-schedule-services
+  (atom {}))
+
+(def default-stop-interval
+  60)
+
+(def max-stop-interval
+  720)
 
 (def default-keys-map
   {:key (env/env :service-aws-access-key-id-poke)
@@ -85,7 +90,7 @@
       false)))
 
 (defn- local-config [filename]
-    (slurp (str "test/shuppet/resources/local/" filename ".clj")))
+  (slurp (str "test/shuppet/resources/local/" filename ".clj")))
 
 (defn get-config
   ([env]
@@ -109,7 +114,8 @@
          (validate-app app-config))
        (get-config env))))
 
-(defn format-report [report env app]
+(defn format-report
+  [report env app]
   (cond-> {:report report}
           env (assoc :env env)
           app (assoc :app app)))
@@ -121,29 +127,29 @@
      (apply-config (git/get-data env) env app))
   ([env-str-config env app]
      (try+
-       (binding [cl-sign/*aws-credentials* (aws-keys-map env)]
-         (->
-          (cl-core/apply-config (get-config env-str-config env app))
-          (format-report env app)
-          (process-report)))
-       (catch [:type :shuppet.git/git] m
-         (let [message (merge {:env env
-                               :app app} m)]
-           (warn message)
-           message))
-       (catch map? m
-         (let [message (merge {:env env
-                               :app app} m)]
-           (cf/error message)
-           (error message)
-           message))
-       (catch Exception e
-         (let [message  {:app app
-                         :env env
-                         :message (.getMessage e)
-                         :stacktrace  (util/str-stacktrace e)}]
-           (error message)
-           message)))))
+      (binding [cl-sign/*aws-credentials* (aws-keys-map env)]
+        (->
+         (cl-core/apply-config (get-config env-str-config env app))
+         (format-report env app)
+         (process-report)))
+      (catch [:type :shuppet.git/git] m
+        (let [message (merge {:env env
+                              :app app} m)]
+          (warn message)
+          message))
+      (catch map? m
+        (let [message (merge {:env env
+                              :app app} m)]
+          (cf/error message)
+          (error message)
+          message))
+      (catch Exception e
+        (let [message  {:app app
+                        :env env
+                        :message (.getMessage e)
+                        :stacktrace  (util/str-stacktrace e)}]
+          (error message)
+          message)))))
 
 (defn filtered-apply-config
   [env-str-config env app]
@@ -151,7 +157,8 @@
     {:env env :app app :excluded true}
     (apply-config env-str-config env app)))
 
-(defn- env-config? [config]
+(defn- env-config?
+  [config]
   (re-find #"\(def +\$" config))
 
 (defn validate-config
@@ -163,8 +170,8 @@
         config (if env?
                  (cl-core/evaluate-string config)
                  (cl-core/evaluate-string [env-config config]
-                                  {:$app-name app
-                                   :$env env}))]
+                                          {:$app-name app
+                                           :$env env}))]
     (if env?
       (validate-env config)
       (validate-app config))))
@@ -186,10 +193,12 @@
     (remove tooling-service? names)
     names))
 
-(defn app-names [env]
+(defn app-names
+  [env]
   (filter-tooling-services env (onix-app-names)))
 
-(defn update-configs [env-str-config env]
+(defn update-configs
+  [env-str-config env]
   (let [apps (app-names env)]
     (map (fn [app]
            (filtered-apply-config env-str-config env app))

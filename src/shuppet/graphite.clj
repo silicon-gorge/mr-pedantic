@@ -1,15 +1,14 @@
 (ns shuppet.graphite
-  (:require
-    [environ.core :refer [env]])
-  (:import
-   [com.yammer.metrics Metrics]
-   [java.io PrintWriter StringWriter]
-   [com.ovi.common.metrics MetricNames]
-   [java.util.concurrent TimeUnit]
-   [com.ovi.common.metrics.graphite GraphiteName AsynchronousGraphiteValueReporter ReporterState]
-   [com.ovi.common.metrics HostnameFactory]))
+  (:require [environ.core :refer [env]])
+  (:import [com.yammer.metrics Metrics]
+           [java.io PrintWriter StringWriter]
+           [com.ovi.common.metrics MetricNames]
+           [java.util.concurrent TimeUnit]
+           [com.ovi.common.metrics.graphite GraphiteName AsynchronousGraphiteValueReporter ReporterState]
+           [com.ovi.common.metrics HostnameFactory]))
 
-(defn update-timer! [name duration unit]
+(defn update-timer!
+  [name duration unit]
   (doto (Metrics/newTimer (MetricNames/name name)
                           unit
                           TimeUnit/SECONDS)

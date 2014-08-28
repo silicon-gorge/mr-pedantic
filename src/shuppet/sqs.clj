@@ -1,9 +1,8 @@
 (ns shuppet.sqs
-  (:require
-   [environ.core :as e]
-   [cheshire.core :refer [generate-string]]
-   [cluppet.signature :refer [get-signed-request]]
-   [clj-http.client :as client]))
+  (:require [environ.core :as e]
+            [cheshire.core :refer [generate-string]]
+            [cluppet.signature :refer [get-signed-request]]
+            [clj-http.client :as client]))
 
 (defn- send-message
   [queue-url message]
@@ -20,7 +19,7 @@
   (generate-string {:Message (generate-string {:Event "autoscaling:ELB_LAUNCH"
                                                :LoadbalancerName elb-name})}))
 
-(defn announce-elb [elb-name environment]
-  ;check nils
+(defn announce-elb
+  [elb-name environment]
   (when-let [q-url (e/env (keyword (str "service-sqs-autoscale-announcements-" environment)))]
     (send-message q-url (elb-created-message elb-name))))

@@ -1,8 +1,7 @@
 (ns shuppet.campfire
-  (:require
-   [slingshot.slingshot :refer [try+ throw+]]
-   [environ.core :as env]
-   [clj-campfire.core :as cf]))
+  (:require [slingshot.slingshot :refer [try+ throw+]]
+            [environ.core :as env]
+            [clj-campfire.core :as cf]))
 
 (def ^:private cf-settings
   {:api-token (env/env :service-campfire-api-token)
@@ -14,18 +13,21 @@
   [room-name]
   (cf/room-by-name cf-settings room-name))
 
-(defn build-messages [{:keys [report env app]}]
+(defn build-messages
+  [{:keys [report env app]}]
   (cond-> []
           env (conj (str "Environment: " env))
           app (conj (str "App: " app))
           report (into (map :message report))))
 
-(defn info [report]
+(defn info
+  [report]
   (when (and (seq (:report report)) (not (env/env :service-campfire-off)))
     (doseq [message (build-messages report)]
       (cf/message (room (env/env :service-campfire-default-info-room)) message))))
 
-(defn- ignore? [error-map]
+(defn- ignore?
+  [error-map]
   (>= (or (:status error-map) 0) 500))
 
 (defn error
