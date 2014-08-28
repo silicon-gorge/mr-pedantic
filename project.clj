@@ -45,13 +45,13 @@
 
   :env {:environment-entertainment-graphite-host "carbon.brislabs.com"
         :environment-entertainment-graphite-port "2003"
-        :environment-entertainment-onix-url "http://onix.brislabs.com:8080/1.x"
+        :environment-entertainment-onix-url "http://onix/1.x"
         :environment-music-errorlogging1java-baseurl "http://errorlogging.music.cq3.brislabs.com:8080/ErrorLogging/1.x"
         :environment-name "local"
-        :github-auth-token "0424e83847497fc0fe777167763cc0a4fcdc265a"
-        :github-base-url "http://github.brislabs.com/api/v3/"
+        :github-auth-token "github-auth-token"
+        :github-base-url "http://github/api/v3/"
         :github-organisation "shuppet"
-        :service-aws-access-key-id-poke "AKIAIW7NVQ3ZHPADAEKQ"
+        :service-aws-access-key-id-poke "poke-access-key-id"
         :service-aws-ddb-api-version "2012-08-10"
         :service-aws-ddb-url "https://dynamodb.eu-west-1.amazonaws.com"
         :service-aws-ec2-api-version "2013-10-01"
@@ -61,16 +61,16 @@
         :service-aws-iam-api-version "2010-05-08"
         :service-aws-iam-url "https://iam.amazonaws.com"
         :service-aws-s3-url "https://s3-eu-west-1.amazonaws.com"
-        :service-aws-secret-access-key-poke "96pmpi8hEjw34agmxRfi088f5UpQgXlEcHnaGL9W"
+        :service-aws-secret-access-key-poke "poke-access-key-secret"
         :service-aws-sqs-api-version "2012-11-05"
-        :service-campfire-api-token "acec839becb8d253b2973f1614d46ce34e640da4"
-        :service-campfire-default-error-room "Shuppet Error"
-        :service-campfire-default-info-room "Shuppet Info"
+        :service-campfire-api-token "campfire-api-token"
+        :service-campfire-default-error-room "error-room"
+        :service-campfire-default-info-room "info-room"
         :service-campfire-off true
-        :service-campfire-sub-domain "nokia-entertainment"
+        :service-campfire-sub-domain "campfire-sub-domain"
         :service-environments "poke"
         :service-graphite-enabled "DISABLED"
-        :service-graphite-post-interval "1"
+        :service-graphite-post-interval 1
         :service-graphite-post-unit "MINUTES"
         :service-local-app-names "localtest"
         :service-local-config-path "test/shuppet/resources"
@@ -81,10 +81,10 @@
         :service-logging-servicethreshold "off"
         :service-name "shuppet"
         :service-port "8080"
-        :service-production "false"
-        :service-scheduler-interval "120"
+        :service-production false
+        :service-scheduler-interval 120
         :service-scheduler-off true
-        :service-sqs-autoscale-announcements-poke "http://sqs.eu-west-1.amazonaws.com/513894612423/autoscale-announcements"
+        :service-sqs-autoscale-announcements-poke "http://autoscale/announcements"
         :service-sqs-disabled true
         :service-tooling-applications "ditto,exploud,numel,tyranitar,onix,garbodor,shuppet"}
 
