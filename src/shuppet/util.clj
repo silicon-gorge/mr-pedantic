@@ -1,17 +1,14 @@
 (ns shuppet.util
-  (:require [clj-time.local :refer [local-now to-local-date-time]]
-            [clj-time.format :as format]
-            [clojure.string :refer [join upper-case split]]
-            [slingshot.slingshot :refer [try+ throw+]]
-            [environ.core :refer [env]])
+  (:require [clj-time.local :as local]
+            [clj-time.format :as format])
   (:import [java.io StringWriter PrintWriter]))
 
-(def rfc2616-format
+(def ^:private rfc2616-format
   (format/formatter "EEE, dd MMM yyyy HH:mm:ss 'GMT'"))
 
 (defn rfc2616-time
   []
-  (format/unparse rfc2616-format (local-now)))
+  (format/unparse rfc2616-format (local/local-now)))
 
 (defn str-stacktrace
   [e]
