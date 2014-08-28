@@ -16,8 +16,8 @@
 (defn- elb-created-message
   "Create the message describing the creation of a load balancer."
   [elb-name]
-  (generate-string {:Message (generate-string {:Event "autoscaling:ELB_LAUNCH"
-                                               :LoadbalancerName elb-name})}))
+  (generate-string (sorted-map :Message (generate-string (sorted-map :Event "autoscaling:ELB_LAUNCH"
+                                                                     :LoadbalancerName elb-name)))))
 
 (defn announce-elb
   [elb-name environment]
