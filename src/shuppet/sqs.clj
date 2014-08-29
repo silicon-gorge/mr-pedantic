@@ -1,12 +1,15 @@
 (ns shuppet.sqs
-  (:require [environ.core :as e]
+  (:require [environ.core :refer [env]]
             [cheshire.core :refer [generate-string]]
             [cluppet.signature :refer [get-signed-request]]
             [clj-http.client :as client]))
 
+(def ^:private sqs-enabled?
+  (Boolean/valueOf (env :service-sqs-enabled)))
+
 (defn- send-message
   [queue-url message]
-  (when-not (e/env :service-sqs-disabled)
+  (when sqs-enabled?
     (let [request (get-signed-request "sqs" {:url queue-url
                                              :params {:Action "SendMessage"
                                                       :MessageBody message}})]
@@ -19,7 +22,11 @@
   (generate-string (sorted-map :Message (generate-string (sorted-map :Event "autoscaling:ELB_LAUNCH"
                                                                      :LoadbalancerName elb-name)))))
 
+(defn- announcements-queue-url
+  [environment]
+  (env (keyword (str "service-sqs-autoscale-announcements-" environment))))
+
 (defn announce-elb
   [elb-name environment]
-  (when-let [q-url (e/env (keyword (str "service-sqs-autoscale-announcements-" environment)))]
+  (when-let [q-url (announcements-queue-url environment)]
     (send-message q-url (elb-created-message elb-name))))

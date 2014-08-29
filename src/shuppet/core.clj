@@ -1,20 +1,21 @@
 (ns shuppet.core
-  (:require [shuppet
+  (:require [clj-http.client :as client]
+            [clj-time
+             [core :refer [plus after? minutes]]
+             [local :refer [local-now to-local-date-time]]]
+            [clojure.string :as str]
+            [clojure.tools.logging :refer [info warn error]]
+            [cluppet
+             [core :as cl-core]
+             [signature :as cl-sign]]
+            [environ.core :refer [env]]
+            [shuppet
              [util :as util]
              [git :as git]
              [sqs :as sqs]
              [campfire :as cf]
              [validator :refer [validate-app validate-env]]]
-            [cluppet
-             [core :as cl-core]
-             [signature :as cl-sign]]
-            [clojure.string :refer [lower-case split]]
-            [clojure.tools.logging :refer [info warn error]]
-            [clj-http.client :as client]
-            [environ.core :as env]
-            [slingshot.slingshot :refer [try+ throw+]]
-            [clj-time.local :refer [local-now to-local-date-time]]
-            [clj-time.core :refer [plus after? minutes]]))
+            [slingshot.slingshot :refer [try+ throw+]]))
 
 (def no-schedule-services
   (atom {}))
@@ -26,35 +27,35 @@
   720)
 
 (def default-keys-map
-  {:key (env/env :service-aws-access-key-id-poke)
-   :secret (env/env :service-aws-secret-access-key-poke)})
+  {:key (env :service-aws-access-key-id-poke)
+   :secret (env :service-aws-secret-access-key-poke)})
 
 (defn onix-app-names
   []
-  (let [url (str (env/env :environment-entertainment-onix-url) "/applications")
+  (let [url (str (env :environment-entertainment-onix-url) "/applications")
         response (client/get url {:as :json})]
     (get-in response [:body :applications])))
 
 (defn local-app-names
   []
-  (split (env/env :service-local-app-names) #","))
+  (str/split (env :service-local-app-names) #","))
 
 (defn git-config-as-string
-  [environment app-name]
-  (git/get-data environment app-name))
+  [environment application]
+  (git/get-data environment application))
 
 (defn create-git-config
-  [appname master-only]
-  (git/create-application appname master-only))
+  [application master-only]
+  (git/create-application application master-only))
 
 (defn aws-keys-map
   [environment]
-  {:key (env/env (keyword (str "service-aws-access-key-id-" environment)))
-   :secret (env/env (keyword (str "service-aws-secret-access-key-" environment)))} )
+  {:key (env (keyword (str "service-aws-access-key-id-" environment)))
+   :secret (env (keyword (str "service-aws-secret-access-key-" environment)))} )
 
 (defn- tooling-service?
   [name]
-  ((set (split (env/env :service-tooling-applications) #",")) name))
+  ((set (str/split (env :service-tooling-applications) #",")) name))
 
 (defn- process-report
   [report]
@@ -62,30 +63,30 @@
   (info report)
   (doseq [item (:report report)]
     (when (= :CreateLoadBalancer (:action item))
-      (sqs/announce-elb (:elb-name item) (:env report))))
+      (sqs/announce-elb (:elb-name item) (:environment report))))
   report)
 
 (defn stop-schedule-temporarily
-  [env name interval]
+  [environment name interval]
   (let [interval (or interval default-stop-interval)
         interval (if (> interval max-stop-interval) max-stop-interval interval)
-        t-key (keyword (str env "-" name))]
+        t-key (keyword (str environment "-" name))]
     (swap! no-schedule-services merge {t-key (plus (local-now) (minutes interval))})))
 
 (defn restart-app-schedule
-  [env name]
-  (swap! no-schedule-services dissoc (keyword (str env "-" name))))
+  [environment name]
+  (swap! no-schedule-services dissoc (keyword (str environment "-" name))))
 
 (defn get-app-schedule
-  [env name]
-  (@no-schedule-services (keyword (str env "-" name))))
+  [environment name]
+  (@no-schedule-services (keyword (str environment "-" name))))
 
 (defn- is-stopped?
-  [env name]
-  (let [schedule (get-app-schedule env name)]
+  [environment name]
+  (let [schedule (get-app-schedule environment name)]
     (if schedule
       (if (after? (local-now) schedule)
-        (not (empty? (swap! no-schedule-services dissoc (keyword (str env "-" name)))))
+        (not (empty? (swap! no-schedule-services dissoc (keyword (str environment "-" name)))))
         true)
       false)))
 
@@ -93,99 +94,99 @@
   (slurp (str "test/shuppet/resources/local/" filename ".clj")))
 
 (defn get-config
-  ([env]
-     (let [config (if (= env "local") (local-config env) (git/get-data env))]
+  ([environment]
+     (let [config (if (= environment "local") (local-config environment) (git/get-data environment))]
        (-> (cl-core/evaluate-string config)
            (validate-env))))
-  ([env app]
-     (let [config (if (= env "local") (local-config env) (git/get-data env))]
-       (get-config config env app)))
-  ([env-str-config env app]
-     (if (and env-str-config app)
+  ([environment application]
+     (let [config (if (= environment "local") (local-config environment) (git/get-data environment))]
+       (get-config config environment application)))
+  ([env-str-config environment application]
+     (if (and env-str-config application)
        (let [default-policies (:DefaultRolePolicies (cl-core/evaluate-string env-str-config))
-             app-config (if (= env "local") (local-config app) (git/get-data env app))
+             app-config (if (= environment "local") (local-config application) (git/get-data environment application))
              app-config (cl-core/evaluate-string [env-str-config app-config]
-                                                 {:$app-name app
-                                                  :$env env})
+                                                 {:$app-name application
+                                                  :$env environment})
              app-config (assoc-in app-config
                                   [:Role :Policies]
                                   (concat (get-in app-config [:Role :Policies])
                                           default-policies))]
          (validate-app app-config))
-       (get-config env))))
+       (get-config environment))))
 
 (defn format-report
-  [report env app]
+  [report environment application]
   (cond-> {:report report}
-          env (assoc :env env)
-          app (assoc :app app)))
+          environment (assoc :environment environment)
+          application (assoc :application application)))
 
 (defn apply-config
-  ([env]
-     (apply-config nil env nil))
-  ([env app]
-     (apply-config (git/get-data env) env app))
-  ([env-str-config env app]
+  ([environment]
+     (apply-config nil environment nil))
+  ([environment application]
+     (apply-config (git/get-data environment) environment application))
+  ([env-str-config environment application]
      (try+
-      (binding [cl-sign/*aws-credentials* (aws-keys-map env)]
+      (binding [cl-sign/*aws-credentials* (aws-keys-map environment)]
         (->
-         (cl-core/apply-config (get-config env-str-config env app))
-         (format-report env app)
+         (cl-core/apply-config (get-config env-str-config environment application))
+         (format-report environment application)
          (process-report)))
       (catch [:type :shuppet.git/git] m
-        (let [message (merge {:env env
-                              :app app} m)]
+        (let [message (merge {:environment environment
+                              :application application} m)]
           (warn message)
           message))
       (catch map? m
-        (let [message (merge {:env env
-                              :app app} m)]
+        (let [message (merge {:environment environment
+                              :application application} m)]
           (cf/error message)
           (error message)
           message))
       (catch Exception e
-        (let [message  {:app app
-                        :env env
+        (let [message  {:application application
+                        :environment environment
                         :message (.getMessage e)
                         :stacktrace  (util/str-stacktrace e)}]
           (error message)
           message)))))
 
 (defn filtered-apply-config
-  [env-str-config env app]
-  (if (is-stopped? env app)
-    {:env env :app app :excluded true}
-    (apply-config env-str-config env app)))
+  [env-str-config environment application]
+  (if (is-stopped? environment application)
+    {:environment environment :application application :excluded true}
+    (apply-config env-str-config environment application)))
 
 (defn- env-config?
   [config]
   (re-find #"\(def +\$" config))
 
 (defn validate-config
-  [env app config]
-  (let [env? (env-config? config)
-        env (or env "poke")
-        app (or app "app-name")
-        env-config (if (= env "local") (local-config env) (git/get-data env))
-        config (if env?
+  [environment application config]
+  (let [environment? (env-config? config)
+        environent (or environment "poke")
+        application (or application "app-name")
+        env-config (if (= environment "local") (local-config environment) (git/get-data environment))
+        config (if environment?
                  (cl-core/evaluate-string config)
                  (cl-core/evaluate-string [env-config config]
-                                          {:$app-name app
-                                           :$env env}))]
-    (if env?
+                                          {:$app-name application
+                                           :$env environment}))]
+    (if environment?
       (validate-env config)
       (validate-app config))))
 
 (defn create-config
-  [env app master-only]
-  (when-not (= "local" env)
-    (let [master-only (or master-only (tooling-service? app))]
-      (create-git-config app master-only))))
+  [environment application master-only]
+  (when-not (= "local" environment)
+    (let [master-only (or master-only (tooling-service? application))]
+      (create-git-config application master-only))))
 
 (defn clean-config
-  [env app]
-  (binding [cl-sign/*aws-credentials* (aws-keys-map env)]
-    (cl-core/clean-config (get-config env app))))
+  [environment application]
+  (binding [cl-sign/*aws-credentials* (aws-keys-map environment)]
+    (cl-core/clean-config (get-config environment application))))
 
 (defn- filter-tooling-services
   [environment names]
@@ -194,23 +195,23 @@
     names))
 
 (defn app-names
-  [env]
-  (filter-tooling-services env (onix-app-names)))
+  [environment]
+  (filter-tooling-services environment (onix-app-names)))
 
 (defn update-configs
-  [env-str-config env]
-  (let [apps (app-names env)]
-    (map (fn [app]
-           (filtered-apply-config env-str-config env app))
+  [env-str-config environment]
+  (let [apps (app-names environment)]
+    (map (fn [application]
+           (filtered-apply-config env-str-config environment application))
          apps)))
 
 (defn configure-apps
-  [env]
+  [environment]
   (try
-    (let [env-report (apply-config env)]
-      (cons env-report (update-configs (git/get-data env) env)))
+    (let [env-report (apply-config environment)]
+      (cons env-report (update-configs (git/get-data environment) environment)))
     (catch Exception e
-      (let [message  {:env env
+      (let [message  {:environment environment
                       :message (.getMessage e)
                       :stacktrace  (util/str-stacktrace e)}]
         (error message)

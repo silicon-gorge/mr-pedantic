@@ -23,8 +23,6 @@
             [slingshot.slingshot :refer [throw+]]))
 
 (def ^:dynamic *version* "none")
-(def ^:private cf-info-room (env :service-campfire-default-info-room))
-(def ^:private cf-error-room (env :service-campfire-default-error-room))
 (def ^:private environments (env :service-environments))
 
 (defn set-version!

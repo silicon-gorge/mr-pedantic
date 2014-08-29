@@ -5,9 +5,9 @@
             [shuppet.campfire :refer :all]))
 
 (def campfire-before
-  (intern 'shuppet.campfire 'campfire-off?))
+  (intern 'shuppet.campfire 'campfire-on?))
 
-(intern 'shuppet.campfire 'campfire-off? false)
+(intern 'shuppet.campfire 'campfire-on? true)
 
 (fact "that we can get a room"
       (room "the-room") => "room-id"
@@ -17,15 +17,15 @@
                          :sub-domain "campfire-sub-domain"} "the-room") => "room-id"))
 
 (fact "that info messages can be sent"
-      (info {:env "env" :app "app" :report [{:message "message1"}
-                                            {:message "message2"}]})
+      (info {:environment "env" :application "app" :report [{:message "message1"}
+                                                            {:message "message2"}]})
       => nil
       (provided
-       (cf/message ..room.. #"message1") => nil
-       (cf/message ..room.. #"message2") => nil
        (room "info-room") => ..room..
        (cf/message ..room.. #"env") => nil
-       (cf/message ..room.. #"app") => nil))
+       (cf/message ..room.. #"app") => nil
+       (cf/message ..room.. #"message1") => nil
+       (cf/message ..room.. #"message2") => nil))
 
 (fact "that error messages can be sent"
       (error {:message "message"})
@@ -40,11 +40,11 @@
       (provided
        (cf/message anything anything) => nil :times 0))
 
-(intern 'shuppet.campfire 'campfire-off? true)
+(intern 'shuppet.campfire 'campfire-on? false)
 
 (fact "that info messages can be sent"
-      (info {:env "env" :app "app" :report [{:message "message1"}
-                                            {:message "message2"}]})
+      (info {:environment "env" :application "app" :report [{:message "message1"}
+                                                            {:message "message2"}]})
       => nil
       (provided
        (cf/message anything anything) => nil :times 0))
@@ -55,4 +55,4 @@
       (provided
        (cf/message anything anything) => nil :times 0))
 
-(intern 'shuppet.campfire 'campfire-off? campfire-before)
+(intern 'shuppet.campfire 'campfire-on? campfire-before)

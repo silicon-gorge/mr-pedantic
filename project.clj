@@ -66,7 +66,7 @@
         :service-campfire-api-token "campfire-api-token"
         :service-campfire-default-error-room "error-room"
         :service-campfire-default-info-room "info-room"
-        :service-campfire-off true
+        :service-campfire-on false
         :service-campfire-sub-domain "campfire-sub-domain"
         :service-environments "poke"
         :service-graphite-enabled "DISABLED"
@@ -83,9 +83,9 @@
         :service-port "8080"
         :service-production false
         :service-scheduler-interval 120
-        :service-scheduler-off true
+        :service-scheduler-on false
         :service-sqs-autoscale-announcements-poke "http://autoscale/announcements"
-        :service-sqs-disabled true
+        :service-sqs-enabled false
         :service-tooling-applications "ditto,exploud,numel,tyranitar,onix,garbodor,shuppet"}
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]

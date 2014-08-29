@@ -4,6 +4,7 @@
              [sweet :refer :all]
              [util :refer :all]]
             [shuppet
+             [campfire :as cf]
              [core :refer :all]
              [git :as git]
              [sqs :as sqs]
@@ -15,16 +16,18 @@
       (env-config? "(def $var \"value\")") => truthy
       (env-config? "(def var \"value\")") => falsey)
 
-(fact "that anSQS message is sent when an ELB is created while applying a config"
-      (apply-config ..config.. "poke" ..app..) => {:app ..app..
-                                                   :env "poke"
+(fact "that an SQS message is sent when an ELB is created while applying a config"
+      (apply-config ..config.. "poke" ..app..) => {:application ..app..
+                                                   :environment "poke"
                                                    :report [{:action :CreateLoadBalancer
                                                              :elb-name ..elb-name..}]}
       (provided
        (get-config ..config.. "poke" ..app..) => ..evaluated-config..
        (cluppet/apply-config ..evaluated-config..) =>  [{:action :CreateLoadBalancer
                                                          :elb-name ..elb-name..}]
-       (sqs/announce-elb ..elb-name.. "poke" ) => ..anything.. :times 1))
+       (cf/info {:application ..app.. :environment "poke" :report [{:action :CreateLoadBalancer
+                                                                    :elb-name ..elb-name..}]}) => nil
+       (sqs/announce-elb ..elb-name.. "poke" ) => ..anything..))
 
 (fact "that default role policies are added to app config and are validated"
       (get-config ..str-env.. "poke" ..app..)
@@ -57,8 +60,8 @@
        (app-names ..env..) => [..app..]))
 
 (fact "that an error is caught and added to report"
-      (apply-config ..env-config.. ..env.. ..app..) => (contains {:app ..app..
-                                                                  :env ..env..
+      (apply-config ..env-config.. ..env.. ..app..) => (contains {:application ..app..
+                                                                  :environment ..env..
                                                                   :message anything
                                                                   :stacktrace anything})
       (provided
@@ -79,7 +82,7 @@
 
 
 (fact "that any errors are caught"
-      (configure-apps ..env..) =>  (contains {:env ..env..
+      (configure-apps ..env..) =>  (contains {:environment ..env..
                                               :message anything
                                               :stacktrace anything})
       (provided

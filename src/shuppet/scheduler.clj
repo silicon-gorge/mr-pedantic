@@ -1,36 +1,43 @@
 (ns shuppet.scheduler
-  (:require
-   [shuppet
-    [graphite :as graphite]
-    [core :as core]
-    [util :refer [rfc2616-time str-stacktrace]]]
-   [clojure.tools.logging :refer [info warn error]]
-   [slingshot.slingshot :refer [try+ throw+]]
-   [environ.core :as env]
-   [clojure.string :refer [split]]
-   [overtone.at-at :as at-at]))
+  (:require [clojure.string :as str]
+            [clojure.tools.logging :refer [info warn error]]
+            [environ.core :refer [env]]
+            [metrics.timers :refer [time! timer]]
+            [overtone.at-at :as at-at]
+            [shuppet
+             [core :as core]
+             [util :refer [rfc2616-time str-stacktrace]]]
+            [slingshot.slingshot :refer [try+ throw+]]))
 
-(def ^:private environments (set (split (env/env :service-environments) #",")))
+(def ^:private environments
+  (set (str/split (env :service-environments) #",")))
 
-(def ^:private schedule-pools (atom {}))
+(def ^:private schedule-pools
+  (atom {}))
+
+(def ^:private scheduler-on?
+  (Boolean/valueOf (env :service-scheduler-on)))
+
+(def ^:private scheduler-interval
+  (Integer/valueOf (env :service-scheduler-interval)))
 
 (defn- create-pool
-  [env]
-  {env (at-at/mk-pool)})
+  [environment]
+  {environment (at-at/mk-pool)})
 
 (defn- get-pool
-  [env]
-  (let [env (keyword env)
-        pool (env @schedule-pools)]
+  [environment]
+  (let [environment (keyword environment)
+        pool (environment @schedule-pools)]
     (if pool
       pool
-      (env (swap! schedule-pools merge (create-pool env))))))
+      (environment (swap! schedule-pools merge (create-pool environment))))))
 
-(defn configure-apps [env]
+(defn configure-apps
+  [environment]
   (try
-    (graphite/report-time
-     (str "scheduler." env ".configure_apps")
-     (dorun (core/configure-apps env)))
+    (time! (timer ["info" "application" (str "scheduler." environment ".configure_apps")]
+                  (dorun (core/configure-apps environment))))
     (catch Exception e
       (error (str-stacktrace e)))))
 
@@ -41,14 +48,12 @@
      (at-at/stop-and-reset-pool! pool :strategy :kill)
      (if (= action "stop")
        {:message "Successfully stopped the shuppet scheduler"}
-       (let [interval (Integer/valueOf (or interval (env/env :service-scheduler-interval)))]
+       (let [interval (or interval scheduler-interval)]
          (at-at/every (* interval 60 1000)
                       #(configure-apps environment)
                       pool
                       :desc (rfc2616-time))
-         {:message
-          (str "Successfully started the shuppet scheduler. The scheduler will run every "
-               interval " minutes.") })))
+         {:message (str "Successfully started the shuppet scheduler. The scheduler will run every " interval " minutes.") })))
    (catch Exception e
      (error (str-stacktrace e))
      (throw+ e))))
@@ -62,13 +67,16 @@
       {:created (:desc job)
        :delay (str (/ (:initial-delay job) (* 60 1000)) " minutes")})))
 
+(defn environment-delay
+  [environment]
+  (let [property (keyword (str "service-scheduler-delay-" environment))]
+    (Integer/valueOf (or (env property 1)))))
+
 (defn start
   []
-  (when-not (env/env :service-scheduler-off)
+  (when scheduler-on?
     (doseq [environment environments]
-      (at-at/after (* (Integer/valueOf
-                       (or (env/env (keyword (str "service-scheduler-delay-" environment))) "1"))
-                      60 1000)
+      (at-at/after (* (environment-delay environment) 60 1000)
                    #(schedule environment)
                    (get-pool environment)
                    :desc (rfc2616-time)))))
