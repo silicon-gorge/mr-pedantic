@@ -36,8 +36,8 @@
 (defn configure-apps
   [environment]
   (try
-    (time! (timer ["info" "application" (str "scheduler." environment ".configure_apps")]
-                  (dorun (core/configure-apps environment))))
+    (time! (timer ["info" "application" (str "scheduler." environment ".configure_apps")])
+           (dorun (core/configure-apps environment)))
     (catch Exception e
       (error (str-stacktrace e)))))
 
