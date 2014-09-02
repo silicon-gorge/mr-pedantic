@@ -27,9 +27,9 @@
    (conj "prod")))
 
 (defn- repo-branch
-  "Only look for the prod branch when env = prod"
-  [env name]
-  (if (and (not= env name) (= env "prod"))
+  "Only look for the prod branch when environment = prod"
+  [environment name]
+  (if (and (not= environment name) (= environment "prod"))
     "prod"
     "master"))
 
@@ -46,10 +46,10 @@
     false))
 
 (defn- data-from-repo
-  [name]
+  [environment name]
   (try
     (let [file (str name ".clj")
-          branch (repo-branch env name)]
+          branch (repo-branch environment name)]
       (:content (repos/contents organisation name file {:ref branch
                                                         :str? true})))
     (catch Exception e
@@ -57,8 +57,8 @@
 
 (defn- *get-data
   "Fetches the data corresponding to the given application from Git"
-  [env name]
-  (if-let [data (data-from-repo name)]
+  [environment name]
+  (if-let [data (data-from-repo environment name)]
     data
     (send-error 404 "Missing Shuppet configuration")))
 
