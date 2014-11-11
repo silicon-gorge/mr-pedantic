@@ -1,5 +1,7 @@
 (ns shuppet.git
-  (:require [clj-time.core :as time]
+  (:require [clj-time
+             [core :as time]
+             [format :as fmt]]
             [clojure.java.io :refer [resource]]
             [clojure.string :as str]
             [clojure.tools.logging :refer [info warn error]]
@@ -115,7 +117,7 @@
 (defn- create-commit
   [application tree]
   (try
-    (let [date (str (time/now))
+    (let [date (fmt/unparse (fmt/formatters :date-time-no-ms) (time/now))
           info {:date date :email "mixradiobot@gmail.com" :name "Mix Radio Bot"}
           options {:author info :committer info :parents []}
           response (data/create-commit organisation application "Initial commit" tree options)]
