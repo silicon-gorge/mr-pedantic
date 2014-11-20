@@ -133,9 +133,8 @@
                     :groupname "shuppet"
                     :sources {:source [{:location "scripts/bin"}]}}
                    {:directory "/etc/rc.d/init.d"
-                    :filemode "744"
-                    :username "shuppet"
-                    :groupname "shuppet"
-                    :sources {:source [{:location "scripts/service/shuppet"}]}}]}
+                    :filemode "755"
+                    :sources {:source [{:location "scripts/service/shuppet"
+                                        :destination "shuppet"}]}}]}
 
   :main shuppet.setup)
