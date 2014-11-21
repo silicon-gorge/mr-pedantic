@@ -2,94 +2,82 @@
   :description "Shuppet service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Shuppet"
 
-  :dependencies [[bouncer "0.3.0"]
+  :dependencies [[bouncer "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
                  [clj-campfire "2.2.0"]
                  [clj-http "0.9.1"]
                  [clj-time "0.8.0"]
                  [cluppet "0.0.9"]
-                 [com.ovi.common.logging/logback-appender "0.0.47"]
-                 [com.ovi.common.metrics/metrics-graphite "2.1.25"]
-                 [com.yammer.metrics/metrics-logback "2.2.0"]
-                 [compojure "1.1.8" :exclusions [javax.servlet/servlet-api]]
+                 [compojure "1.2.1"]
                  [environ "1.0.0"]
                  [io.clj/logging "0.8.1"]
-                 [metrics-clojure "1.1.0"]
-                 [metrics-clojure-ring "1.1.0"]
-                 [nokia/instrumented-ring-jetty-adapter "0.1.10"]
-                 [nokia/ring-utils "1.2.4"]
+                 [mixradio/graphite-filter "1.0.0"]
+                 [mixradio/instrumented-ring-jetty-adapter "1.0.4"]
+                 [mixradio/radix "1.0.9"]
+                 [net.logstash.logback/logstash-logback-encoder "3.4"]
                  [org.clojure/clojure "1.6.0"]
-                 [org.clojure/tools.logging "0.3.0"]
-                 [org.slf4j/jcl-over-slf4j "1.7.7"]
-                 [org.slf4j/jul-to-slf4j "1.7.7"]
-                 [org.slf4j/log4j-over-slf4j "1.7.7"]
-                 [org.slf4j/slf4j-api "1.7.7"]
+                 [org.clojure/tools.logging "0.3.1"]
                  [overtone/at-at "1.2.0"]
                  [ring-middleware-format "0.4.0"]
                  [tentacles.custom "0.2.8"]]
 
   :exclusions [commons-logging
-               log4j]
+               log4j
+               org.clojure/clojure]
 
   :profiles {:dev {:dependencies [[midje "1.6.3"]]
-                   :plugins [[lein-rpm "0.0.5"]
+                   :plugins [[lein-kibit "0.0.8"]
                              [lein-midje "3.1.3"]
-                             [jonase/kibit "0.0.8"]]}}
+                             [lein-rpm "0.0.5"]]}}
 
   :plugins [[codox "0.8.10"]
+            [lein-cloverage "1.0.2"]
             [lein-environ "1.0.0"]
-            [lein-marginalia "0.7.1"]
-            [lein-release "1.0.73"]
-            [lein-ring "0.8.11"]]
+            [lein-marginalia "0.8.0"]
+            [lein-release "1.0.5"]
+            [lein-ring "0.8.13"]]
 
-  :env {:environment-entertainment-graphite-host "carbon.brislabs.com"
-        :environment-entertainment-graphite-port "2003"
-        :environment-entertainment-onix-url "http://onix/1.x"
-        :environment-music-errorlogging1java-baseurl "http://errorlogging.music.cq3.brislabs.com:8080/ErrorLogging/1.x"
-        :environment-name "local"
+  :env {:aws-access-key-id-poke "poke-access-key-id"
+        :aws-secret-access-key-poke "poke-access-key-secret"
+        :aws-sqs-autoscale-announcements-poke "http://autoscale/announcements"
+        :aws-sqs-enabled false
+        :campfire-api-token "campfire-api-token"
+        :campfire-default-error-room "error-room"
+        :campfire-default-info-room "info-room"
+        :campfire-on false
+        :campfire-sub-domain "campfire-sub-domain"
+        :environment-name "dev"
+        :environments "poke"
         :github-auth-token "github-auth-token"
         :github-base-url "http://github/api/v3/"
         :github-organisation "shuppet"
-        :service-aws-access-key-id-poke "poke-access-key-id"
-        :service-aws-ddb-api-version "2012-08-10"
-        :service-aws-ddb-url "https://dynamodb.eu-west-1.amazonaws.com"
-        :service-aws-ec2-api-version "2013-10-01"
-        :service-aws-ec2-url "https://ec2.eu-west-1.amazonaws.com"
-        :service-aws-elb-api-version "2012-06-01"
-        :service-aws-elb-url "https://elasticloadbalancing.eu-west-1.amazonaws.com"
-        :service-aws-iam-api-version "2010-05-08"
-        :service-aws-iam-url "https://iam.amazonaws.com"
-        :service-aws-s3-url "https://s3-eu-west-1.amazonaws.com"
-        :service-aws-secret-access-key-poke "poke-access-key-secret"
-        :service-aws-sqs-api-version "2012-11-05"
-        :service-campfire-api-token "campfire-api-token"
-        :service-campfire-default-error-room "error-room"
-        :service-campfire-default-info-room "info-room"
-        :service-campfire-on false
-        :service-campfire-sub-domain "campfire-sub-domain"
-        :service-environments "poke"
-        :service-graphite-enabled "DISABLED"
-        :service-graphite-post-interval 1
-        :service-graphite-post-unit "MINUTES"
-        :service-local-app-names "localtest"
-        :service-local-config-path "test/shuppet/resources"
-        :service-logging-consolethreshold "off"
-        :service-logging-filethreshold "info"
-        :service-logging-level "info"
-        :service-logging-path "/tmp"
-        :service-logging-servicethreshold "off"
+        :graphite-enabled false
+        :graphite-host "carbon.brislabs.com"
+        :graphite-port 2003
+        :graphite-post-interval-seconds 60
+        :ignored-applications ""
+        :logging-consolethreshold "off"
+        :logging-filethreshold "info"
+        :logging-level "info"
+        :logging-path "/tmp"
+        :logging-stashthreshold "warn"
+        :onix-baseurl "http://onix/1.x"
+        :production false
+        :requestlog-enabled false
+        :requestlog-retainhours 24
+        :scheduler-interval 120
+        :scheduler-on false
+        :service-jvmargs ""
         :service-name "shuppet"
-        :service-port "8080"
-        :service-production false
-        :service-scheduler-interval 120
-        :service-scheduler-on false
-        :service-sqs-autoscale-announcements-poke "http://autoscale/announcements"
-        :service-sqs-enabled false
-        :service-tooling-applications "ditto,exploud,numel,tyranitar,onix,garbodor,shuppet"}
+        :service-port 8080
+        :shutdown-timeout-millis 5000
+        :start-timeout-seconds 120
+        :threads 254
+        :tooling-applications "ditto,exploud,numel,tyranitar,onix,garbodor,shuppet"}
 
-  :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
-                 :clojars-url "clojars@clojars.brislabs.com:"}
+  :lein-release {:deploy-via :shell
+                 :shell ["lein" "do" "clean," "uberjar," "pom," "rpm"]}
 
   :jvm-opts ["-Djava.security.policy=./.java.policy"]
 
@@ -111,12 +99,12 @@
 
   :rpm {:name "shuppet"
         :summary "RPM for Shuppet service"
-        :copyright "Nokia 2013"
+        :copyright "MixRadio 2014"
         :preinstall {:scriptFile "scripts/rpm/preinstall.sh"}
         :postinstall {:scriptFile "scripts/rpm/postinstall.sh"}
         :preremove {:scriptFile "scripts/rpm/preremove.sh"}
         :postremove {:scriptFile "scripts/rpm/postremove.sh"}
-        :requires ["jdk >= 2000:1.6.0_31-fcs"]
+        :requires ["jdk >= 2000:1.7.0_55-fcs"]
         :mappings [{:directory "/usr/local/shuppet"
                     :filemode "444"
                     :username "shuppet"

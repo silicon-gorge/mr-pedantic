@@ -46,7 +46,7 @@
   [handler]
   (fn [{:keys [uri] :as req}]
     (if (re-matches #"/1.x/envs/.*" uri)
-      (if (valid-env? uri (split (env :service-environments) #","))
+      (if (valid-env? uri (split (env :environments) #","))
         (handler req)
         {:message "Unknown environment"
          :status 404})

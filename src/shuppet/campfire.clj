@@ -3,15 +3,15 @@
             [environ.core :refer [env]]))
 
 (def ^:private cf-settings
-  {:api-token (env :service-campfire-api-token)
+  {:api-token (env :campfire-api-token)
    :ssl true
-   :sub-domain  (env :service-campfire-sub-domain)})
+   :sub-domain  (env :campfire-sub-domain)})
 
 (def ^:private campfire-on?
-  (Boolean/valueOf (env :service-campfire-on)))
+  (Boolean/valueOf (env :campfire-on)))
 
 (def ^:private default-info-room
-  (env :service-campfire-default-info-room))
+  (env :campfire-default-info-room))
 
 (defn- build-messages
   "Turn the report into multiple lines of text"

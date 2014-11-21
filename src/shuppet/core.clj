@@ -27,18 +27,14 @@
   720)
 
 (def default-keys-map
-  {:key (env :service-aws-access-key-id-poke)
-   :secret (env :service-aws-secret-access-key-poke)})
+  {:key (env :aws-access-key-id-poke)
+   :secret (env :aws-secret-access-key-poke)})
 
 (defn onix-app-names
   []
-  (let [url (str (env :environment-entertainment-onix-url) "/applications")
+  (let [url (str (env :onix-baseurl) "/applications")
         response (client/get url {:as :json})]
     (get-in response [:body :applications])))
-
-(defn local-app-names
-  []
-  (str/split (env :service-local-app-names) #","))
 
 (defn git-config-as-string
   [environment application]
@@ -50,12 +46,12 @@
 
 (defn aws-keys-map
   [environment]
-  {:key (env (keyword (str "service-aws-access-key-id-" environment)))
-   :secret (env (keyword (str "service-aws-secret-access-key-" environment)))} )
+  {:key (env (keyword (str "aws-access-key-id-" environment)))
+   :secret (env (keyword (str "aws-secret-access-key-" environment)))} )
 
 (defn- tooling-service?
   [name]
-  ((set (str/split (env :service-tooling-applications) #",")) name))
+  ((set (str/split (env :tooling-applications) #",")) name))
 
 (defn- process-report
   [report]

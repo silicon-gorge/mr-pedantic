@@ -5,7 +5,7 @@
             [clj-http.client :as client]))
 
 (def ^:private sqs-enabled?
-  (Boolean/valueOf (env :service-sqs-enabled)))
+  (Boolean/valueOf (env :aws-sqs-enabled)))
 
 (defn- send-message
   [queue-url message]
@@ -24,7 +24,7 @@
 
 (defn- announcements-queue-url
   [environment]
-  (env (keyword (str "service-sqs-autoscale-announcements-" environment))))
+  (env (keyword (str "aws-sqs-autoscale-announcements-" environment))))
 
 (defn announce-elb
   [elb-name environment]

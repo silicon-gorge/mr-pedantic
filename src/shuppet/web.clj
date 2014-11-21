@@ -9,9 +9,11 @@
             [metrics.ring
              [expose :refer [expose-metrics-as-json]]
              [instrument :refer [instrument]]]
-            [nokia.ring-utils
+            [radix
              [error :refer [wrap-error-handling error-response]]
-             [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
+             [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
+             [setup :as setup]
+             [reload :refer [wrap-reload]]]
             [ring.middleware
              [format-params :refer [wrap-json-kw-params]]
              [format-response :refer [wrap-json-response]]
@@ -22,12 +24,11 @@
              [scheduler :as scheduler]]
             [slingshot.slingshot :refer [throw+]]))
 
-(def ^:dynamic *version* "none")
-(def ^:private environments (env :service-environments))
+(def ^:private version
+  (setup/version "shuppet"))
 
-(defn set-version!
-  [version]
-  (alter-var-root #'*version* (fn [_] version)))
+(def ^:private environments
+  (env :environments))
 
 (defn- response
   ([body status]
@@ -137,7 +138,7 @@
 (defn healthcheck
   []
   {:body {:name "shuppet"
-          :version *version*
+          :version version
           :success true}})
 
 (defroutes applications-routes

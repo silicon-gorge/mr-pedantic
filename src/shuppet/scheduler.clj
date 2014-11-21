@@ -10,16 +10,16 @@
             [slingshot.slingshot :refer [try+ throw+]]))
 
 (def ^:private environments
-  (set (str/split (env :service-environments) #",")))
+  (set (str/split (env :environments) #",")))
 
 (def ^:private schedule-pools
   (atom {}))
 
 (def ^:private scheduler-on?
-  (Boolean/valueOf (env :service-scheduler-on)))
+  (Boolean/valueOf (env :scheduler-on)))
 
 (def ^:private scheduler-interval
-  (Integer/valueOf (env :service-scheduler-interval)))
+  (Integer/valueOf (env :scheduler-interval)))
 
 (defn- create-pool
   [environment]
@@ -69,7 +69,7 @@
 
 (defn environment-delay
   [environment]
-  (let [property (keyword (str "service-scheduler-delay-" environment))]
+  (let [property (keyword (str "scheduler-delay-" environment))]
     (Integer/valueOf (or (env property 1)))))
 
 (defn start

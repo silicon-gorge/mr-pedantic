@@ -23,7 +23,7 @@
 
 (def ^:private valid-environments
   (->
-   (str/split (env :service-environments) #",")
+   (str/split (env :environments) #",")
    (set)
    (disj "local" "poke")
    (conj "prod")))
