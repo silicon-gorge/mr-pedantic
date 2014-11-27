@@ -62,7 +62,7 @@
         :logging-level "info"
         :logging-path "/tmp"
         :logging-stashthreshold "warn"
-        :onix-baseurl "http://onix/1.x"
+        :onix-baseurl "http://onix"
         :production false
         :requestlog-enabled false
         :requestlog-retainhours 24
