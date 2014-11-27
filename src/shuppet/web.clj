@@ -68,21 +68,13 @@
   [env name]
   {:body (core/apply-config env name)})
 
-(defn- clean-app-config
-  [environment name]
-  (when-not (or (= (env :environment-name) "local") (= name "test"))
-    (throw+ {:type ::clean-not-allowed}));only allow clean for dev and integration test
-  (core/clean-config environment name)
-  {:body {:message (str "Succesfully cleaned the configuration for application " name)}})
-
 (defn- apply-apps-config
   [env]
   {:body (core/configure-apps env)})
 
 (defn- create-app-config
-  [name local master-only]
-  (let [env (if local "local" "")
-        resp (core/create-config env name master-only)]
+  [name]
+  (let [resp (core/create-config name)]
     {:body (dissoc resp :status)
      :status (:status resp)}))
 
@@ -132,7 +124,7 @@
                    "/1.x/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from Git repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
                    "/1.x/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment"
                    "/1.x/envs/:env-name/apps/:app-name/schedule" "Displays the current schedule for the app, use QS action=start/stop to start/stop the scheduler interval=xx in minutes (the default interval is 60 minutes, and the maximum stop interval is 720 minutes)")
-   :POST (array-map "/1.x/apps/:app-name" "Create an application configuration, QS Parameter masteronly=true, just creates the master branch"
+   :POST (array-map "/1.x/apps/:app-name" "Create an application configuration"
                     "/1.x/validate" "Validate the configuration passed in the body, env and app-name are optional parameters")})
 
 (defn healthcheck
@@ -171,10 +163,7 @@
        (app-schedule env name action interval))
 
   (GET "/:env/apps/:name/apply" [env name]
-       (apply-app-config env name))
-
-  (GET "/:env/apps/:name/clean" [env name]
-       (clean-app-config env name)))
+       (apply-app-config env name)))
 
 (defroutes routes
   (context "/1.x" []
@@ -184,8 +173,8 @@
                    (clojure.java.io/input-stream))
          :headers {"Content-Type" "image/jpeg"}})
 
-   (POST "/apps/:name" [name local masteronly]
-         (create-app-config (str/lower-case name) local (Boolean/valueOf masteronly)))
+   (POST "/apps/:name" [name]
+         (create-app-config (str/lower-case name)))
 
    (POST "/validate" [env app-name :as {body :body}]
          (validate-config env app-name (slurp body)))

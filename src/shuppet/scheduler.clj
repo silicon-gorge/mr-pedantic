@@ -70,7 +70,7 @@
 (defn environment-delay
   [environment]
   (let [property (keyword (str "scheduler-delay-" environment))]
-    (Integer/valueOf (or (env property 1)))))
+    (Integer/valueOf (env property 1))))
 
 (defn start
   []

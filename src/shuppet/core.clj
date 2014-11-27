@@ -36,13 +36,9 @@
         response (client/get url {:as :json})]
     (get-in response [:body :applications])))
 
-(defn git-config-as-string
-  [environment application]
-  (git/get-data environment application))
-
 (defn create-git-config
-  [application master-only]
-  (git/create-application application master-only))
+  [application]
+  (git/create-application application))
 
 (defn aws-keys-map
   [environment]
@@ -82,25 +78,21 @@
   (let [schedule (get-app-schedule environment name)]
     (if schedule
       (if (after? (local-now) schedule)
-        (not (empty? (swap! no-schedule-services dissoc (keyword (str environment "-" name)))))
+        (seq (swap! no-schedule-services dissoc (keyword (str environment "-" name))))
         true)
       false)))
 
-(defn- local-config [filename]
-  (slurp (str "test/shuppet/resources/local/" filename ".clj")))
-
 (defn get-config
   ([environment]
-     (let [config (if (= environment "local") (local-config environment) (git/get-data environment))]
-       (-> (cl-core/evaluate-string config)
-           (validate-env))))
+     (let [config (git/get-data environment)]
+       (validate-env (cl-core/evaluate-string config))))
   ([environment application]
-     (let [config (if (= environment "local") (local-config environment) (git/get-data environment))]
+     (let [config (git/get-data environment)]
        (get-config config environment application)))
   ([env-str-config environment application]
      (if (and env-str-config application)
        (let [default-policies (:DefaultRolePolicies (cl-core/evaluate-string env-str-config))
-             app-config (if (= environment "local") (local-config application) (git/get-data environment application))
+             app-config (git/get-data application)
              app-config (cl-core/evaluate-string [env-str-config app-config]
                                                  {:$app-name application
                                                   :$env environment})
@@ -163,7 +155,7 @@
   (let [environment? (env-config? config)
         environent (or environment "poke")
         application (or application "app-name")
-        env-config (if (= environment "local") (local-config environment) (git/get-data environment))
+        env-config (git/get-data environment)
         config (if environment?
                  (cl-core/evaluate-string config)
                  (cl-core/evaluate-string [env-config config]
@@ -174,15 +166,8 @@
       (validate-app config))))
 
 (defn create-config
-  [environment application master-only]
-  (when-not (= "local" environment)
-    (let [master-only (or master-only (tooling-service? application))]
-      (create-git-config application master-only))))
-
-(defn clean-config
-  [environment application]
-  (binding [cl-sign/*aws-credentials* (aws-keys-map environment)]
-    (cl-core/clean-config (get-config environment application))))
+  [application]
+  (create-git-config application))
 
 (defn- filter-tooling-services
   [environment names]

@@ -37,11 +37,12 @@
       (provided
        (cluppet/evaluate-string ..str-env..)
        => {:DefaultRolePolicies [..default-policy..]}
-       (git/get-data "poke" ..app..)
+       (git/get-data ..app..)
        => ..str-app..
        (cluppet/evaluate-string [..str-env.. ..str-app..] anything)
        =>  {:Role {:RoleName ..name..
                    :Policies [..app-policy..]}}))
+
 (fact "that env config is loaded when there is just an env string"
       (get-config nil "poke" nil)
       => ..env-config..
@@ -68,7 +69,6 @@
        (get-config ..env-config.. ..env.. ..app..) => ..app-config..
        (cluppet/apply-config ..app-config.. ) =throws=>  (NullPointerException.)))
 
-
 (fact "that an app can be excluded"
       (stop-schedule-temporarily "env" "app" nil) => anything
       (filtered-apply-config ..env-str.. "env" "app") => (contains {:excluded true})
@@ -79,7 +79,6 @@
       (filtered-apply-config ..env-str.. "env" "app") => ..report..
       (provided
        (apply-config ..env-str..  "env" "app") => ..report..))
-
 
 (fact "that any errors are caught"
       (configure-apps ..env..) =>  (contains {:environment ..env..
