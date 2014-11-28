@@ -39,13 +39,13 @@
 (defn- valid-env?
   [uri envs]
   (not-empty (filter identity (map
-                               #(re-matches (re-pattern (str "/1.x/envs/" % ".*")) uri)
+                               #(re-matches (re-pattern (str "/envs/" % ".*")) uri)
                                envs))))
 
 (defn wrap-check-env
   [handler]
   (fn [{:keys [uri] :as req}]
-    (if (re-matches #"/1.x/envs/.*" uri)
+    (if (re-matches #"/envs/.*" uri)
       (if (valid-env? uri (split (env :environments) #","))
         (handler req)
         {:message "Unknown environment"

@@ -166,21 +166,15 @@
        (apply-app-config env name)))
 
 (defroutes routes
-  (context "/1.x" []
 
-   (GET "/icon" []
-        {:body (-> (clojure.java.io/resource "shuppet.jpg")
-                   (clojure.java.io/input-stream))
-         :headers {"Content-Type" "image/jpeg"}})
+  (POST "/apps/:name" [name]
+        (create-app-config (str/lower-case name)))
 
-   (POST "/apps/:name" [name]
-         (create-app-config (str/lower-case name)))
+  (POST "/validate" [env app-name :as {body :body}]
+        (validate-config env app-name (slurp body)))
 
-   (POST "/validate" [env app-name :as {body :body}]
-         (validate-config env app-name (slurp body)))
-
-   (context "/envs" []
-            applications-routes))
+  (context "/envs" []
+           applications-routes)
 
   (GET "/ping" []
        {:body "pong"
@@ -195,8 +189,15 @@
 
   (route/not-found (error-response "Resource not found" 404)))
 
+(defn remove-legacy-path
+  "Temporarily redirect anything with /1.x in the path to somewhere without /1.x"
+  [handler]
+  (fn [request]
+    (handler (update-in request [:uri] (fn [uri] (str/replace-first uri "/1.x" ""))))))
+
 (def app
   (-> routes
+      (remove-legacy-path)
       (middleware/wrap-check-env)
       (middleware/wrap-shuppet-error)
       (instrument)
