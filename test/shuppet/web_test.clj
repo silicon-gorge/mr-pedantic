@@ -49,26 +49,26 @@
       (request :get "/healthcheck") => (contains {:status 200}))
 
 (fact "that we can list environments"
-      (request :get "/1.x/envs") => (contains {:body {:environments ["poke"]}
+      (request :get "/envs") => (contains {:body {:environments ["poke"]}
                                                :status 200}))
 
 (fact "that we can read environment configuration"
-      (request :get "/1.x/envs/poke") => (contains {:body {:some "config"}
+      (request :get "/envs/poke") => (contains {:body {:some "config"}
                                                     :status 200})
       (provided
        (core/get-config "poke") => {:some "config"}))
 
 (fact "that we get a 404 for an unknown environment"
-      (request :get "/1.x/envs/unknown") => (contains {:status 404}))
+      (request :get "/envs/unknown") => (contains {:status 404}))
 
 (fact "that we can read application configuration"
-      (request :get "/1.x/envs/poke/apps/application") => (contains {:body {:some "config"}
+      (request :get "/envs/poke/apps/application") => (contains {:body {:some "config"}
                                                                      :status 200})
       (provided
        (core/get-config "poke" "application") => {:some "config"}))
 
 (fact "that we can validate environment configuration"
-      (request :post "/1.x/validate" (merge (json-body {:some "config"})
+      (request :post "/validate" (merge (json-body {:some "config"})
                                             {:params {"env" "poke"}}))
       => (contains {:body {:the "result"}
                     :status 200})
@@ -76,7 +76,7 @@
        (core/validate-config "poke" nil "{\"some\":\"config\"}") => {:the "result"}))
 
 (fact "that we can validate application configuration"
-      (request :post "/1.x/validate" (merge (json-body {:some "config"})
+      (request :post "/validate" (merge (json-body {:some "config"})
                                             {:params {"env" "poke"
                                                       "app-name" "application"}}))
       => (contains {:body {:the "result"}
@@ -85,7 +85,7 @@
        (core/validate-config "poke" "application" "{\"some\":\"config\"}") => {:the "result"}))
 
 (fact "that an invalid application configuration is rejected"
-      (request :post "/1.x/validate" (merge (json-body {:some "config"})
+      (request :post "/validate" (merge (json-body {:some "config"})
                                             {:params {"env" "poke"
                                                       "app-name" "application"}}))
       => (contains {:status 400})
@@ -94,7 +94,7 @@
                                                                                                            :details {:the "result"}})))
 
 (fact "that we can apply an application configuration"
-      (request :get "/1.x/envs/poke/apps/application/apply")
+      (request :get "/envs/poke/apps/application/apply")
       => (contains {:body {:report "something"}
                     :status 200})
       (provided
