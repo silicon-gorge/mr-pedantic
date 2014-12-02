@@ -1,16 +1,16 @@
-(ns shuppet.core-test
+(ns pedantic.core-test
   (:require [cluppet.core :as cluppet]
             [midje
              [sweet :refer :all]
              [util :refer :all]]
-            [shuppet
+            [pedantic
              [campfire :as cf]
              [core :refer :all]
              [git :as git]
              [sqs :as sqs]
              [util :as util]]))
 
-(testable-privates shuppet.core env-config?)
+(testable-privates pedantic.core env-config?)
 
 (fact "that we can detect environment config"
       (env-config? "(def $var \"value\")") => truthy

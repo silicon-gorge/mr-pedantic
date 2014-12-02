@@ -1,6 +1,5 @@
-(defproject shuppet "0.70-SNAPSHOT"
-  :description "Shuppet service"
-  :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Shuppet"
+(defproject pedantic "0.70-SNAPSHOT"
+  :description "Pedantic service"
 
   :dependencies [[bouncer "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.2"]
@@ -51,40 +50,40 @@
         :environments "poke"
         :github-auth-token "github-auth-token"
         :github-base-url "http://github/api/v3/"
-        :github-organisation "shuppet"
+        :github-organisation "pedantic"
         :graphite-enabled false
-        :graphite-host "carbon.brislabs.com"
+        :graphite-host "carbon"
         :graphite-port 2003
         :graphite-post-interval-seconds 60
         :ignored-applications ""
+        :lister-baseurl "http://lister"
         :logging-consolethreshold "off"
         :logging-filethreshold "info"
         :logging-level "info"
         :logging-path "/tmp"
         :logging-stashthreshold "warn"
-        :onix-baseurl "http://onix"
         :production false
         :requestlog-enabled false
         :requestlog-retainhours 24
         :scheduler-interval 120
         :scheduler-on false
         :service-jvmargs ""
-        :service-name "shuppet"
+        :service-name "pedantic"
         :service-port 8080
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
         :threads 254
-        :tooling-applications "ditto,exploud,numel,tyranitar,onix,garbodor,shuppet"}
+        :tooling-applications "tooling"}
 
   :lein-release {:deploy-via :shell
                  :shell ["lein" "do" "clean," "uberjar," "pom," "rpm"]}
 
   :jvm-opts ["-Djava.security.policy=./.java.policy"]
 
-  :ring {:handler shuppet.web/app
-         :main shuppet.setup
+  :ring {:handler pedantic.web/app
+         :main pedantic.setup
          :port ~(Integer/valueOf (get (System/getenv) "SERVICE_PORT" "8080"))
-         :init shuppet.setup/setup
+         :init pedantic.setup/setup
          :browser-uri "/healthcheck"
          :nrepl {:start? true}}
 
@@ -93,36 +92,36 @@
                  "rm.brislabs.com"
                  "http://rm.brislabs.com/nexus/content/groups/all-releases"}
 
-  :uberjar-name "shuppet.jar"
+  :uberjar-name "pedantic.jar"
 
   :eastwood {:namespaces [:source-paths]}
 
-  :rpm {:name "shuppet"
-        :summary "RPM for Shuppet service"
+  :rpm {:name "pedantic"
+        :summary "RPM for Pedantic service"
         :copyright "MixRadio 2014"
         :preinstall {:scriptFile "scripts/rpm/preinstall.sh"}
         :postinstall {:scriptFile "scripts/rpm/postinstall.sh"}
         :preremove {:scriptFile "scripts/rpm/preremove.sh"}
         :postremove {:scriptFile "scripts/rpm/postremove.sh"}
         :requires ["jdk >= 2000:1.7.0_55-fcs"]
-        :mappings [{:directory "/usr/local/shuppet"
+        :mappings [{:directory "/usr/local/pedantic"
                     :filemode "444"
-                    :username "shuppet"
-                    :groupname "shuppet"
-                    :sources {:source [{:location "target/shuppet.jar"}]}}
-                   {:directory "/usr/local/shuppet"
+                    :username "pedantic"
+                    :groupname "pedantic"
+                    :sources {:source [{:location "target/pedantic.jar"}]}}
+                   {:directory "/usr/local/pedantic"
                     :filemode "444"
-                    :username "shuppet"
-                    :groupname "shuppet"
+                    :username "pedantic"
+                    :groupname "pedantic"
                     :sources {:source [{:location ".java.policy"}]}}
-                   {:directory "/usr/local/shuppet/bin"
+                   {:directory "/usr/local/pedantic/bin"
                     :filemode "744"
-                    :username "shuppet"
-                    :groupname "shuppet"
+                    :username "pedantic"
+                    :groupname "pedantic"
                     :sources {:source [{:location "scripts/bin"}]}}
                    {:directory "/etc/rc.d/init.d"
                     :filemode "755"
-                    :sources {:source [{:location "scripts/service/shuppet"
-                                        :destination "shuppet"}]}}]}
+                    :sources {:source [{:location "scripts/service/pedantic"
+                                        :destination "pedantic"}]}}]}
 
-  :main shuppet.setup)
+  :main pedantic.setup)

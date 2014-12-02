@@ -1,21 +1,21 @@
-(ns shuppet.middleware
+(ns pedantic.middleware
   (:require [cheshire.core :as json]
             [clojure.string :refer [split]]
             [environ.core :refer [env]]
             [ring.util.response :as ring-response]
             [slingshot.slingshot :refer [try+ throw+]]))
 
-(defn wrap-shuppet-error
+(defn wrap-pedantic-error
   [handler]
   (fn [req]
     (try+
      (handler req)
-     (catch [:type :shuppet.validator/validator] e
+     (catch [:type :pedantic.validator/validator] e
        (->  (ring-response/response (json/generate-string {:message "Validation Failure"
                                                            :details (e :details)}))
             (ring-response/content-type "application/json")
             (ring-response/status 400)))
-     (catch [:type :shuppet.git/git] e
+     (catch [:type :pedantic.git/git] e
        (->  (ring-response/response (json/generate-string {:message (e :message)}))
             (ring-response/content-type "application/json")
             (ring-response/status (e :status))))

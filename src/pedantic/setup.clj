@@ -1,13 +1,13 @@
-(ns shuppet.setup
+(ns pedantic.setup
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.logging :refer [info warn error]]
             [environ.core :refer [env]]
             [mixradio.instrumented-jetty :refer [run-jetty]]
-            [radix.setup :as setup]
-            [shuppet
+            [pedantic
              [scheduler :as scheduler]
-             [web :as web]])
+             [web :as web]]
+            [radix.setup :as setup])
   (:gen-class))
 
 (defonce server

@@ -1,4 +1,4 @@
-(ns shuppet.validator
+(ns pedantic.validator
   (:require [bouncer
              [core :as b]
              [validators :as v]]

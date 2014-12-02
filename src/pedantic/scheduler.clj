@@ -1,10 +1,10 @@
-(ns shuppet.scheduler
+(ns pedantic.scheduler
   (:require [clojure.string :as str]
             [clojure.tools.logging :refer [info warn error]]
             [environ.core :refer [env]]
             [metrics.timers :refer [time! timer]]
             [overtone.at-at :as at-at]
-            [shuppet
+            [pedantic
              [core :as core]
              [util :refer [rfc2616-time str-stacktrace]]]
             [slingshot.slingshot :refer [try+ throw+]]))
@@ -47,13 +47,13 @@
    (let [pool (get-pool environment)]
      (at-at/stop-and-reset-pool! pool :strategy :kill)
      (if (= action "stop")
-       {:message "Successfully stopped the shuppet scheduler"}
+       {:message "Successfully stopped the Pedantic scheduler"}
        (let [interval (or interval scheduler-interval)]
          (at-at/every (* interval 60 1000)
                       #(configure-apps environment)
                       pool
                       :desc (rfc2616-time))
-         {:message (str "Successfully started the shuppet scheduler. The scheduler will run every " interval " minutes.") })))
+         {:message (str "Successfully started the Pedantic scheduler. The scheduler will run every " interval " minutes.") })))
    (catch Exception e
      (error (str-stacktrace e))
      (throw+ e))))

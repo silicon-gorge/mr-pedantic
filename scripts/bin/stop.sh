@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PIDS=$(pgrep java -lf | grep shuppet | cut -d" " -f1);
+PIDS=$(pgrep java -lf | grep pedantic | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then

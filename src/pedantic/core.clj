@@ -1,4 +1,4 @@
-(ns shuppet.core
+(ns pedantic.core
   (:require [clj-http.client :as client]
             [clj-time
              [core :refer [plus after? minutes]]
@@ -9,7 +9,7 @@
              [core :as cl-core]
              [signature :as cl-sign]]
             [environ.core :refer [env]]
-            [shuppet
+            [pedantic
              [util :as util]
              [git :as git]
              [sqs :as sqs]
@@ -30,9 +30,9 @@
   {:key (env :aws-access-key-id-poke)
    :secret (env :aws-secret-access-key-poke)})
 
-(defn onix-app-names
+(defn lister-app-names
   []
-  (let [url (str (env :onix-baseurl) "/applications")
+  (let [url (str (env :lister-baseurl) "/applications")
         response (client/get url {:as :json})]
     (get-in response [:body :applications])))
 
@@ -121,7 +121,7 @@
          (cl-core/apply-config (get-config env-str-config environment application))
          (format-report environment application)
          (process-report)))
-      (catch [:type :shuppet.git/git] m
+      (catch [:type :pedantic.git/git] m
         (let [message (merge {:environment environment
                               :application application} m)]
           (warn message)
@@ -177,7 +177,7 @@
 
 (defn app-names
   [environment]
-  (filter-tooling-services environment (onix-app-names)))
+  (filter-tooling-services environment (lister-app-names)))
 
 (defn update-configs
   [env-str-config environment]

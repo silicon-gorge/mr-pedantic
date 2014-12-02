@@ -1,13 +1,13 @@
-(ns shuppet.campfire-test
+(ns pedantic.campfire-test
   (:require [clj-campfire.core :as cf]
             [environ.core :refer [env]]
             [midje.sweet :refer :all]
-            [shuppet.campfire :refer :all]))
+            [pedantic.campfire :refer :all]))
 
 (def campfire-before
-  (intern 'shuppet.campfire 'campfire-on?))
+  (intern 'pedantic.campfire 'campfire-on?))
 
-(intern 'shuppet.campfire 'campfire-on? true)
+(intern 'pedantic.campfire 'campfire-on? true)
 
 (fact "that we can get a room"
       (room "the-room") => "room-id"
@@ -40,7 +40,7 @@
       (provided
        (cf/message anything anything) => nil :times 0))
 
-(intern 'shuppet.campfire 'campfire-on? false)
+(intern 'pedantic.campfire 'campfire-on? false)
 
 (fact "that info messages can be sent"
       (info {:environment "env" :application "app" :report [{:message "message1"}
@@ -55,4 +55,4 @@
       (provided
        (cf/message anything anything) => nil :times 0))
 
-(intern 'shuppet.campfire 'campfire-on? campfire-before)
+(intern 'pedantic.campfire 'campfire-on? campfire-before)

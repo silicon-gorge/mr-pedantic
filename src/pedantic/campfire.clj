@@ -1,4 +1,4 @@
-(ns shuppet.campfire
+(ns pedantic.campfire
   (:require [clj-campfire.core :as cf]
             [environ.core :refer [env]]))
 

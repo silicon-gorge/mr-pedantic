@@ -1,12 +1,12 @@
 #!/bin/sh
 
-APP_NAME=shuppet
+APP_NAME=pedantic
 
 PIDS=$(pgrep java -lf | grep $APP_NAME | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then
-  echo "Shuppet is already running in process $PIDS";
+  echo "Pedantic is already running in process $PIDS";
   exit 1
 fi
 
@@ -32,8 +32,8 @@ SERVICE_PORT=${SERVICE_PORT:-"8080"}
 HEALTHCHECK_PATH=${HEALTHCHECK_PATH:-"/healthcheck"}
 START_TIMEOUT_SECONDS=${START_TIMEOUT_SECONDS:-"60"}
 LOGGING_PATH=${LOGGING_PATH:-"/var/log/${SERVICE_NAME}"}
-LOG_FILE=${LOGGING_PATH}/shuppet.out
-ERR_FILE=${LOGGING_PATH}/shuppet.err
+LOG_FILE=${LOGGING_PATH}/pedantic.out
+ERR_FILE=${LOGGING_PATH}/pedantic.err
 
 mkdir -p /var/encrypted/logs/${APP_NAME}
 
@@ -44,7 +44,7 @@ waitTimeout=$START_TIMEOUT_SECONDS
 sleepCounter=0
 sleepIncrement=2
 
-echo "Giving Shuppet $waitTimeout seconds to start successfully"
+echo "Giving Pedantic $waitTimeout seconds to start successfully"
 echo "Using $statusUrl to determine service status"
 
 retVal=0
@@ -53,7 +53,7 @@ until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -
 do
   if [ $sleepCounter -ge $waitTimeout ]
   then
-    echo "Shuppet didn't start within $waitTimeout seconds."
+    echo "Pedantic didn't start within $waitTimeout seconds."
     PIDS=$(pgrep java -lf | grep $APP_NAME | cut -d" " -f1);
     if [ -n "$PIDS" ]
 	then
@@ -80,9 +80,9 @@ cat $ERR_FILE 1>&2
 
 if [ $retVal -eq 1 ]
 then
-  echo "Starting Shuppet failed"
+  echo "Starting Pedantic failed"
 else
-  echo "Starting Shuppet succeeded"
+  echo "Starting Pedantic succeeded"
 fi
 
 exit $retVal

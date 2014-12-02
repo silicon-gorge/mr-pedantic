@@ -1,9 +1,9 @@
-(ns shuppet.util-test
+(ns pedantic.util-test
   (:require [clj-time
              [core :as time]
              [local :as local]]
             [midje.sweet :refer :all]
-            [shuppet.util :refer :all]))
+            [pedantic.util :refer :all]))
 
 (fact "that creating an rfc2616 time works"
       (rfc2616-time) => "Thu, 21 Aug 1997 08:00:00 GMT"

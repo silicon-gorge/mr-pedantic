@@ -1,4 +1,4 @@
-(ns shuppet.sqs
+(ns pedantic.sqs
   (:require [environ.core :refer [env]]
             [cheshire.core :refer [generate-string]]
             [cluppet.signature :refer [get-signed-request]]

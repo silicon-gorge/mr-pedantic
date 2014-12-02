@@ -1,10 +1,10 @@
-(ns shuppet.web-test
+(ns pedantic.web-test
   (:require [cheshire.core :as json]
             [midje.sweet :refer :all]
-            [ring.util.io :refer [string-input-stream]]
-            [shuppet
+            [pedantic
              [core :as core]
              [web :refer :all]]
+            [ring.util.io :refer [string-input-stream]]
             [slingshot.support :as s]))
 
 (defn- json-body
@@ -90,7 +90,7 @@
                                                       "app-name" "application"}}))
       => (contains {:status 400})
       (provided
-       (core/validate-config "poke" "application" "{\"some\":\"config\"}") =throws=> (slingshot-exception {:type :shuppet.validator/validator
+       (core/validate-config "poke" "application" "{\"some\":\"config\"}") =throws=> (slingshot-exception {:type :pedantic.validator/validator
                                                                                                            :details {:the "result"}})))
 
 (fact "that we can apply an application configuration"

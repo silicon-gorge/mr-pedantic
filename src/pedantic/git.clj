@@ -1,4 +1,4 @@
-(ns shuppet.git
+(ns pedantic.git
   (:require [clj-time
              [core :as time]
              [format :as fmt]]
@@ -54,7 +54,7 @@
   [name]
   (if-let [data (data-from-repo name)]
     data
-    (send-error 404 "Missing Shuppet configuration")))
+    (send-error 404 "Missing Pedantic configuration")))
 
 (defn- create-repository
   [application]

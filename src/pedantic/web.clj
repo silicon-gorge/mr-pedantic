@@ -1,4 +1,4 @@
-(ns shuppet.web
+(ns pedantic.web
   (:require [cheshire.core :as json]
             [compojure
              [core :refer [defroutes context GET PUT POST DELETE]]
@@ -9,6 +9,10 @@
             [metrics.ring
              [expose :refer [expose-metrics-as-json]]
              [instrument :refer [instrument]]]
+            [pedantic
+             [core :as core]
+             [middleware :as middleware]
+             [scheduler :as scheduler]]
             [radix
              [error :refer [wrap-error-handling error-response]]
              [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
@@ -18,14 +22,10 @@
              [format-params :refer [wrap-json-kw-params]]
              [format-response :refer [wrap-json-response]]
              [params :refer [wrap-params]]]
-            [shuppet
-             [core :as core]
-             [middleware :as middleware]
-             [scheduler :as scheduler]]
             [slingshot.slingshot :refer [throw+]]))
 
 (def ^:private version
-  (setup/version "shuppet"))
+  (setup/version "pedantic"))
 
 (def ^:private environments
   (env :environments))
@@ -118,8 +118,8 @@
                    "/envs/:env-name" "Read and evaluate the environment configuration :env-name.clj from Git repository :env-name, return the configuration in JSON"
                    "/envs/:env-name/apply" "Apply the environment configuration"
                    "/envs/:env-name/apps" "All available applications for the given environment"
-                   "/envs/:env-name/schedule" "Shows the current shuppet schedule, if any"
-                   "/envs/:env-name/apps/apply" "Apply configuration for all applications listed in Onix"
+                   "/envs/:env-name/schedule" "Shows the current Pedantic schedule, if any"
+                   "/envs/:env-name/apps/apply" "Apply configuration for all applications listed in Lister"
                    "/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from Git repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
                    "/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment"
                    "/envs/:env-name/apps/:app-name/schedule" "Displays the current schedule for the app, use QS action=start/stop to start/stop the scheduler interval=xx in minutes (the default interval is 60 minutes, and the maximum stop interval is 720 minutes)")
@@ -128,7 +128,7 @@
 
 (defn healthcheck
   []
-  {:body {:name "shuppet"
+  {:body {:name "pedantic"
           :version version
           :success true}})
 
@@ -198,7 +198,7 @@
   (-> routes
       (remove-legacy-path)
       (middleware/wrap-check-env)
-      (middleware/wrap-shuppet-error)
+      (middleware/wrap-pedantic-error)
       (instrument)
       (wrap-error-handling)
       (wrap-ignore-trailing-slash)

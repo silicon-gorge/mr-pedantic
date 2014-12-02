@@ -1,20 +1,20 @@
 /bin/echo "preinstall script started [$1]"
 
-APP_NAME=shuppet
+APP_NAME=pedantic
 prefixDir=/usr/local/$APP_NAME
 identifier=$APP_NAME.jar
 
 isJettyRunning=`pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l`
 if [ $isJettyRunning -eq 0 ]
 then
-  /bin/echo "Shuppet is not running"
+  /bin/echo "Pedantic is not running"
 else
   sleepCounter=0
   sleepIncrement=2
   waitTimeOut=600
 
   /bin/echo "Timeout is $waitTimeOut seconds"
-  /bin/echo "Shuppet is running, stopping service"
+  /bin/echo "Pedantic is running, stopping service"
   /sbin/service $APP_NAME stop &
   myPid=$!
 
@@ -23,7 +23,7 @@ else
     if [ $sleepCounter -ge $waitTimeOut ]
     then
       /usr/bin/pkill -KILL -f '$identifier'
-      /bin/echo "Killed Shuppet"
+      /bin/echo "Killed Pedantic"
       break
     fi
     sleep $sleepIncrement
@@ -32,7 +32,7 @@ else
 
   wait $myPid
 
-  /bin/echo "Shuppet down"
+  /bin/echo "Pedantic down"
 fi
 
 rm -rf $prefixDir
@@ -40,7 +40,7 @@ rm -rf $prefixDir
 if [ "$1" -le 1 ]
 then
   mkdir -p $prefixDir
-  /usr/sbin/useradd -r -s /sbin/nologin -d $prefixDir -m -c "Shuppet user for the Shuppet service" $APP_NAME 2> /dev/null || :
+  /usr/sbin/useradd -r -s /sbin/nologin -d $prefixDir -m -c "Pedantic user for the Pedantic service" $APP_NAME 2> /dev/null || :
 fi
 
 /usr/bin/getent passwd $APP_NAME

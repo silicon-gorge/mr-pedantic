@@ -1,4 +1,4 @@
-(ns shuppet.util
+(ns pedantic.util
   (:require [clj-time.local :as local]
             [clj-time.format :as format])
   (:import [java.io StringWriter PrintWriter]))

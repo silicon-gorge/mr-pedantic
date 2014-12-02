@@ -1,6 +1,6 @@
-(ns shuppet.git-test
+(ns pedantic.git-test
   (:require [midje.sweet :refer :all]
-            [shuppet.git :refer :all]
+            [pedantic.git :refer :all]
             [tentacles
              [repos :as repos]]))
 
@@ -8,6 +8,6 @@
       (get-data "application")
       => "content"
       (provided
-       (repos/contents "shuppet" "application" "application.clj" {:ref "master"
-                                                                  :str? true})
+       (repos/contents "pedantic" "application" "application.clj" {:ref "master"
+                                                                   :str? true})
        => {:content "content"}))
