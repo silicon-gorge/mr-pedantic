@@ -1,4 +1,4 @@
-(defproject pedantic "0.71"
+(defproject pedantic "0.72-SNAPSHOT"
   :description "Pedantic service"
 
   :dependencies [[bouncer "0.3.1"]
