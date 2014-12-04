@@ -1,5 +1,6 @@
 (defproject pedantic "0.71-SNAPSHOT"
   :description "Pedantic service"
+  :license  "https://github.com/mixradio/mr-pedantic/blob/master/LICENSE"
 
   :dependencies [[bouncer "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.2"]
