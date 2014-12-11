@@ -4,6 +4,8 @@
 
 Pedantic is able to create IAM roles (and their policies), security groups, load balancers, S3 buckets and DynamoDB tables in AWS. It regularly compares a configuration file with the current state of an AWS account and makes the changes required to ensure the state matches whatever configuration is present.
 
+You can see @neilprosser talking about the application in [this talk at Clojure eXchange 2014](https://skillsmatter.com/skillscasts/6057-herding-cattle-with-clojure-at-mixradio).
+
 All the configuration is stored in Github repositories in under a chosen organisation. Each application has a repository which contains a file called `{application}.clj` which contains configuration to be applied to all accounts.
 
 Pedantic can also use Campfire to communicate configuration changes.
