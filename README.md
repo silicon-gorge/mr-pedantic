@@ -1,4 +1,4 @@
-# Mr. Pedantic - Keeping AWS infrastructure in sync
+# Mr. Pedantic [![Build Status](https://travis-ci.org/mixradio/mr-pedantic.png)](https://travis-ci.org/mixradio/mr-pedantic)
 
 ## Intro
 
