@@ -20,7 +20,7 @@ or:
 
 ```
 lein uberjar
-java -jar pedantic.jar
+java -jar target/pedantic.jar
 ```
 
 ## Configuration
