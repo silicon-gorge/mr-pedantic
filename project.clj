@@ -16,11 +16,11 @@
                  [mixradio/instrumented-ring-jetty-adapter "1.0.4"]
                  [mixradio/radix "1.0.9"]
                  [net.logstash.logback/logstash-logback-encoder "3.4"]
-                 [ninjakoala/tentacles.custom "0.2.9"]
                  [org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.logging "0.3.1"]
                  [overtone/at-at "1.2.0"]
-                 [ring-middleware-format "0.4.0"]]
+                 [ring-middleware-format "0.4.0"]
+                 [tentacles "0.3.0"]]
 
   :exclusions [commons-logging
                log4j
