@@ -23,7 +23,7 @@
 
 (defn request
   "Creates a compojure request map and applies it to our application.
-   Accepts method, resource and optionally an extended map"
+  Accepts method, resource and optionally an extended map"
   [method resource & [{:keys [body headers params]
                        :or {:body nil
                             :headers {}
@@ -50,11 +50,11 @@
 
 (fact "that we can list environments"
       (request :get "/envs") => (contains {:body {:environments ["poke"]}
-                                               :status 200}))
+                                           :status 200}))
 
 (fact "that we can read environment configuration"
       (request :get "/envs/poke") => (contains {:body {:some "config"}
-                                                    :status 200})
+                                                :status 200})
       (provided
        (core/get-config "poke") => {:some "config"}))
 
@@ -63,13 +63,13 @@
 
 (fact "that we can read application configuration"
       (request :get "/envs/poke/apps/application") => (contains {:body {:some "config"}
-                                                                     :status 200})
+                                                                 :status 200})
       (provided
        (core/get-config "poke" "application") => {:some "config"}))
 
 (fact "that we can validate environment configuration"
       (request :post "/validate" (merge (json-body {:some "config"})
-                                            {:params {"env" "poke"}}))
+                                        {:params {"env" "poke"}}))
       => (contains {:body {:the "result"}
                     :status 200})
       (provided
@@ -77,8 +77,8 @@
 
 (fact "that we can validate application configuration"
       (request :post "/validate" (merge (json-body {:some "config"})
-                                            {:params {"env" "poke"
-                                                      "app-name" "application"}}))
+                                        {:params {"env" "poke"
+                                                  "app-name" "application"}}))
       => (contains {:body {:the "result"}
                     :status 200})
       (provided
@@ -86,8 +86,8 @@
 
 (fact "that an invalid application configuration is rejected"
       (request :post "/validate" (merge (json-body {:some "config"})
-                                            {:params {"env" "poke"
-                                                      "app-name" "application"}}))
+                                        {:params {"env" "poke"
+                                                  "app-name" "application"}}))
       => (contains {:status 400})
       (provided
        (core/validate-config "poke" "application" "{\"some\":\"config\"}") =throws=> (slingshot-exception {:type :pedantic.validator/validator

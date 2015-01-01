@@ -32,13 +32,13 @@
 
 (defn- response
   ([body status]
-     (merge {:status status
-             :headers {"Content-Type" "application/json"}}
-      (if (nil? body)
-        {}
-        {:body body})))
+   (merge {:status status
+           :headers {"Content-Type" "application/json"}}
+          (if (nil? body)
+            {}
+            {:body body})))
   ([body]
-     (response body 200)))
+   (response body 200)))
 
 (defn- list-envs
   []
