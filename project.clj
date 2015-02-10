@@ -42,11 +42,6 @@
         :aws-secret-access-key-poke "poke-access-key-secret"
         :aws-sqs-autoscale-announcements-poke "http://autoscale/announcements"
         :aws-sqs-enabled false
-        :campfire-api-token "campfire-api-token"
-        :campfire-default-error-room "error-room"
-        :campfire-default-info-room "info-room"
-        :campfire-on false
-        :campfire-sub-domain "campfire-sub-domain"
         :environment-name "dev"
         :environments "poke"
         :github-auth-token "github-auth-token"
@@ -56,6 +51,10 @@
         :graphite-host "carbon"
         :graphite-port 2003
         :graphite-post-interval-seconds 60
+        :hubot-error-room "pedantic-error"
+        :hubot-info-room "pedantic-info"
+        :hubot-on false
+        :hubot-url "http://hubot"
         :ignored-applications ""
         :lister-baseurl "http://lister"
         :logging-consolethreshold "off"

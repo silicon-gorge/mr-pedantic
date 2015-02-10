@@ -4,9 +4,9 @@
              [sweet :refer :all]
              [util :refer :all]]
             [pedantic
-             [campfire :as cf]
              [core :refer :all]
              [git :as git]
+             [hubot :as hubot]
              [sqs :as sqs]
              [util :as util]]))
 
@@ -25,8 +25,8 @@
        (get-config ..config.. "poke" ..app..) => ..evaluated-config..
        (cluppet/apply-config ..evaluated-config..) =>  [{:action :CreateLoadBalancer
                                                          :elb-name ..elb-name..}]
-       (cf/info {:application ..app.. :environment "poke" :report [{:action :CreateLoadBalancer
-                                                                    :elb-name ..elb-name..}]}) => nil
+       (hubot/info {:application ..app.. :environment "poke" :report [{:action :CreateLoadBalancer
+                                                                       :elb-name ..elb-name..}]}) => nil
        (sqs/announce-elb ..elb-name.. "poke" ) => ..anything..))
 
 (fact "that default role policies are added to app config and are validated"

@@ -10,10 +10,10 @@
              [signature :as cl-sign]]
             [environ.core :refer [env]]
             [pedantic
+             [hubot :as hubot]
              [util :as util]
              [git :as git]
              [sqs :as sqs]
-             [campfire :as cf]
              [validator :refer [validate-app validate-env]]]
             [slingshot.slingshot :refer [try+ throw+]]))
 
@@ -51,7 +51,7 @@
 
 (defn- process-report
   [report]
-  (cf/info report)
+  (hubot/info report)
   (info report)
   (doseq [item (:report report)]
     (when (= :CreateLoadBalancer (:action item))
@@ -129,7 +129,7 @@
       (catch map? m
         (let [message (merge {:environment environment
                               :application application} m)]
-          (cf/error message)
+          (hubot/error message)
           (error message)
           message))
       (catch Exception e
