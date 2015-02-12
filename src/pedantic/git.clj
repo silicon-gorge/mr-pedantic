@@ -13,10 +13,17 @@
              [repos :as repos]]))
 
 (intern 'tentacles.core 'url (env :github-base-url))
-(intern 'tentacles.core 'defaults {:oauth-token (env :github-auth-token)})
 
 (def default-config
   (slurp (resource "default.clj")))
+
+(def ^:private github-options
+  {:oauth-token (env :github-auth-token)})
+
+(defn merge-options
+  [options]
+  (merge github-options
+         options))
 
 (def ^:private organisation
   (env :github-organisation))
@@ -44,8 +51,8 @@
   [name]
   (try
     (let [file (str name ".clj")]
-      (:content (repos/contents organisation name file {:ref "master"
-                                                        :str? true})))
+      (:content (repos/contents organisation name file (merge-options {:ref "master"
+                                                                       :str? true}))))
     (catch Exception e
       (error e "Failed to get data from repository"))))
 
@@ -60,7 +67,7 @@
   [application]
   (try
     (let [options {:auto_init true :has-downloads false :has-issues false :has-wiki false :public false}
-          response (repos/create-org-repo organisation application options)]
+          response (repos/create-org-repo organisation application (merge-options options))]
       (if (busted? response)
         (do
           (with-logging-context {:response response}
@@ -86,7 +93,7 @@
   (try
     (let [tree (properties-tree application)
           options {}
-          response (data/create-tree organisation application tree options)]
+          response (data/create-tree organisation application tree (merge-options options))]
       (if (busted? response)
         (do
           (with-logging-context {:response response}
@@ -106,7 +113,7 @@
     (let [date (fmt/unparse (fmt/formatters :date-time-no-ms) (time/now))
           info {:date date :email "mixradiobot@gmail.com" :name "Mix Radio Bot"}
           options {:author info :committer info :parents []}
-          response (data/create-commit organisation application "Initial commit" tree options)]
+          response (data/create-commit organisation application "Initial commit" tree (merge-options options))]
       (if (busted? response)
         (do
           (with-logging-context {:response response}
@@ -125,7 +132,7 @@
   [application commit]
   (try
     (let [options {:force true}
-          response (data/edit-reference organisation application "heads/master" commit options)]
+          response (data/edit-reference organisation application "heads/master" commit (merge-options options))]
       (if (busted? response)
         (do
           (with-logging-context {:response response}

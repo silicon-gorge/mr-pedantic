@@ -9,5 +9,6 @@
       => "content"
       (provided
        (repos/contents "pedantic" "application" "application.clj" {:ref "master"
-                                                                   :str? true})
+                                                                   :str? true
+                                                                   :oauth-token "github-auth-token"})
        => {:content "content"}))
