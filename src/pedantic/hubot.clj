@@ -2,6 +2,7 @@
   (:require [cemerick.url :refer [url]]
             [cheshire.core :as json]
             [clj-http.client :as http]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [environ.core :refer [env]]))
 
@@ -20,13 +21,13 @@
 (def ^:private hubot-url
   (url (env :hubot-url)))
 
-(defn- build-messages
+(defn- build-message
   "Turn the report into multiple lines of text"
   [{:keys [application environment report]}]
-  (cond-> []
-          environment (conj (str "Environment: " environment))
-          application (conj (str "App: " application))
-          report (into (map :message report))))
+  (let [plural? (not= 1 (count report))
+        plural-bit (if plural? "Some Pedantic changes have" "A Pedantic change has")
+        messages (str/join "\n" (map :message report))]
+    (format "%s been made for *%s* in *%s*\n>>>\n%s" plural-bit application environment messages)))
 
 (defn- ignore?
   "Should we ignore the error?"
@@ -58,12 +59,11 @@
   "Sends an info message to Hubot"
   [report]
   (when (and hubot-on? (seq (:report report)))
-    (doseq [message (build-messages report)]
+    (let [message (build-message report)]
       (speak-info message))))
 
 (defn error
   "Sends an error message to Hubot"
-  [error-map]
-  (when (and hubot-on? (not (ignore? error-map)))
-    (doseq [error-message error-map]
-      (speak-error (str (first error-message) " " (second error-message))))))
+  [{:keys [application code environment message status title] :as error}]
+  (when (and hubot-on? (not (ignore? error)))
+    (speak-error (format "An error occurred while synchronizing configuration for *%s* in *%s*\n>>>\nStatus %d - %s\n%s - %s" application environment status code title message))))

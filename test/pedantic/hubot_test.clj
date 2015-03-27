@@ -1,5 +1,6 @@
 (ns pedantic.hubot-test
-  (:require [clj-http.client :as http]
+  (:require [cheshire.core :as json]
+            [clj-http.client :as http]
             [environ.core :refer [env]]
             [midje.sweet :refer :all]
             [pedantic.hubot :refer :all]))
@@ -9,33 +10,35 @@
 
 (intern 'pedantic.hubot 'hubot-on? true)
 
-(fact "that info messages can be sent"
+(fact "that a singular info message can be sent"
+      (info {:environment "env" :application "app" :report [{:message "message"}]})
+      => nil
+      (provided
+       (json/generate-string {:room "pedantic-info" :message "A Pedantic change has been made for *app* in *env*\n>>>\nmessage"}) => ..json..
+       (http/post "http://hubot/hubot/say" {:content-type :json
+                                            :body ..json..
+                                            :socket-timeout 5000}) => nil :times 1))
+
+(fact "that a pluralised info message can be sent"
       (info {:environment "env" :application "app" :report [{:message "message1"}
                                                             {:message "message2"}]})
       => nil
       (provided
+       (json/generate-string {:room "pedantic-info" :message "Some Pedantic changes have been made for *app* in *env*\n>>>\nmessage1\nmessage2"}) => ..json..
        (http/post "http://hubot/hubot/say" {:content-type :json
-                                            :body "{\"room\":\"pedantic-info\",\"message\":\"Environment: env\"}"
-                                            :socket-timeout 5000}) => nil
-       (http/post "http://hubot/hubot/say" {:content-type :json
-                                            :body "{\"room\":\"pedantic-info\",\"message\":\"App: app\"}"
-                                            :socket-timeout 5000}) => nil
-       (http/post "http://hubot/hubot/say" {:content-type :json
-                                            :body "{\"room\":\"pedantic-info\",\"message\":\"message1\"}"
-                                            :socket-timeout 5000}) => nil
-       (http/post "http://hubot/hubot/say" {:content-type :json
-                                            :body "{\"room\":\"pedantic-info\",\"message\":\"message2\"}"
-                                            :socket-timeout 5000}) => nil))
+                                            :body ..json..
+                                            :socket-timeout 5000}) => nil :times 1))
 
 (fact "that error messages can be sent"
-      (error {:message "message"})
+      (error {:code "code" :message "message" :status 400 :title "title" :type :cluppet.util/aws :environment "env" :application "app"})
       => nil
       (provided
+       (json/generate-string {:room "pedantic-error" :message "An error occurred while synchronizing configuration for *app* in *env*\n>>>\nStatus 400 - code\ntitle - message"}) => ..json..
        (http/post "http://hubot/hubot/say" {:content-type :json
-                                            :body "{\"room\":\"pedantic-error\",\"message\":\":message message\"}"
-                                            :socket-timeout 5000}) => nil))
+                                            :body ..json..
+                                            :socket-timeout 5000}) => nil :times 1))
 
-(fact "that 500s are never sent to Campfire"
+(fact "that 500s are never sent to Hubot"
       (error {:status 500})
       => nil
       (provided
