@@ -117,7 +117,7 @@
   (loop [n n]
     (if-let [result (try+ [(thunk)]
                           (catch [:code "Throttling"] e
-                            (warn "Retryable exception while applying configuration" e)
+                            (warn e "Retryable exception while applying configuration")
                             (when (zero? n)
                               (throw+ e))))]
       (result 0)
