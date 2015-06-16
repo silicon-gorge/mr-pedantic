@@ -26,6 +26,9 @@
 (def max-stop-interval
   720)
 
+(def retry-interval
+  (Integer/valueOf (env :retry-interval-millis "10")))
+
 (def default-keys-map
   {:key (env :aws-access-key-id-poke)
    :secret (env :aws-secret-access-key-poke)})
@@ -109,36 +112,52 @@
           environment (assoc :environment environment)
           application (assoc :application application)))
 
+(defn try-times*
+  [n thunk]
+  (loop [n n]
+    (if-let [result (try+ [(thunk)]
+                          (catch [:code "Throttling"] e
+                            (warn "Retryable exception while applying configuration" e)
+                            (when (zero? n)
+                              (throw+ e))))]
+      (result 0)
+      (do
+        (Thread/sleep retry-interval)
+        (recur (dec n))))))
+
+(defmacro try-times
+  [n & body]
+  `(try-times* ~n (fn [] ~@body)))
+
 (defn apply-config
   ([environment]
-     (apply-config nil environment nil))
+   (apply-config nil environment nil))
   ([environment application]
-     (apply-config (git/get-data environment) environment application))
+   (apply-config (git/get-data environment) environment application))
   ([env-str-config environment application]
-     (try+
-      (binding [cl-sign/*aws-credentials* (aws-keys-map environment)]
-        (->
-         (cl-core/apply-config (get-config env-str-config environment application))
-         (format-report environment application)
-         (process-report)))
-      (catch [:type :pedantic.git/git] m
-        (let [message (merge {:environment environment
-                              :application application} m)]
-          (warn message)
-          message))
-      (catch map? m
-        (let [message (merge {:environment environment
-                              :application application} m)]
-          (hubot/error message)
-          (error message)
-          message))
-      (catch Exception e
-        (let [message  {:application application
-                        :environment environment
-                        :message (.getMessage e)
-                        :stacktrace  (util/str-stacktrace e)}]
-          (error message)
-          message)))))
+   (try+
+    (try-times 2 (binding [cl-sign/*aws-credentials* (aws-keys-map environment)]
+                   (-> (cl-core/apply-config (get-config env-str-config environment application))
+                       (format-report environment application)
+                       (process-report))))
+    (catch [:type :pedantic.git/git] m
+      (let [message (merge {:environment environment
+                            :application application} m)]
+        (warn message)
+        message))
+    (catch map? m
+      (let [message (merge {:environment environment
+                            :application application} m)]
+        (hubot/error message)
+        (error message)
+        message))
+    (catch Exception e
+      (let [message  {:application application
+                      :environment environment
+                      :message (.getMessage e)
+                      :stacktrace  (util/str-stacktrace e)}]
+        (error message)
+        message)))))
 
 (defn filtered-apply-config
   [env-str-config environment application]

@@ -65,6 +65,7 @@
         :production false
         :requestlog-enabled false
         :requestlog-retainhours 24
+        :retry-interval-millis 10
         :scheduler-interval 120
         :scheduler-on false
         :service-jvmargs ""

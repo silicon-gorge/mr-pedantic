@@ -10,11 +10,23 @@
              [sqs :as sqs]
              [util :as util]]))
 
+(defn sling
+  [exception-map]
+  (slingshot.support/get-throwable (slingshot.support/make-context exception-map (str "throw+: " map) (slingshot.support/stack-trace) {})))
+
 (testable-privates pedantic.core env-config?)
 
 (fact "that we can detect environment config"
       (env-config? "(def $var \"value\")") => truthy
       (env-config? "(def var \"value\")") => falsey)
+
+(fact "that we retry in the event of throttling"
+      (apply-config ..config.. "poke" ..app..) => {:application ..app..
+                                                   :environment "poke"
+                                                   :code "Throttling"}
+      (provided
+       (get-config ..config.. "poke" ..app..) => ..evaluated-config..
+       (cluppet/apply-config ..evaluated-config..) =throws=> (sling {:code "Throttling"}) :times 3))
 
 (fact "that an SQS message is sent when an ELB is created while applying a config"
       (apply-config ..config.. "poke" ..app..) => {:application ..app..
