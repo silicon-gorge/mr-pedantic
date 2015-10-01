@@ -74,6 +74,7 @@
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
         :threads 254
+        :throttle-delay-millis 0
         :tooling-applications "tooling"}
 
   :lein-release {:deploy-via :shell

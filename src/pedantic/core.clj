@@ -26,6 +26,9 @@
 (def max-stop-interval
   720)
 
+(def throttle-delay-millis
+  (Integer/valueOf (env :throttle-delay-millis "0")))
+
 (def retry-interval
   (Integer/valueOf (env :retry-interval-millis "10")))
 
@@ -202,6 +205,7 @@
   [env-str-config environment]
   (let [apps (app-names environment)]
     (map (fn [application]
+           (Thread/sleep throttle-delay-millis)
            (filtered-apply-config env-str-config environment application))
          apps)))
 
