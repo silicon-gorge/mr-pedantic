@@ -28,13 +28,6 @@
 (def ^:private organisation
   (env :github-organisation))
 
-(def ^:private valid-environments
-  (->
-   (str/split (env :environments) #",")
-   (set)
-   (disj "poke")
-   (conj "prod")))
-
 (defn- send-error
   [status message]
   (throw+ {:type ::git

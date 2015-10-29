@@ -3,6 +3,7 @@
             [midje.sweet :refer :all]
             [pedantic
              [core :as core]
+             [environments :as environments]
              [web :refer :all]]
             [ring.util.io :refer [string-input-stream]]
             [slingshot.support :as s]))
@@ -39,7 +40,7 @@
 
 (defn slingshot-exception
   [exception-map]
-  (s/get-throwable (s/make-context exception-map (str "throw+: " map) (s/stack-trace) {})))
+  (s/get-throwable (s/make-context exception-map (str "throw+: " map) (Exception. "Busted") (s/stack-trace))))
 
 (fact "that ping pongs with a 200 response code"
       (request :get "/ping") => (contains {:body "pong"
@@ -49,53 +50,60 @@
       (request :get "/healthcheck") => (contains {:status 200}))
 
 (fact "that we can list environments"
-      (request :get "/envs") => (contains {:body {:environments ["poke"]}
-                                           :status 200}))
+      (request :get "/envs") => (contains {:body {:environments ["env1" "env2"]}
+                                           :status 200})
+      (provided
+       (environments/environment-names) => #{"env1" "env2"}))
 
 (fact "that we can read environment configuration"
-      (request :get "/envs/poke") => (contains {:body {:some "config"}
+      (request :get "/envs/env1") => (contains {:body {:some "config"}
                                                 :status 200})
       (provided
-       (core/get-config "poke") => {:some "config"}))
+       (environments/environment-names) => #{"env1"}
+       (core/get-config "env1") => {:some "config"}))
 
 (fact "that we get a 404 for an unknown environment"
-      (request :get "/envs/unknown") => (contains {:status 404}))
+      (request :get "/envs/unknown") => (contains {:status 404})
+      (provided
+       (environments/environment-names) => #{}))
 
 (fact "that we can read application configuration"
-      (request :get "/envs/poke/apps/application") => (contains {:body {:some "config"}
+      (request :get "/envs/env1/apps/application") => (contains {:body {:some "config"}
                                                                  :status 200})
       (provided
-       (core/get-config "poke" "application") => {:some "config"}))
+       (environments/environment-names) => #{"env"}
+       (core/get-config "env1" "application") => {:some "config"}))
 
 (fact "that we can validate environment configuration"
       (request :post "/validate" (merge (json-body {:some "config"})
-                                        {:params {"env" "poke"}}))
+                                        {:params {"env" "env1"}}))
       => (contains {:body {:the "result"}
                     :status 200})
       (provided
-       (core/validate-config "poke" nil "{\"some\":\"config\"}") => {:the "result"}))
+       (core/validate-config "env1" nil "{\"some\":\"config\"}") => {:the "result"}))
 
 (fact "that we can validate application configuration"
       (request :post "/validate" (merge (json-body {:some "config"})
-                                        {:params {"env" "poke"
+                                        {:params {"env" "env1"
                                                   "app-name" "application"}}))
       => (contains {:body {:the "result"}
                     :status 200})
       (provided
-       (core/validate-config "poke" "application" "{\"some\":\"config\"}") => {:the "result"}))
+       (core/validate-config "env1" "application" "{\"some\":\"config\"}") => {:the "result"}))
 
 (fact "that an invalid application configuration is rejected"
       (request :post "/validate" (merge (json-body {:some "config"})
-                                        {:params {"env" "poke"
+                                        {:params {"env" "env1"
                                                   "app-name" "application"}}))
       => (contains {:status 400})
       (provided
-       (core/validate-config "poke" "application" "{\"some\":\"config\"}") =throws=> (slingshot-exception {:type :pedantic.validator/validator
+       (core/validate-config "env1" "application" "{\"some\":\"config\"}") =throws=> (slingshot-exception {:type :pedantic.validator/validator
                                                                                                            :details {:the "result"}})))
 
 (fact "that we can apply an application configuration"
-      (request :get "/envs/poke/apps/application/apply")
+      (request :get "/envs/env1/apps/application/apply")
       => (contains {:body {:report "something"}
                     :status 200})
       (provided
-       (core/apply-config "poke" "application") => {:report "something"}))
+       (environments/environment-names) => #{"env1"}
+       (core/apply-config "env1" "application") => {:report "something"}))

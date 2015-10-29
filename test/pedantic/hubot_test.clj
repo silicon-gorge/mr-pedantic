@@ -30,7 +30,7 @@
                                             :socket-timeout 5000}) => nil :times 1))
 
 (fact "that error messages can be sent"
-      (error {:code "code" :message "message" :status 400 :title "title" :type :cluppet.util/aws :environment "env" :application "app"})
+      (error {:code "code" :message "message" :status 400 :title "title" :type :pedantic.util/aws :environment "env" :application "app"})
       => nil
       (provided
        (json/generate-string {:room "pedantic-error" :message "An error occurred while synchronizing configuration for *app* in *env*\n>>>\nStatus 400 - code\ntitle - message"}) => ..json..

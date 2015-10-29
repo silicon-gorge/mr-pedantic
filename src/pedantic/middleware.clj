@@ -2,6 +2,7 @@
   (:require [cheshire.core :as json]
             [clojure.string :refer [split]]
             [environ.core :refer [env]]
+            [pedantic.environments :as environments]
             [ring.util.response :as ring-response]
             [slingshot.slingshot :refer [try+ throw+]]))
 
@@ -19,7 +20,7 @@
        (->  (ring-response/response (json/generate-string {:message (e :message)}))
             (ring-response/content-type "application/json")
             (ring-response/status (e :status))))
-     (catch [:type :cluppet.util/aws] e
+     (catch [:type :pedantic.util/aws] e
        (->  (ring-response/response (json/generate-string e))
             (ring-response/content-type "application/json")
             (ring-response/status 409)))
@@ -27,7 +28,7 @@
        (->  (ring-response/response (json/generate-string {:message (e :message)}))
             (ring-response/content-type "application/json")
             (ring-response/status (e :status))))
-     (catch [:type :cluppet.core/invalid-config] e
+     (catch [:type :pedantic.core/invalid-config] e
        (->  (ring-response/response (json/generate-string (select-keys e [:message])))
             (ring-response/content-type "application/json")
             (ring-response/status 400)))
@@ -46,7 +47,7 @@
   [handler]
   (fn [{:keys [uri] :as req}]
     (if (re-matches #"/envs/.*" uri)
-      (if (valid-env? uri (split (env :environments) #","))
+      (if (valid-env? uri (environments/environment-names))
         (handler req)
         {:message "Unknown environment"
          :status 404})

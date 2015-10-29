@@ -1,32 +1,36 @@
 (ns pedantic.sqs
-  (:require [environ.core :refer [env]]
-            [cheshire.core :refer [generate-string]]
-            [cluppet.signature :refer [get-signed-request]]
-            [clj-http.client :as client]))
+  (:require [amazonica.aws.sqs :as sqs]
+            [cheshire.core :as json]
+            [environ.core :refer [env]]
+            [pedantic
+             [aws :as aws]
+             [environments :as environments]
+             [guard :refer [guarded]]]))
 
-(def ^:private sqs-enabled?
+(def ^:private sqs-enabled*
   (Boolean/valueOf (env :aws-sqs-enabled)))
 
-(defn- send-message
+(defn sqs-enabled?
+  []
+  sqs-enabled*)
+
+(defn send-message
   [queue-url message]
-  (when sqs-enabled?
-    (let [request (get-signed-request "sqs" {:url queue-url
-                                             :params {:Action "SendMessage"
-                                                      :MessageBody message}})]
-      (client/get (request :url)
-                  {:headers (request :headers)}))))
+  (when (sqs-enabled?)
+    (guarded (sqs/send-message (aws/config)
+                               :queue-url queue-url
+                               :delay-seconds 0
+                               :message-body message)))
+  nil)
 
-(defn- elb-created-message
-  "Create the message describing the creation of a load balancer."
+(defn elb-created-message
   [elb-name]
-  (generate-string (sorted-map :Message (generate-string (sorted-map :Event "autoscaling:ELB_LAUNCH"
-                                                                     :LoadbalancerName elb-name)))))
-
-(defn- announcements-queue-url
-  [environment]
-  (env (keyword (str "aws-sqs-autoscale-announcements-" environment))))
+  (let [message (sorted-map :Event "autoscaling:ELB_LAUNCH" :LoadbalancerName elb-name)
+        message-string (json/generate-string message)]
+    (json/generate-string (sorted-map :Message message-string))))
 
 (defn announce-elb
   [elb-name environment]
-  (when-let [q-url (announcements-queue-url environment)]
-    (send-message q-url (elb-created-message elb-name))))
+  (when-let [queue-url (environments/autoscaling-queue environment)]
+    (send-message queue-url (elb-created-message elb-name))
+    nil))

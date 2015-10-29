@@ -11,6 +11,7 @@
              [instrument :refer [instrument]]]
             [pedantic
              [core :as core]
+             [environments :as environments]
              [middleware :as middleware]
              [scheduler :as scheduler]]
             [radix
@@ -27,9 +28,6 @@
 (def ^:private version
   (setup/version "pedantic"))
 
-(def ^:private environments
-  (env :environments))
-
 (defn- response
   ([body status]
    (merge {:status status
@@ -42,7 +40,7 @@
 
 (defn- list-envs
   []
-  (response {:environments (str/split environments #",")}))
+  (response {:environments (environments/environment-names)}))
 
 (defn- show-env-config
   [env]

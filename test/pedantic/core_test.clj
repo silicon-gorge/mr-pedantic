@@ -1,18 +1,14 @@
 (ns pedantic.core-test
-  (:require [cluppet.core :as cluppet]
-            [midje
+  (:require [midje
              [sweet :refer :all]
              [util :refer :all]]
             [pedantic
+             [cluppet-core :as cluppet]
              [core :refer :all]
              [git :as git]
              [hubot :as hubot]
              [sqs :as sqs]
              [util :as util]]))
-
-(defn sling
-  [exception-map]
-  (slingshot.support/get-throwable (slingshot.support/make-context exception-map (str "throw+: " map) (slingshot.support/stack-trace) {})))
 
 (testable-privates pedantic.core env-config?)
 
@@ -20,29 +16,21 @@
       (env-config? "(def $var \"value\")") => truthy
       (env-config? "(def var \"value\")") => falsey)
 
-(fact "that we retry in the event of throttling"
-      (apply-config ..config.. "poke" ..app..) => {:application ..app..
-                                                   :environment "poke"
-                                                   :code "Throttling"}
-      (provided
-       (get-config ..config.. "poke" ..app..) => ..evaluated-config..
-       (cluppet/apply-config ..evaluated-config..) =throws=> (sling {:code "Throttling"}) :times 3))
-
 (fact "that an SQS message is sent when an ELB is created while applying a config"
-      (apply-config ..config.. "poke" ..app..) => {:application ..app..
-                                                   :environment "poke"
-                                                   :report [{:action :CreateLoadBalancer
-                                                             :elb-name ..elb-name..}]}
+      (apply-config ..config.. "env" ..app..) => {:application ..app..
+                                                  :environment "env"
+                                                  :report [{:action :CreateLoadBalancer
+                                                            :elb-name ..elb-name..}]}
       (provided
-       (get-config ..config.. "poke" ..app..) => ..evaluated-config..
-       (cluppet/apply-config ..evaluated-config..) =>  [{:action :CreateLoadBalancer
-                                                         :elb-name ..elb-name..}]
-       (hubot/info {:application ..app.. :environment "poke" :report [{:action :CreateLoadBalancer
-                                                                       :elb-name ..elb-name..}]}) => nil
-       (sqs/announce-elb ..elb-name.. "poke" ) => ..anything..))
+       (get-config ..config.. "env" ..app..) => ..evaluated-config..
+       (cluppet/apply-config ..app.. "env" ..evaluated-config..) => [{:action :CreateLoadBalancer
+                                                                      :elb-name ..elb-name..}]
+       (hubot/info {:application ..app.. :environment "env" :report [{:action :CreateLoadBalancer
+                                                                      :elb-name ..elb-name..}]}) => nil
+                                                                      (sqs/announce-elb ..elb-name.. "env") => ..anything..))
 
 (fact "that default role policies are added to app config and are validated"
-      (get-config ..str-env.. "poke" ..app..)
+      (get-config ..str-env.. "env" ..app..)
       => {:Role {:RoleName ..name..
                  :Policies [..app-policy..
                             ..default-policy..]}}
@@ -52,14 +40,14 @@
        (git/get-data ..app..)
        => ..str-app..
        (cluppet/evaluate-string [..str-env.. ..str-app..] anything)
-       =>  {:Role {:RoleName ..name..
-                   :Policies [..app-policy..]}}))
+       => {:Role {:RoleName ..name..
+                  :Policies [..app-policy..]}}))
 
 (fact "that env config is loaded when there is just an env string"
-      (get-config nil "poke" nil)
+      (get-config nil "env" nil)
       => ..env-config..
       (provided
-       (git/get-data "poke")
+       (git/get-data "env")
        => ..str-env..
        (cluppet/evaluate-string ..str-env..)
        => ..env-config...))
@@ -79,7 +67,7 @@
                                                                   :stacktrace anything})
       (provided
        (get-config ..env-config.. ..env.. ..app..) => ..app-config..
-       (cluppet/apply-config ..app-config.. ) =throws=>  (NullPointerException.)))
+       (cluppet/apply-config ..app.. ..env.. ..app-config.. ) =throws=> (NullPointerException.)))
 
 (fact "that an app can be excluded"
       (stop-schedule-temporarily "env" "app" nil) => anything
@@ -93,8 +81,8 @@
        (apply-config ..env-str..  "env" "app") => ..report..))
 
 (fact "that any errors are caught"
-      (configure-apps ..env..) =>  (contains {:environment ..env..
-                                              :message anything
-                                              :stacktrace anything})
+      (configure-apps ..env..) => (contains {:environment ..env..
+                                             :message anything
+                                             :stacktrace anything})
       (provided
-       (apply-config ..env..) =throws=>  (NullPointerException.)))
+       (apply-config ..env..) =throws=> (NullPointerException.)))

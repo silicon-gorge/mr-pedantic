@@ -1,17 +1,19 @@
 (ns pedantic.middleware-test
   (:require [environ.core :refer [env]]
             [midje.sweet :refer :all]
-            [pedantic.middleware :refer :all]))
+            [pedantic
+             [environments :as environments]
+             [middleware :refer :all]]))
 
 (fact "that a listed environment is allowed"
-      ((wrap-check-env (fn [req] req)) {:uri "/envs/prod"}) => {:uri "/envs/prod"}
+      ((wrap-check-env (fn [req] req)) {:uri "/envs/env2"}) => {:uri "/envs/env2"}
       (provided
-       (env :environments) => "prod,poke"))
+       (environments/environment-names) => #{"env2" "env1"}))
 
 (fact "that a non-listed environment is not found"
       ((wrap-check-env (fn [req] req)) {:uri "/envs/something"}) => (contains {:status 404})
       (provided
-       (env :environments) => "prod,poke"))
+       (environments/environment-names) => #{"env2" "env1"}))
 
 (fact "that a non-environment path is always allowed"
       ((wrap-check-env (fn [req] req)) {:uri "/something"}) => {:uri "/something"})
