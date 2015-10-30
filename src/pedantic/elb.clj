@@ -103,6 +103,14 @@
   [{:keys [listener-descriptions] :as load-balancer}]
   (assoc load-balancer :listener-descriptions (map #(dissoc % :policy-names) listener-descriptions)))
 
+(defn correct-listener-description-keys
+  [{:keys [listener] :as listener-description}]
+  (assoc listener-description :listener (rename-keys listener {:sslcertificate-id :ssl-certificate-id})))
+
+(defn correct-load-balancer-keys
+  [{:keys [listener-descriptions] :as load-balancer}]
+  (assoc load-balancer :listener-descriptions (map correct-listener-description-keys listener-descriptions)))
+
 (defn find-elb
   [name]
   (try
@@ -110,7 +118,8 @@
       (let [load-balancer (first (:load-balancer-descriptions load-balancers))]
         (-> load-balancer
             (select-keys [:availability-zones :health-check :listener-descriptions :load-balancer-name :scheme :security-groups :subnets])
-            remove-policy-names)))
+            remove-policy-names
+            correct-load-balancer-keys)))
     (catch LoadBalancerNotFoundException e
       nil)))
 

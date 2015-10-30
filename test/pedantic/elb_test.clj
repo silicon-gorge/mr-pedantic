@@ -119,10 +119,10 @@
          => ..create-result..)))
 
 (fact "that finding an ELB by name works"
-      (find-elb "elb") => {:listener-descriptions [{:listener ..listener..}]}
+      (find-elb "elb") => {:listener-descriptions [{:listener {:ssl-certificate-id "something"}}]}
       (provided
        (elb/describe-load-balancers anything
-                                    :load-balancer-names ["elb"]) => {:load-balancer-descriptions [{:listener-descriptions [{:listener ..listener..
+                                    :load-balancer-names ["elb"]) => {:load-balancer-descriptions [{:listener-descriptions [{:listener {:sslcertificate-id "something"}
                                                                                                                              :policy-names ..policies..}]}]}))
 
 (fact "that finding an unknown ELB by name returns nil"
