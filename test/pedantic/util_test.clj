@@ -61,3 +61,9 @@
       (provided
        (create-policy ..policy-1..) => nil
        (create-policy ..policy-2..) => nil))
+
+(fact "that creating required tags are empty if there's no application provided"
+      (required-tags nil) => [])
+
+(fact "that creating required tags creates a tag if an application is provided"
+      (required-tags "application") => [{:key "PedanticApplication" :value "application"}])

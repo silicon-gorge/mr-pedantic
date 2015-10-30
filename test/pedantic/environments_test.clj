@@ -23,12 +23,12 @@
                           :env2 ..env2..}))
 
 (fact "that updating environments creates the right map and removes anything which shouldn't be considered"
-      (update-environments) => {:env1 {:name "env1" :metadata {:pedantic true}} :env3 {:name "env3" :metadata {:pedantic true}}}
+      (update-environments) => {:env1 {:name "env1" :metadata {:pedantic {:enabled true}}} :env3 {:name "env3" :metadata {:pedantic {:enabled true}}}}
       (provided
        (lister/environments) => ["env1" "env2" "env3"]
-       (lister/environment "env1") => {:name "env1" :metadata {:pedantic true}}
+       (lister/environment "env1") => {:name "env1" :metadata {:pedantic {:enabled true}}}
        (lister/environment "env2") => {:name "env2"}
-       (lister/environment "env3") => {:name "env3" :metadata {:pedantic true}}))
+       (lister/environment "env3") => {:name "env3" :metadata {:pedantic {:enabled true}}}))
 
 (fact "that we get nil for an account ID if the environment doesn't exist"
       (account-id "unknown") => nil
@@ -59,6 +59,21 @@
       (autoscaling-queue "env") => "queue-url"
       (provided
        (environment "env") => {:metadata {:autoscaling-queue "queue-url"}}))
+
+(fact "that we get nil for an environment start delay when the environment doesn't exist"
+      (start-delay "env") => nil
+      (provided
+       (environment "env") => nil))
+
+(fact "that we get the default value for an environment start delay when the environment has no delay set"
+      (start-delay "env") => 1
+      (provided
+       (environment "env") => {}))
+
+(fact "that we get the specified start delay value when the environment has one set"
+      (start-delay "env") => 20
+      (provided
+       (environment "env") => {:metadata {:pedantic {:delay 20}}}))
 
 (fact "that we're healthy if there are some environments"
       (healthy?) => truthy

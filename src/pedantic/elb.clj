@@ -63,10 +63,20 @@
         (dissoc :listeners))
     config))
 
+(defn remove-nils
+  [m k]
+  (let [v (get m k)]
+    (if v
+      (assoc m k (remove nil? v))
+      m)))
+
 (defn convert-local-config
   [config]
   (-> config
       keywordize-keys
+      (remove-nils :listeners)
+      (remove-nils :security-groups)
+      (remove-nils :subnets)
       adjust-listeners
       (dissoc :vpc-id)))
 
@@ -123,10 +133,23 @@
     (catch LoadBalancerNotFoundException e
       nil)))
 
+(defn strip-if-not-enabled
+  [{:keys [enabled] :as attribute}]
+  (if (true? enabled)
+    attribute
+    (select-keys attribute [:enabled])))
+
+(defn strip-attributes
+  [{:keys [access-log connection-draining cross-zone-load-balancing] :as attributes}]
+  (-> attributes
+      (assoc :access-log (strip-if-not-enabled access-log))
+      (assoc :connection-draining (strip-if-not-enabled connection-draining))
+      (assoc :cross-zone-load-balancing (strip-if-not-enabled cross-zone-load-balancing))))
+
 (defn get-load-balancer-attributes
   [name]
   (try
-    (:load-balancer-attributes (guarded (elb/describe-load-balancer-attributes (aws/config) :load-balancer-name name)))
+    (strip-attributes (:load-balancer-attributes (guarded (elb/describe-load-balancer-attributes (aws/config) :load-balancer-name name))))
     (catch LoadBalancerNotFoundException e
       nil)))
 

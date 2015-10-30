@@ -37,10 +37,10 @@
   []
   (setup/configure-logging)
   (setup/start-graphite-reporting {:graphite-prefix (str/join "." [(env :environment-name) (env :service-name) (env :box-id setup/hostname)])})
-  (scheduler/start)
   (ttlr/init :cpu-count 1)
   (environments/init)
   (id/init)
+  (scheduler/start)
   (reset! server (start-server)))
 
 (defn stop

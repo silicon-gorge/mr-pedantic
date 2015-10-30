@@ -42,7 +42,7 @@
   []
   (let [{:keys [body status]} (http/get (applications-url))]
     (if (= status 200)
-      {:names (:applications (json/parse-string body true))})))
+      (:applications (json/parse-string body true)))))
 
 (defn environment
   "Gets a particular environment. Returns `nil` if the environment doesn't exist"

@@ -86,4 +86,6 @@
 
 (defn required-tags
   [application]
-  [{:key "PedanticApplication" :value application}])
+  (if application
+    [{:key "PedanticApplication" :value application}]
+    []))

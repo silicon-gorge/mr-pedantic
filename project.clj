@@ -55,7 +55,6 @@
         :hubot-info-room "pedantic-info"
         :hubot-on false
         :hubot-url "http://hubot"
-        :ignored-applications ""
         :lister-baseurl "http://lister"
         :logging-consolethreshold "off"
         :logging-filethreshold "info"
@@ -65,7 +64,6 @@
         :production false
         :requestlog-enabled false
         :requestlog-retainhours 24
-        :retry-interval-millis 10
         :scheduler-interval 120
         :scheduler-on false
         :service-jvmargs ""
@@ -73,9 +71,7 @@
         :service-port 8080
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
-        :threads 254
-        :throttle-delay-millis 0
-        :tooling-applications "tooling"}
+        :threads 254}
 
   :lein-release {:deploy-via :shell
                  :shell ["lein" "do" "clean," "uberjar," "pom," "rpm"]}

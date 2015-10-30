@@ -7,6 +7,7 @@
              [core :refer :all]
              [git :as git]
              [hubot :as hubot]
+             [lister :as lister]
              [sqs :as sqs]
              [util :as util]]))
 
@@ -19,15 +20,19 @@
 (fact "that an SQS message is sent when an ELB is created while applying a config"
       (apply-config ..config.. "env" ..app..) => {:application ..app..
                                                   :environment "env"
-                                                  :report [{:action :CreateLoadBalancer
+                                                  :report [{:action :elb/create-load-balancer
                                                             :elb-name ..elb-name..}]}
       (provided
+       (lister/application ..app..) => {:pedantic ..app-info..}
+       (is-enabled? ..app-info.. "env") => true
        (get-config ..config.. "env" ..app..) => ..evaluated-config..
-       (cluppet/apply-config ..app.. "env" ..evaluated-config..) => [{:action :CreateLoadBalancer
-                                                                      :elb-name ..elb-name..}]
-       (hubot/info {:application ..app.. :environment "env" :report [{:action :CreateLoadBalancer
-                                                                      :elb-name ..elb-name..}]}) => nil
-                                                                      (sqs/announce-elb ..elb-name.. "env") => ..anything..))
+       (cluppet/apply-config ..app.. "env" ..evaluated-config..)
+       => [{:action :elb/create-load-balancer
+            :elb-name ..elb-name..}]
+       (hubot/info {:application ..app.. :environment "env" :report [{:action :elb/create-load-balancer
+                                                                      :elb-name ..elb-name..}]})
+       => nil
+       (sqs/announce-elb ..elb-name.. "env") => ..anything..))
 
 (fact "that default role policies are added to app config and are validated"
       (get-config ..str-env.. "env" ..app..)
@@ -52,33 +57,44 @@
        (cluppet/evaluate-string ..str-env..)
        => ..env-config...))
 
-(fact "that env and all apps are configured"
-      (configure-apps ..env..) => [..env-report.. ..app-report..]
-      (provided
-       (apply-config ..env..) => ..env-report..
-       (git/get-data ..env..) => ..env-config..
-       (filtered-apply-config ..env-config.. ..env.. ..app..) => ..app-report..
-       (app-names ..env..) => [..app..]))
-
 (fact "that an error is caught and added to report"
       (apply-config ..env-config.. ..env.. ..app..) => (contains {:application ..app..
                                                                   :environment ..env..
                                                                   :message anything
                                                                   :stacktrace anything})
       (provided
+       (lister/application ..app..) => {:pedantic ..app-info..}
+       (is-enabled? ..app-info.. ..env..) => true
        (get-config ..env-config.. ..env.. ..app..) => ..app-config..
        (cluppet/apply-config ..app.. ..env.. ..app-config.. ) =throws=> (NullPointerException.)))
 
 (fact "that an app can be excluded"
       (stop-schedule-temporarily "env" "app" nil) => anything
-      (filtered-apply-config ..env-str.. "env" "app") => (contains {:excluded true})
-      (filtered-apply-config ..env-str.. "env" "anotherapp") => ..report..
-      (provided
-       (apply-config ..env-str.. "env" "anotherapp") => ..report..)
+      (is-stopped? "env" "app") => true
+      (is-stopped? "env" "anotherapp") => false
       (restart-app-schedule "env" "app") => anything
-      (filtered-apply-config ..env-str.. "env" "app") => ..report..
-      (provided
-       (apply-config ..env-str..  "env" "app") => ..report..))
+      (is-stopped? "env" "app") => false)
+
+(fact "that an application isn't enabled when the config has it listed as disabled"
+      (is-enabled? {:enabled false} "env") => falsey)
+
+(fact "that an application is enabled when the config doesn't have a value for enabled"
+      (is-enabled? {} "env") => truthy)
+
+(fact "that an application is enabled when the config has it listed as enabled"
+      (is-enabled? {:enabled true} "env") => truthy)
+
+(fact "that an application is enabled for any environment when it doesn't list environments"
+      (is-enabled? {:environments nil} "anything") => truthy
+      (is-enabled? {:environments nil} "anythingelse") => truthy
+      (is-enabled? {:environments []} "anything") => truthy
+      (is-enabled? {:environments []} "anythingelse") => truthy)
+
+(fact "that an application isn't enabled when it lists environments and the specified one isn't in that list"
+      (is-enabled? {:environments ["env"]} "anything") => falsey)
+
+(fact "that an application is enabled when it lists the specified environment"
+      (is-enabled? {:environments ["env"]} "env") => truthy)
 
 (fact "that any errors are caught"
       (configure-apps ..env..) => (contains {:environment ..env..
@@ -86,3 +102,10 @@
                                              :stacktrace anything})
       (provided
        (apply-config ..env..) =throws=> (NullPointerException.)))
+
+(fact "that env and all apps are configured"
+      (configure-apps ..env..) => [..env-report.. ..app-report..]
+      (provided
+       (apply-config ..env..) => ..env-report..
+       (git/get-data ..env..) => ..env-config..
+       (update-configs ..env-config.. ..env..) => [..app-report..]))

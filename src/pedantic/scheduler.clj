@@ -66,16 +66,13 @@
       {:created (:desc job)
        :delay (str (/ (:initial-delay job) (* 60 1000)) " minutes")})))
 
-(defn environment-delay
-  [environment]
-  (let [property (keyword (str "scheduler-delay-" environment))]
-    (Integer/valueOf (env property 1))))
-
 (defn start
   []
   (when scheduler-on?
     (doseq [environment (environments/environment-names)]
-      (at-at/after (* (environment-delay environment) 60 1000)
-                   #(schedule environment)
-                   (get-pool environment)
-                   :desc (str (time/now))))))
+      (let [start-delay (environments/start-delay environment)]
+        (info "Starting scheduler for" environment "after" start-delay "minutes")
+        (at-at/after (* start-delay 60 1000)
+                     #(schedule environment)
+                     (get-pool environment)
+                     :desc (str (time/now)))))))

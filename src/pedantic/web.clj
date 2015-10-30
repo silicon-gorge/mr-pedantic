@@ -12,6 +12,7 @@
             [pedantic
              [core :as core]
              [environments :as environments]
+             [lister :as lister]
              [middleware :as middleware]
              [scheduler :as scheduler]]
             [radix
@@ -52,7 +53,7 @@
 
 (defn- list-apps
   [env]
-  {:body {:applications (core/app-names env)}})
+  {:body {:applications (lister/applications)}})
 
 (defn- show-app-config
   [env name]
@@ -118,7 +119,7 @@
                    "/envs/:env-name/apps" "All available applications for the given environment"
                    "/envs/:env-name/schedule" "Shows the current Pedantic schedule, if any"
                    "/envs/:env-name/apps/apply" "Apply configuration for all applications listed in Lister"
-                   "/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from Git repository :app-name and evaluate it with the environment configuration, return the configuration in JSON. Master branch is used for all environments except for production where prod branch is used instead."
+                   "/envs/:env-name/apps/:app-name" "Read the application configuration :app-name.clj from Git repository :app-name and evaluate it with the environment configuration, return the configuration in JSON."
                    "/envs/:env-name/apps/:app-name/apply" "Apply the application configuration for the given environment"
                    "/envs/:env-name/apps/:app-name/schedule" "Displays the current schedule for the app, use QS action=start/stop to start/stop the scheduler interval=xx in minutes (the default interval is 60 minutes, and the maximum stop interval is 720 minutes)")
    :POST (array-map "/apps/:app-name" "Create an application configuration"

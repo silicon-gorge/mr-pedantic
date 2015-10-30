@@ -21,7 +21,7 @@
 
 (defn update-environments
   []
-  (map-by-name-kw (filter (fn [e] (true? (get-in e [:metadata :pedantic]))) (map lister/environment (lister/environments)))))
+  (map-by-name-kw (filter (fn [e] (true? (get-in e [:metadata :pedantic :enabled]))) (map lister/environment (lister/environments)))))
 
 (defn account-id
   [environment-name]
@@ -37,6 +37,11 @@
   [environment-name]
   (when-let [e (environment environment-name)]
     (get-in e [:metadata :autoscaling-queue])))
+
+(defn start-delay
+  [environment-name]
+  (when-let [e (environment environment-name)]
+    (Integer/valueOf (get-in e [:metadata :pedantic :delay] 1))))
 
 (defn healthy?
   []

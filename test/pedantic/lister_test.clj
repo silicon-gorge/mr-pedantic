@@ -24,7 +24,7 @@
 
 (fact "that getting applications works properly"
       (applications)
-      => {:names ["name1" "name2"]}
+      => ["name1" "name2"]
       (provided
        (http/get "http://lister/applications")
        => {:status 200

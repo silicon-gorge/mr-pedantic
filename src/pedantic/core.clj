@@ -4,7 +4,7 @@
              [core :refer [plus after? minutes]]
              [local :refer [local-now to-local-date-time]]]
             [clojure.string :as str]
-            [clojure.tools.logging :refer [info warn error]]
+            [clojure.tools.logging :refer [debug error info warn]]
             [environ.core :refer [env]]
             [pedantic
              [cluppet-core :as cluppet]
@@ -25,27 +25,19 @@
 (def max-stop-interval
   720)
 
-(def throttle-delay-millis
-  (Integer/valueOf (env :throttle-delay-millis "0")))
-
-(def retry-interval
-  (Integer/valueOf (env :retry-interval-millis "10")))
-
 (defn create-git-config
   [application]
   (git/create-application application))
 
-(defn- tooling-service?
-  [name]
-  ((set (str/split (env :tooling-applications) #",")) name))
-
 (defn- process-report
   [report]
   (hubot/info report)
-  (info report)
-  (doseq [item (:report report)]
-    (when (= :CreateLoadBalancer (:action item))
-      (sqs/announce-elb (:elb-name item) (:environment report))))
+  (let [report-content (:report report)]
+    (when (seq report-content)
+      (info report-content))
+    (doseq [item report-content]
+      (when (= :elb/create-load-balancer (:action item))
+        (sqs/announce-elb (:elb-name item) (:environment report)))))
   report)
 
 (defn stop-schedule-temporarily
@@ -63,7 +55,7 @@
   [environment name]
   (@no-schedule-services (keyword (str environment "-" name))))
 
-(defn- is-stopped?
+(defn is-stopped?
   [environment name]
   (let [schedule (get-app-schedule environment name)]
     (if schedule
@@ -99,40 +91,49 @@
     environment (assoc :environment environment)
     application (assoc :application application)))
 
+(defn is-enabled?
+  [pedantic-config environment]
+  (and (true? (get pedantic-config :enabled true))
+       (let [environments (into (hash-set) (get pedantic-config :environments []))]
+         (or (zero? (count environments))
+             (contains? environments environment)))))
+
 (defn apply-config
   ([environment]
    (apply-config nil environment nil))
   ([environment application]
    (apply-config (git/get-data environment) environment application))
   ([env-str-config environment application]
-   (try+
-    (-> (cluppet/apply-config application environment (get-config env-str-config environment application))
-        (format-report environment application)
-        (process-report))
-    (catch [:type :pedantic.git/git] m
-      (let [message (merge {:environment environment
-                            :application application} m)]
-        (warn message)
-        message))
-    (catch map? m
-      (let [message (merge {:environment environment
-                            :application application} m)]
-        (hubot/error message)
-        (error message)
-        message))
-    (catch Exception e
-      (let [message {:application application
-                     :environment environment
-                     :message (.getMessage e)
-                     :stacktrace (util/str-stacktrace e)}]
-        (error message)
-        message)))))
-
-(defn filtered-apply-config
-  [env-str-config environment application]
-  (if (is-stopped? environment application)
-    {:environment environment :application application :excluded true}
-    (apply-config env-str-config environment application)))
+   (if-let [application-info (if application (lister/application application) {})]
+     (if (is-enabled? (:pedantic application-info) environment)
+       (try+
+        (-> (cluppet/apply-config application environment (get-config env-str-config environment application))
+            (format-report environment application)
+            (process-report))
+        (catch [:type :pedantic.git/git] m
+          (let [message (merge {:environment environment
+                                :application application} m)]
+            (warn message)
+            message))
+        (catch map? m
+          (let [message (merge {:environment environment
+                                :application application} m)]
+            (hubot/error message)
+            (error message)
+            message))
+        (catch Exception e
+          (let [message {:application application
+                         :environment environment
+                         :message (.getMessage e)
+                         :stacktrace (util/str-stacktrace e)}]
+            (error message)
+            message)))
+       (do
+         (debug "Application" application "is disabled in environment" environment)
+         {:environment environment :application application :status :disabled}))
+     (do
+       (warn "Application" application "does not exist")
+       {:environment environment :application application :status :missing}))))
 
 (defn- env-config?
   [config]
@@ -156,23 +157,16 @@
   [application]
   (create-git-config application))
 
-(defn- filter-tooling-services
-  [environment names]
-  (if (= environment "prod")
-    (remove tooling-service? names)
-    names))
-
-(defn app-names
-  [environment]
-  (filter-tooling-services environment (:names (lister/applications))))
-
 (defn update-configs
   [env-str-config environment]
-  (let [apps (app-names environment)]
+  (let [applications (lister/applications)]
     (map (fn [application]
-           (Thread/sleep throttle-delay-millis)
-           (filtered-apply-config env-str-config environment application))
-         apps)))
+           (if-not (is-stopped? environment application)
+             (apply-config env-str-config environment application)
+             (do
+               (info "Application" application "is stopped in environment" environment)
+               {:environment environment :application application :status :stopped})))
+         applications)))
 
 (defn configure-apps
   [environment]

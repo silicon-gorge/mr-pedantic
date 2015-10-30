@@ -21,11 +21,12 @@
                                           :InstanceProtocol "http"
                                           :LoadBalancerPort 80
                                           :Protocol "http"
-                                          :SSLCertificateId "cert-id"}]
+                                          :SSLCertificateId "cert-id"}
+                                         nil]
                              :LoadBalancerName "loadbalancer"
                              :Scheme "internal"
-                             :SecurityGroups ["sg-1" "sg-2"]
-                             :Subnets ["subnet-id-1" "subnet-id-2"]
+                             :SecurityGroups ["sg-1" "sg-2" nil]
+                             :Subnets ["subnet-id-1" "subnet-id-2" nil]
                              :VpcId "vpc-id"})
       => {:cross-zone true
           :health-check {:healthy-threshold 2
@@ -130,9 +131,25 @@
       (provided
        (elb/describe-load-balancers anything :load-balancer-names ["elb"]) =throws=> (LoadBalancerNotFoundException. "Busted")))
 
+(fact "that stripping attributes works"
+      (strip-attributes {:access-log {:enabled false
+                                      :other "rubbish"}
+                         :additional-attributes []
+                         :connection-draining {:enabled false
+                                               :other "rubbish"}
+                         :connection-settings {:idle-timeout 60}
+                         :cross-zone-load-balancing {:enabled false
+                                                     :other "rubbish"}})
+      => {:access-log {:enabled false}
+          :additional-attributes []
+          :connection-draining {:enabled false}
+          :connection-settings {:idle-timeout 60}
+          :cross-zone-load-balancing {:enabled false}})
+
 (fact "that getting load balancer attributes works for an ELB which exists"
       (get-load-balancer-attributes "elb") => ..attributes..
       (provided
+       (strip-attributes ..attributes..) => ..attributes..
        (elb/describe-load-balancer-attributes anything :load-balancer-name "elb") => {:load-balancer-attributes ..attributes..}))
 
 (fact "that getting load balancer attributes for an ELB which doesn't exist gives nil"
