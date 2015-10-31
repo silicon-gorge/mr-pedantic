@@ -2,7 +2,7 @@
   :description "Pedantic service"
   :license  "https://github.com/mixradio/mr-pedantic/blob/master/LICENSE"
 
-  :dependencies [[amazonica "0.3.36"]
+  :dependencies [[amazonica "0.3.38"]
                  [bouncer "0.3.3"]
                  [ch.qos.logback/logback-classic "1.1.3"]
                  [cheshire "5.5.0"]
@@ -29,7 +29,7 @@
                log4j
                org.clojure/clojure]
 
-  :profiles {:dev {:dependencies [[midje "1.7.0"]]
+  :profiles {:dev {:dependencies [[midje "1.8.1"]]
                    :plugins [[lein-kibit "0.0.8"]
                              [lein-midje "3.1.3"]
                              [lein-rpm "0.0.5"]]}}
