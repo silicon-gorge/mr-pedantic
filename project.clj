@@ -19,6 +19,7 @@
                  [mixradio/radix "1.0.9"]
                  [net.logstash.logback/logstash-logback-encoder "4.5.1"]
                  [org.clojure/clojure "1.6.0"]
+                 [org.clojure/core.memoize "0.5.7"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.tobereplaced/lettercase "1.0.0"]
                  [overtone/at-at "1.2.0"]
@@ -43,6 +44,8 @@
 
   :env {:aws-sqs-enabled false
         :aws-role-name "pedantic"
+        :credentials-ttl-enabled false
+        :credentials-ttl-minutes 25
         :environment-name "dev"
         :github-auth-token "github-auth-token"
         :github-base-url "http://github/api/v3/"
