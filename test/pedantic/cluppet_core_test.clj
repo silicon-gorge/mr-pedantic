@@ -12,7 +12,7 @@
 
 (fact "that long running code times out"
       (evaluate-string "(Thread/sleep 600000000)")
-      => (throws java.util.concurrent.TimeoutException))
+      => (throws clojure.lang.ExceptionInfo))
 
 (fact "that global variables are accessible"
       (evaluate-string ["{:env $env :app-name $app-name :number $number}"] {:$env "env"

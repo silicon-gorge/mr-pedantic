@@ -48,7 +48,9 @@
    (catch java.util.concurrent.ExecutionException e
      (throw+ {:type ::invalid-config :message (.getMessage e)}))
    (catch clojure.lang.LispReader$ReaderException e
-     (throw+ {:type ::invalid-config :message (.getMessage e)}))))
+     (throw+ {:type ::invalid-config :message (.getMessage e)}))
+   (catch java.util.concurrent.TimeoutException e
+     (throw+ {:type ::evaluation-timeout :message (.getMessage e)}))))
 
 (defn apply-config
   [application environment config]
