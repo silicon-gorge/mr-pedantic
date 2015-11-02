@@ -1,6 +1,7 @@
 (ns pedantic.aws
   (:require [amazonica.aws.securitytoken :as sts]
             [clojure.core.memoize :as memo]
+            [clojure.tools.logging :refer [info]]
             [environ.core :refer [env]]
             [pedantic
              [environments :as environments]
@@ -33,16 +34,21 @@
   [account-id]
   (format "arn:aws:iam::%s:role/%s" account-id role-name))
 
-(defn- alternative-credentials-if-necessary*
+(defn- assume-role*
+  [account-id]
+  (info "Assuming role")
+  (:credentials (guarded (sts/assume-role :duration-seconds (to-millis (+ credentials-ttl 5)) :role-arn (role-arn account-id) :role-session-name "pedantic"))))
+
+(def assume-role
+  (if credentials-ttl-enabled?
+    (memo/ttl assume-role* :ttl/threshold (to-millis credentials-ttl))
+    assume-role*))
+
+(defn alternative-credentials-if-necessary
   [environment-name]
   (let [account-id (environments/account-id environment-name)]
     (when-not (= account-id (id/current-account-id))
-      (:credentials (guarded (sts/assume-role :duration-seconds (to-millis (+ credentials-ttl 5)) :role-arn (role-arn account-id) :role-session-name "pedantic"))))))
-
-(def alternative-credentials-if-necessary
-  (if credentials-ttl-enabled?
-    (memo/ttl alternative-credentials-if-necessary* :ttl/threshold (to-millis credentials-ttl))
-    alternative-credentials-if-necessary*))
+      (assume-role account-id))))
 
 (defn config
   []
