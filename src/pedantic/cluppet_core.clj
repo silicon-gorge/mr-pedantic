@@ -15,7 +15,7 @@
             [slingshot.slingshot :refer [try+ throw+]]))
 
 (def ^:private cluppet-tester
-  (conj secure-tester-without-def (blanket "cluppet" "environ")))
+  (conj secure-tester-without-def (blanket "environ" "pedantic")))
 
 (defn- make-sandbox
   []
