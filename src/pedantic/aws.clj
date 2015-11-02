@@ -26,9 +26,13 @@
 (def ^:private credentials-ttl-enabled?
   (Boolean/valueOf (env :credentials-ttl-enabled)))
 
+(defn- to-seconds
+  [minutes]
+  (* minutes 60))
+
 (defn- to-millis
   [minutes]
-  (* minutes 60 1000))
+  (* (to-seconds minutes) 1000))
 
 (defn- role-arn
   [account-id]
@@ -37,7 +41,7 @@
 (defn- assume-role*
   [account-id]
   (info "Assuming role")
-  (:credentials (guarded (sts/assume-role :duration-seconds (to-millis (+ credentials-ttl 5)) :role-arn (role-arn account-id) :role-session-name "pedantic"))))
+  (:credentials (guarded (sts/assume-role :duration-seconds (to-seconds (+ credentials-ttl 5)) :role-arn (role-arn account-id) :role-session-name "pedantic"))))
 
 (def assume-role
   (if credentials-ttl-enabled?
