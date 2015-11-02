@@ -22,7 +22,7 @@
         (provided
          (environments/account-id "environment") => "other-account-id"
          (id/current-account-id) => "account-id"
-         (sts/assume-role :duration-seconds 1800000
+         (sts/assume-role :duration-seconds 1800
                           :role-arn "arn:aws:iam::other-account-id:role/pedantic"
                           :role-session-name "pedantic")
          => {:credentials {:some ..credentials..}})))
