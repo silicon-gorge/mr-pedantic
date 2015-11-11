@@ -40,9 +40,12 @@
 (defn- speak
   [room message]
   (let [content (json/generate-string {:room room :message message})
-        post-body {:content-type :json :body content :socket-timeout timeout}]
+        options {:body content
+                 :content-type :json
+                 :socket-timeout timeout
+                 :throw-exceptions false}]
     (try
-      (http/post speak-url post-body)
+      (http/post speak-url options)
       nil
       (catch Exception e
         (log/warn e "Failed while making Hubot talk")))))

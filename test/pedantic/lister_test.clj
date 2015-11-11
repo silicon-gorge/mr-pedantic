@@ -9,7 +9,7 @@
       (application "app-name")
       => ..details..
       (provided
-       (http/get "http://lister/applications/app-name")
+       (http/get "http://lister/applications/app-name" {:throw-exceptions false})
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -19,39 +19,39 @@
       (application "app-name")
       => nil
       (provided
-       (http/get "http://lister/applications/app-name")
+       (http/get "http://lister/applications/app-name" {:throw-exceptions false})
        => {:status 404}))
 
 (fact "that getting applications works properly"
       (applications)
       => ["name1" "name2"]
       (provided
-       (http/get "http://lister/applications")
+       (http/get "http://lister/applications" {:throw-exceptions false})
        => {:status 200
            :body "{\"applications\":[\"name1\",\"name2\"]}"}))
 
 (fact "that getting an environment works properly when the environment exists"
       (environment "env") => ..env..
       (provided
-       (http/get "http://lister/environments/env") => {:status 200
-                                                       :body ..body..}
+       (http/get "http://lister/environments/env" {:throw-exceptions false}) => {:status 200
+                                                                                 :body ..body..}
        (json/parse-string ..body.. true) => ..env..))
 
 (fact "that getting an environment works properly when using a keyword"
       (environment :env) => ..env..
       (provided
-       (http/get "http://lister/environments/env") => {:status 200
-                                                       :body ..body..}
+       (http/get "http://lister/environments/env" {:throw-exceptions false}) => {:status 200
+                                                                                 :body ..body..}
        (json/parse-string ..body.. true) => ..env..))
 
 (fact "that getting an environment which doesn't exist gives nil"
       (environment "env") => nil
       (provided
-       (http/get "http://lister/environments/env") => {:status 404}))
+       (http/get "http://lister/environments/env" {:throw-exceptions false}) => {:status 404}))
 
 (fact "that getting environments works properly"
       (environments) => #{"one" "two"}
       (provided
-       (http/get "http://lister/environments") => {:status 200
-                                                   :body ..body..}
+       (http/get "http://lister/environments" {:throw-exceptions false}) => {:status 200
+                                                                             :body ..body..}
        (json/parse-string ..body.. true) => {:environments ["one" "two"]}))

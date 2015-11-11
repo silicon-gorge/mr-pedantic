@@ -15,9 +15,10 @@
       => nil
       (provided
        (json/generate-string {:room "pedantic-info" :message "A Pedantic change has been made for *app* in *env*\n>>>\nmessage"}) => ..json..
-       (http/post "http://hubot/hubot/say" {:content-type :json
-                                            :body ..json..
-                                            :socket-timeout 5000}) => nil :times 1))
+       (http/post "http://hubot/hubot/say" {:body ..json..
+                                            :content-type :json
+                                            :socket-timeout 5000
+                                            :throw-exceptions false}) => nil :times 1))
 
 (fact "that a pluralised info message can be sent"
       (info {:environment "env" :application "app" :report [{:message "message1"}
@@ -25,18 +26,20 @@
       => nil
       (provided
        (json/generate-string {:room "pedantic-info" :message "Some Pedantic changes have been made for *app* in *env*\n>>>\nmessage1\nmessage2"}) => ..json..
-       (http/post "http://hubot/hubot/say" {:content-type :json
-                                            :body ..json..
-                                            :socket-timeout 5000}) => nil :times 1))
+       (http/post "http://hubot/hubot/say" {:body ..json..
+                                            :content-type :json
+                                            :socket-timeout 5000
+                                            :throw-exceptions false}) => nil :times 1))
 
 (fact "that error messages can be sent"
       (error {:code "code" :message "message" :status 400 :title "title" :type :pedantic.util/aws :environment "env" :application "app"})
       => nil
       (provided
        (json/generate-string {:room "pedantic-error" :message "An error occurred while synchronizing configuration for *app* in *env*\n>>>\nStatus 400 - code\ntitle - message"}) => ..json..
-       (http/post "http://hubot/hubot/say" {:content-type :json
-                                            :body ..json..
-                                            :socket-timeout 5000}) => nil :times 1))
+       (http/post "http://hubot/hubot/say" {:body ..json..
+                                            :content-type :json
+                                            :socket-timeout 5000
+                                            :throw-exceptions false}) => nil :times 1))
 
 (fact "that 500s are never sent to Hubot"
       (error {:status 500})

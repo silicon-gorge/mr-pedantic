@@ -33,27 +33,27 @@
   "Gets a particular application. Returns `nil` if the application doesn't
    exist."
   [application-name]
-  (let [{:keys [body status]} (http/get (application-url application-name))]
+  (let [{:keys [body status]} (http/get (application-url application-name) {:throw-exceptions false})]
     (if (= status 200)
       (:metadata (json/parse-string body true)))))
 
 (defn applications
   "Gets all applications Lister knows about."
   []
-  (let [{:keys [body status]} (http/get (applications-url))]
+  (let [{:keys [body status]} (http/get (applications-url) {:throw-exceptions false})]
     (if (= status 200)
       (:applications (json/parse-string body true)))))
 
 (defn environment
   "Gets a particular environment. Returns `nil` if the environment doesn't exist"
   [environment-name]
-  (let [{:keys [body status]} (http/get (environment-url (name environment-name)))]
+  (let [{:keys [body status]} (http/get (environment-url (name environment-name)) {:throw-exceptions false})]
     (when (= status 200)
       (json/parse-string body true))))
 
 (defn environments
   "Gets all environments Lister knows about."
   []
-  (let [{:keys [body status]} (http/get (environments-url))]
+  (let [{:keys [body status]} (http/get (environments-url) {:throw-exceptions false})]
     (when (= status 200)
       (apply sorted-set (:environments (json/parse-string body true))))))
