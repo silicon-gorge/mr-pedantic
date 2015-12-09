@@ -6,6 +6,7 @@
             [mixradio.instrumented-jetty :refer [run-jetty]]
             [ninjakoala.ttlr :as ttlr]
             [pedantic
+             [aws :as aws]
              [environments :as environments]
              [identity :as id]
              [scheduler :as scheduler]
@@ -33,15 +34,11 @@
                         :configurator configure-server
                         :send-server-version false}))
 
-(defn disable-amazonica-memoization!
-  []
-  (alter-var-root (var amazonica.core/amazon-client) (fn [_] #(#'amazonica.core/amazon-client* %1 %2 %3))))
-
 (defn start
   []
-  (disable-amazonica-memoization!)
   (setup/configure-logging)
   (setup/start-graphite-reporting {:graphite-prefix (str/join "." [(env :environment-name) (env :service-name) (env :box-id setup/hostname)])})
+  (aws/init)
   (ttlr/init :cpu-count 1)
   (environments/init)
   (id/init)
