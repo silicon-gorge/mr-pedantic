@@ -42,10 +42,17 @@
             [lein-release "1.0.5"]
             [lein-ring "0.8.13"]]
 
-  :env {:aws-sqs-enabled false
-        :aws-role-name "pedantic"
+  :env {:aws-role-name "pedantic"
+        :aws-sqs-enabled false
+        :backoff-enabled false
+        :backoff-maximum-millis 10000
         :credentials-ttl-enabled false
         :credentials-ttl-minutes 25
+        :default-access-log-enabled false
+        :default-connection-draining-enabled true
+        :default-connection-draining-timeout-seconds 300
+        :default-cross-zone-enabled true
+        :default-idle-timeout-seconds 60
         :environment-name "dev"
         :github-auth-token "github-auth-token"
         :github-base-url "http://github/api/v3/"
