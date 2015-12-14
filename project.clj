@@ -2,7 +2,7 @@
   :description "Pedantic service"
   :license  "https://github.com/mixradio/mr-pedantic/blob/master/LICENSE"
 
-  :dependencies [[amazonica "0.3.38"]
+  :dependencies [[amazonica "0.3.40"]
                  [bouncer "0.3.3"]
                  [ch.qos.logback/logback-classic "1.1.3"]
                  [cheshire "5.5.0"]
@@ -19,7 +19,7 @@
                  [mixradio/radix "1.0.9"]
                  [net.logstash.logback/logstash-logback-encoder "4.5.1"]
                  [org.clojure/clojure "1.6.0"]
-                 [org.clojure/core.memoize "0.5.7"]
+                 [org.clojure/core.memoize "0.5.8"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.tobereplaced/lettercase "1.0.0"]
                  [overtone/at-at "1.2.0"]
@@ -30,17 +30,17 @@
                log4j
                org.clojure/clojure]
 
-  :profiles {:dev {:dependencies [[midje "1.8.1"]]
-                   :plugins [[lein-kibit "0.0.8"]
-                             [lein-midje "3.1.3"]
+  :profiles {:dev {:dependencies [[midje "1.8.2"]]
+                   :plugins [[lein-kibit "0.1.2"]
+                             [lein-midje "3.2"]
                              [lein-rpm "0.0.5"]]}}
 
-  :plugins [[codox "0.8.10"]
-            [lein-cloverage "1.0.2"]
-            [lein-environ "1.0.0"]
+  :plugins [[codox "0.9.0"]
+            [lein-cloverage "1.0.6"]
+            [lein-environ "1.0.1"]
             [lein-marginalia "0.8.0"]
             [lein-release "1.0.5"]
-            [lein-ring "0.8.13"]]
+            [lein-ring "0.9.7"]]
 
   :env {:aws-role-name "pedantic"
         :aws-sqs-enabled false
