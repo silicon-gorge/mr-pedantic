@@ -1,4 +1,4 @@
-(defproject pedantic "0.86"
+(defproject pedantic "0.87-SNAPSHOT"
   :description "Pedantic service"
   :license  "https://github.com/mixradio/mr-pedantic/blob/master/LICENSE"
 
