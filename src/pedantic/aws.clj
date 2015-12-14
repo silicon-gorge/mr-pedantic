@@ -58,13 +58,3 @@
   []
   (merge (alternative-credentials-if-necessary environment)
          {:endpoint region}))
-
-(defn switch-amazonica-memoization!
-  []
-  (when credentials-ttl-enabled?
-    (let [new-client-fn (memo/ttl #'amazonica.core/amazon-client* :ttl/threshold (to-millis (+ credentials-ttl 5)))]
-      (alter-var-root (var amazonica.core/amazon-client) (fn [_] #(new-client-fn %1 %2 %3))))))
-
-(defn init
-  []
-  (switch-amazonica-memoization!))
