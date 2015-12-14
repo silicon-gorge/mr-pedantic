@@ -161,6 +161,9 @@
        (app-schedule env name action interval))
 
   (GET "/:env/apps/:name/apply" [env name]
+       (apply-app-config env name))
+
+  (POST "/:env/apps/:name/apply" [env name]
        (apply-app-config env name)))
 
 (defroutes routes
