@@ -9,6 +9,10 @@
   []
   (:account-id @instance-identity-atom))
 
+(defn region
+  []
+  (:region @instance-identity-atom))
+
 (defn healthy?
   []
   (some? @instance-identity-atom))

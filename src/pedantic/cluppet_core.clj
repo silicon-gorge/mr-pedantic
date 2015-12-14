@@ -4,11 +4,11 @@
              [testers :refer [secure-tester-without-def blanket]]]
             [clojure.string :refer [join]]
             [environ.core :refer [env]]
-            [ninjakoala.instance-metadata :as im]
             [pedantic
              [aws :as aws]
              [elb :as elb]
              [iam :as iam]
+             [identity :as id]
              [report :as report]
              [securitygroups :as sg]
              [util :refer :all]]
@@ -57,7 +57,7 @@
   (binding [report/report (atom [])
             aws/application application
             aws/environment environment
-            aws/region (:region (im/instance-identity))]
+            aws/region (id/region)]
     (sg/ensure-security-groups config application)
     (elb/ensure-elbs config application)
     (iam/ensure-iam config)
