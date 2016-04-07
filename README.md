@@ -1,4 +1,4 @@
-# Mr. Pedantic [![Build Status](https://travis-ci.org/mixradio/mr-pedantic.png)](https://travis-ci.org/mixradio/mr-pedantic)
+# Mr. Pedantic [![Build Status](https://travis-ci.org/silicon-gorge/mr-pedantic.png)](https://travis-ci.org/silicon-gorge/mr-pedantic)
 
 ## Intro
 
